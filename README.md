@@ -1,4 +1,4 @@
-# indigo-events
+# arcane-events
 
 Course: CMPUT 301 (Fall 2025)
 
