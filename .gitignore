@@ -22,3 +22,31 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Signing files (keystores)
+*.jks
+*.keystore
+
+# Gradle cache and build intermediates
+.gradle/
+**/build/
+**/.gradle/
+
+# Lint and temporary files
+lint/
+*.tmp
+*.bak
+
+# Kotlin compiler cache
+.kotlinc/
+
+# Google Services (Firebase)
+google-services.json
+GoogleService-Info.plist
+
+# Fastlane (if used for CI/CD)
+fastlane/
+
+# Test and report outputs
+reports/
+test-output/
