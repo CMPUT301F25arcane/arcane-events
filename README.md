@@ -1,4 +1,4 @@
-# arcane-events
+# Arcane-events
 
 Course: CMPUT 301 (Fall 2025)
 
