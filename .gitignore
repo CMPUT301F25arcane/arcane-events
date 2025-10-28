@@ -1,4 +1,7 @@
 # Compiled class file
+
+# Ignore IntelliJ IDEA project files
+.idea/
 *.class
 
 # Log file

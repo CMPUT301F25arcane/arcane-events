@@ -4,18 +4,36 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     tools:context=".ui.login.LoginFragment">
+
+    <TextView
+        android:id="@+id/loginTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/login_title"
+        android:textColor="@color/brand_primary"
+        android:textStyle="bold"
+        android:textSize="24sp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/emailLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="@string/login_email"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/loginTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:boxStrokeColor="?attr/colorPrimary"
+        app:boxStrokeColor="@color/brand_primary"
+        app:hintTextColor="@color/text_secondary"
+        app:boxBackgroundColor="@color/surface"
         app:boxBackgroundMode="outline"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
@@ -27,6 +45,8 @@
             android:layout_height="wrap_content"
             android:inputType="textEmailAddress"
             android:autofillHints="emailAddress"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_muted"
             android:imeOptions="actionNext" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -42,6 +62,9 @@
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
         android:layout_marginTop="16dp"
+        app:boxStrokeColor="@color/brand_primary"
+        app:hintTextColor="@color/text_secondary"
+        app:boxBackgroundColor="@color/surface"
         app:boxBackgroundMode="outline">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -50,6 +73,8 @@
             android:layout_height="wrap_content"
             android:inputType="textPassword"
             android:autofillHints="password"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_muted"
             android:imeOptions="actionDone" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -58,6 +83,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="@string/login_sign_in"
+        android:textColor="@color/on_brand"
+        android:backgroundTint="@color/brand_primary"
         app:layout_constraintTop_toBottomOf="@id/passwordLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
