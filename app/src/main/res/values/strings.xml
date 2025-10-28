@@ -7,4 +7,17 @@
     <string name="login_email">Email</string>
     <string name="login_password">Password</string>
     <string name="login_sign_in">Sign in</string>
+    
+    <!-- Profile Strings -->
+    <string name="title_profile">Profile</string>
+    <string name="profile_name_label">Name</string>
+    <string name="profile_name_hint">Enter your name</string>
+    <string name="profile_pronouns_label">Pronouns</string>
+    <string name="profile_pronouns_hint">Enter your pronouns</string>
+    <string name="profile_email_label">Email</string>
+    <string name="profile_email_hint">Enter your email</string>
+    <string name="profile_phone_label">Phone Number</string>
+    <string name="profile_phone_hint">Enter your phone number</string>
+    <string name="profile_toggle_notifications">Toggle Notifications</string>
+    <string name="profile_toggle_geolocation">Toggle Geolocation</string>
 </resources>
