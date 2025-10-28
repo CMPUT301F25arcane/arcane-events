@@ -11,6 +11,7 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.arcane.databinding.ActivityMainBinding;
+import com.example.arcane.R;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,6 +33,14 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
+
+        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            if (destination.getId() == R.id.navigation_login) {
+                binding.navView.setVisibility(android.view.View.GONE);
+            } else {
+                binding.navView.setVisibility(android.view.View.VISIBLE);
+            }
+        });
     }
 
 }
