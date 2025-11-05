@@ -61,5 +61,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_event_card" />
 
+    <!-- Notification Banner (Bottom) -->
+    <include
+        android:id="@+id/notification_banner"
+        layout="@layout/layout_notification_banner"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="invisible" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
 
