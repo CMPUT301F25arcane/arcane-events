@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/overlay_black_60">
+
+    <!-- Camera Preview Surface -->
+    <SurfaceView
+        android:id="@+id/camera_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Top Bar with Back Button -->
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        android:background="@color/overlay_black_60"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageButton
+            android:id="@+id/back_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Scan QR Code"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/on_brand"
+            android:gravity="center"
+            android:layout_marginStart="16dp" />
+    </LinearLayout>
+
+    <!-- Scanning Frame Overlay - Using ConstraintLayout to create L-shaped corners -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/scanning_frame_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Top Left Corner - Horizontal Line -->
+        <View
+            android:id="@+id/corner_top_left_h"
+            android:layout_width="60dp"
+            android:layout_height="4dp"
+            android:background="@color/on_brand"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="200dp"
+            android:layout_marginStart="80dp" />
+
+        <!-- Top Left Corner - Vertical Line -->
+        <View
+            android:id="@+id/corner_top_left_v"
+            android:layout_width="4dp"
+            android:layout_height="60dp"
+            android:background="@color/on_brand"
+            app:layout_constraintTop_toTopOf="@id/corner_top_left_h"
+            app:layout_constraintStart_toStartOf="@id/corner_top_left_h" />
+
+        <!-- Top Right Corner - Horizontal Line -->
+        <View
+            android:id="@+id/corner_top_right_h"
+            android:layout_width="60dp"
+            android:layout_height="4dp"
+            android:background="@color/on_brand"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="200dp"
+            android:layout_marginEnd="80dp" />
+
+        <!-- Top Right Corner - Vertical Line -->
+        <View
+            android:id="@+id/corner_top_right_v"
+            android:layout_width="4dp"
+            android:layout_height="60dp"
+            android:background="@color/on_brand"
+            app:layout_constraintTop_toTopOf="@id/corner_top_right_h"
+            app:layout_constraintEnd_toEndOf="@id/corner_top_right_h" />
+
+        <!-- Bottom Left Corner - Horizontal Line -->
+        <View
+            android:id="@+id/corner_bottom_left_h"
+            android:layout_width="60dp"
+            android:layout_height="4dp"
+            android:background="@color/on_brand"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginBottom="200dp"
+            android:layout_marginStart="80dp" />
+
+        <!-- Bottom Left Corner - Vertical Line -->
+        <View
+            android:id="@+id/corner_bottom_left_v"
+            android:layout_width="4dp"
+            android:layout_height="60dp"
+            android:background="@color/on_brand"
+            app:layout_constraintBottom_toBottomOf="@id/corner_bottom_left_h"
+            app:layout_constraintStart_toStartOf="@id/corner_bottom_left_h" />
+
+        <!-- Bottom Right Corner - Horizontal Line -->
+        <View
+            android:id="@+id/corner_bottom_right_h"
+            android:layout_width="60dp"
+            android:layout_height="4dp"
+            android:background="@color/on_brand"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="200dp"
+            android:layout_marginEnd="80dp" />
+
+        <!-- Bottom Right Corner - Vertical Line -->
+        <View
+            android:id="@+id/corner_bottom_right_v"
+            android:layout_width="4dp"
+            android:layout_height="60dp"
+            android:background="@color/on_brand"
+            app:layout_constraintBottom_toBottomOf="@id/corner_bottom_right_h"
+            app:layout_constraintEnd_toEndOf="@id/corner_bottom_right_h" />
+
+        <!-- Center Circle Indicator -->
+        <View
+            android:id="@+id/center_indicator"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@color/on_brand"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Scan Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/scan_button"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginBottom="48dp"
+        android:backgroundTint="@color/surface"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        app:cornerRadius="36dp"
+        app:icon="@android:drawable/ic_menu_camera"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:iconSize="36dp"
+        app:iconTint="@color/text_primary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
