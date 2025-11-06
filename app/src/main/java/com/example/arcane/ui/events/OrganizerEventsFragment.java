@@ -49,7 +49,13 @@ public class OrganizerEventsFragment extends Fragment {
         eventRepository = new EventRepository();
         userRepository = new UserRepository();
         adapter = new EventCardAdapter(event -> {
-            // Click handling will be added in later step
+            // Navigate to event detail
+            if (event.getEventId() != null) {
+                androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
+                android.os.Bundle args = new android.os.Bundle();
+                args.putString("eventId", event.getEventId());
+                navController.navigate(com.example.arcane.R.id.navigation_event_detail, args);
+            }
         });
 
         binding.eventsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));

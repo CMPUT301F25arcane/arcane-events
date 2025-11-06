@@ -175,8 +175,8 @@ public class EventDetailFragment extends Fragment {
             binding.eventPriceText.setText(String.format(Locale.getDefault(), "$%.2f CAD", currentEvent.getCost()));
         }
 
-        // Organizer name - TODO: Load organizer name from Users collection
-        // For now, leave as default text
+        // Load organizer name (for both user and organizer views)
+        loadOrganizerName();
 
         // Image - placeholder for now
         // TODO: Load image from posterImageUrl when Glide/Picasso is integrated
@@ -278,10 +278,20 @@ public class EventDetailFragment extends Fragment {
         binding.sendNotificationContainer.setVisibility(View.VISIBLE);
         binding.organizerActionButtons.setVisibility(View.VISIBLE);
 
-        // Set lottery status (simplified - can be enhanced)
-        binding.lotteryStatusText.setText("Lottery Open");
+        // Set lottery status (simplified - can be enhanced based on event state)
+        if (currentEvent != null) {
+            // Check if lottery has been drawn (can enhance later based on waiting list/decisions)
+            binding.lotteryStatusText.setText("Lottery Open");
+        } else {
+            binding.lotteryStatusText.setText("Lottery Open");
+        }
 
         // Setup organizer buttons
+        binding.qrCodeButton.setOnClickListener(v -> {
+            // TODO: Show QR code functionality
+            Toast.makeText(requireContext(), "QR Code - Coming soon", Toast.LENGTH_SHORT).show();
+        });
+
         binding.entrantsButton.setOnClickListener(v -> {
             // TODO: Navigate to entrants fragment (Step 9)
             Toast.makeText(requireContext(), "Show Entrants - Coming soon", Toast.LENGTH_SHORT).show();
@@ -301,6 +311,37 @@ public class EventDetailFragment extends Fragment {
             // TODO: Navigate to edit event
             Toast.makeText(requireContext(), "Edit Event - Coming soon", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void loadOrganizerName() {
+        if (currentEvent == null || currentEvent.getOrganizerId() == null) {
+            return;
+        }
+
+        userService.getUserById(currentEvent.getOrganizerId())
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Try UserProfile first
+                        com.example.arcane.model.UserProfile userProfile = documentSnapshot.toObject(com.example.arcane.model.UserProfile.class);
+                        if (userProfile != null && userProfile.getName() != null) {
+                            binding.organizerNameText.setText(userProfile.getName());
+                            return;
+                        }
+                        
+                        // Try Users model if UserProfile didn't work
+                        com.example.arcane.model.Users users = documentSnapshot.toObject(com.example.arcane.model.Users.class);
+                        if (users != null && users.getName() != null) {
+                            binding.organizerNameText.setText(users.getName());
+                            return;
+                        }
+                    }
+                    // Fallback to "Organizer" if name not found
+                    binding.organizerNameText.setText("Organizer");
+                })
+                .addOnFailureListener(e -> {
+                    // On failure, show default text
+                    binding.organizerNameText.setText("Organizer");
+                });
     }
 
     private void setupUserView() {
