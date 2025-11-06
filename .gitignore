@@ -43,13 +43,14 @@ lint/
 # Kotlin compiler cache
 .kotlinc/
 
-# Google Services (Firebase)
-google-services.json
-GoogleService-Info.plist
-
 # Fastlane (if used for CI/CD)
 fastlane/
 
 # Test and report outputs
 reports/
 test-output/
+
+# Local configuration files (user-specific, should not be committed)
+local.properties
+config.properties
+**/config.properties
