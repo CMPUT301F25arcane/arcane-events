@@ -1,3 +1,4 @@
+/*
 package com.example.arcane.model;
 
 public class EventModel {
@@ -21,3 +22,5 @@ public class EventModel {
     public void setPosterImageUrl(String posterImageUrl) { this.posterImageUrl = posterImageUrl; }
     public void setWaitlistStatus(String waitlistStatus) { this.waitlistStatus = waitlistStatus; }
 }
+*/
+

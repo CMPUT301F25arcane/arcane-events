@@ -1,3 +1,4 @@
+/*
 package com.example.arcane.model;
 
 import android.graphics.Color;
@@ -14,9 +15,8 @@ import com.example.arcane.R;
 
 import java.util.List;
 
-/**
- * Adapter for displaying event cards in the RecyclerView.
- */
+// Adapter for displaying event cards in the RecyclerView.
+
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
 
     private final List<EventModel> events;
@@ -91,3 +91,4 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> 
         }
     }
 }
+*/
