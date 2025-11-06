@@ -172,27 +172,54 @@ public class EventService {
 
     /**
      * User leaves waiting list for an event
-     * Removes WaitingListEntry and updates user's registeredEventIds
+     * Removes WaitingListEntry, Decision, and updates user's registeredEventIds
      */
-    public Task<Void> leaveWaitingList(String eventId, String entrantId, String entryId) {
-        // Remove from waiting list
-        return waitingListRepository.removeFromWaitingList(eventId, entryId)
-                .continueWithTask(removeTask -> {
-                    if (!removeTask.isSuccessful()) {
-                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to remove from waiting list"));
-                    }
+    public Task<Void> leaveWaitingList(String eventId, String entrantId, String entryId, String decisionId) {
+        // Get decision first to find decisionId if not provided
+        Task<String> decisionIdTask;
+        if (decisionId != null && !decisionId.isEmpty()) {
+            decisionIdTask = com.google.android.gms.tasks.Tasks.forResult(decisionId);
+        } else {
+            // Find decision by entryId or entrantId
+            decisionIdTask = decisionRepository.getDecisionForUser(eventId, entrantId)
+                    .continueWith(task -> {
+                        if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                            return task.getResult().getDocuments().get(0).getId();
+                        }
+                        return null;
+                    });
+        }
+        
+        return decisionIdTask
+                .continueWithTask(decIdTask -> {
+                    // Delete decision if it exists
+                    String decId = decIdTask.getResult();
+                    Task<Void> deleteDecisionTask = (decId != null) 
+                            ? decisionRepository.deleteDecision(eventId, decId)
+                            : com.google.android.gms.tasks.Tasks.forResult(null);
                     
-                    // Remove eventId from user's registeredEventIds (workaround)
-                    return userRepository.getUserById(entrantId)
-                            .continueWithTask(userTask -> {
-                                if (userTask.isSuccessful() && userTask.getResult() != null) {
-                                    UserProfile user = userTask.getResult().toObject(UserProfile.class);
-                                    if (user != null && user.getRegisteredEventIds() != null) {
-                                        user.getRegisteredEventIds().remove(eventId);
-                                        userRepository.updateUser(user);
-                                    }
+                    // Remove from waiting list (parallel operation)
+                    Task<Void> removeWaitingListTask = waitingListRepository.removeFromWaitingList(eventId, entryId);
+                    
+                    // Execute both operations
+                    return com.google.android.gms.tasks.Tasks.whenAll(deleteDecisionTask, removeWaitingListTask)
+                            .continueWithTask(combinedTask -> {
+                                if (!combinedTask.isSuccessful()) {
+                                    return com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to remove from waiting list"));
                                 }
-                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                                
+                                // Remove eventId from user's registeredEventIds (workaround)
+                                return userRepository.getUserById(entrantId)
+                                        .continueWithTask(userTask -> {
+                                            if (userTask.isSuccessful() && userTask.getResult() != null) {
+                                                UserProfile user = userTask.getResult().toObject(UserProfile.class);
+                                                if (user != null && user.getRegisteredEventIds() != null) {
+                                                    user.getRegisteredEventIds().remove(eventId);
+                                                    userRepository.updateUser(user);
+                                                }
+                                            }
+                                            return com.google.android.gms.tasks.Tasks.forResult(null);
+                                        });
                             });
                 });
     }

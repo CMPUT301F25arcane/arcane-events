@@ -37,6 +37,7 @@ public class EventDetailFragment extends Fragment {
     private WaitingListRepository waitingListRepository;
     private DecisionRepository decisionRepository;
     private UserService userService;
+    private com.example.arcane.service.EventService eventService;
     
     private String eventId;
     private Event currentEvent;
@@ -76,6 +77,7 @@ public class EventDetailFragment extends Fragment {
         waitingListRepository = new WaitingListRepository();
         decisionRepository = new DecisionRepository();
         userService = new UserService();
+        eventService = new com.example.arcane.service.EventService();
 
         // Setup back button
         binding.backButton.setOnClickListener(v -> navigateBack());
@@ -250,7 +252,9 @@ public class EventDetailFragment extends Fragment {
                                     setupUserView();
                                 });
                     } else {
-                        // Not joined
+                        // Not in waiting list - make sure entryId and decisionId are cleared
+                        waitingListEntryId = null;
+                        decisionId = null;
                         isUserJoined = false;
                         setupUserView();
                     }
@@ -319,10 +323,7 @@ public class EventDetailFragment extends Fragment {
             binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
             binding.joinButtonContainer.setVisibility(View.VISIBLE);
 
-            binding.joinButton.setOnClickListener(v -> {
-                // TODO: Implement join waitlist (Step 8)
-                Toast.makeText(requireContext(), "Join Waitlist - Coming soon", Toast.LENGTH_SHORT).show();
-            });
+            binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
         }
     }
 
@@ -385,13 +386,16 @@ public class EventDetailFragment extends Fragment {
         binding.abandonButtonContainer.setVisibility(View.GONE);
         binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
 
+        // Reset button states
+        binding.joinButton.setEnabled(true);
+        binding.joinButton.setText("Join Waitlist");
+        binding.abandonButton.setEnabled(true);
+        binding.abandonButton.setText("Abandon Waitlist");
+
         if ("WAITING".equals(userStatus)) {
             // Show Abandon button
             binding.abandonButtonContainer.setVisibility(View.VISIBLE);
-            binding.abandonButton.setOnClickListener(v -> {
-                // TODO: Implement abandon waitlist (Step 7)
-                Toast.makeText(requireContext(), "Abandon Waitlist - Coming soon", Toast.LENGTH_SHORT).show();
-            });
+            binding.abandonButton.setOnClickListener(v -> handleAbandonWaitlist());
         } else if ("WON".equals(userStatus) && ("none".equals(userDecision) || userDecision == null)) {
             // Show Accept/Decline buttons (actions to be implemented later)
             binding.acceptDeclineButtonsContainer.setVisibility(View.VISIBLE);
@@ -405,6 +409,87 @@ public class EventDetailFragment extends Fragment {
             });
         }
         // For LOST, ACCEPTED, DECLINED, ABANDONED - no buttons shown
+    }
+
+    private void handleJoinWaitlist() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(requireContext(), "You must be logged in to join", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = currentUser.getUid();
+
+        // Disable button during operation
+        binding.joinButton.setEnabled(false);
+        binding.joinButton.setText("Joining...");
+
+        eventService.joinWaitingList(eventId, userId)
+                .addOnSuccessListener(result -> {
+                    String status = result.get("status");
+                    if ("success".equals(status)) {
+                        // Success - reload user status to update UI
+                        Toast.makeText(requireContext(), "Successfully joined waitlist!", Toast.LENGTH_SHORT).show();
+                        isUserJoined = true;
+                        waitingListEntryId = result.get("entryId");
+                        decisionId = result.get("decisionId");
+                        
+                        // Reload user status to update UI
+                        loadUserStatus();
+                    } else if ("already_exists".equals(status)) {
+                        // User already in waiting list
+                        Toast.makeText(requireContext(), "You are already on the waitlist", Toast.LENGTH_SHORT).show();
+                        // Reload status in case UI is out of sync
+                        loadUserStatus();
+                    } else {
+                        Toast.makeText(requireContext(), "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                        binding.joinButton.setEnabled(true);
+                        binding.joinButton.setText("Join Waitlist");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Error joining waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    binding.joinButton.setEnabled(true);
+                    binding.joinButton.setText("Join Waitlist");
+                });
+    }
+
+    private void handleAbandonWaitlist() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(requireContext(), "You must be logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (waitingListEntryId == null) {
+            Toast.makeText(requireContext(), "Unable to find waitlist entry", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = currentUser.getUid();
+
+        // Disable button during operation
+        binding.abandonButton.setEnabled(false);
+        binding.abandonButton.setText("Leaving...");
+
+        eventService.leaveWaitingList(eventId, userId, waitingListEntryId, decisionId)
+                .addOnSuccessListener(aVoid -> {
+                    // Success - update UI to show not joined
+                    Toast.makeText(requireContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
+                    isUserJoined = false;
+                    userStatus = null;
+                    userDecision = null;
+                    waitingListEntryId = null;
+                    decisionId = null;
+                    
+                    // Update UI to show join button
+                    setupUserView();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Error leaving waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    binding.abandonButton.setEnabled(true);
+                    binding.abandonButton.setText("Abandon Waitlist");
+                });
     }
 
     private void navigateBack() {
