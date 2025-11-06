@@ -210,12 +210,18 @@ public class EventDetailFragment extends Fragment {
                                             String decisionStatus = decision.getStatus(); // PENDING, INVITED, ACCEPTED, DECLINED
                                             
                                             // Map Decision status to user status per spec:
-                                            // Decision status "PENDING" or "INVITED" means user is WAITING
+                                            // Decision status "PENDING" means user is WAITING
+                                            // Decision status "INVITED" means user WON (needs to accept/decline)
                                             // Decision status "ACCEPTED" means user ACCEPTED
                                             // Decision status "DECLINED" means user DECLINED
-                                            // Note: WON/LOST status will come from waitingList entry status (to be added in Step 10)
-                                            if ("PENDING".equals(decisionStatus) || "INVITED".equals(decisionStatus)) {
+                                            // Note: WON/LOST status should come from waitingList entry status (to be added in Step 10)
+                                            // For now, we use Decision status "INVITED" to represent "WON"
+                                            if ("PENDING".equals(decisionStatus)) {
                                                 userStatus = "WAITING";
+                                                userDecision = "none";
+                                            } else if ("INVITED".equals(decisionStatus)) {
+                                                // INVITED means user won the lottery - they need to accept/decline
+                                                userStatus = "WON";
                                                 userDecision = "none";
                                             } else if ("ACCEPTED".equals(decisionStatus)) {
                                                 userStatus = "ACCEPTED";
@@ -387,7 +393,7 @@ public class EventDetailFragment extends Fragment {
                 Toast.makeText(requireContext(), "Abandon Waitlist - Coming soon", Toast.LENGTH_SHORT).show();
             });
         } else if ("WON".equals(userStatus) && ("none".equals(userDecision) || userDecision == null)) {
-            // Show Accept/Decline buttons
+            // Show Accept/Decline buttons (actions to be implemented later)
             binding.acceptDeclineButtonsContainer.setVisibility(View.VISIBLE);
             binding.acceptButton.setOnClickListener(v -> {
                 // TODO: Implement accept (Step 6)

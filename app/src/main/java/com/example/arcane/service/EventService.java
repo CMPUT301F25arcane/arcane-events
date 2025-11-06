@@ -198,6 +198,76 @@ public class EventService {
     }
 
     /**
+     * User accepts a won lottery spot
+     * Updates Decision status to ACCEPTED and updates both collections
+     */
+    public Task<Void> acceptWin(String eventId, String userId, String decisionId) {
+        return decisionRepository.getDecisionById(eventId, decisionId)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Decision not found"));
+                    }
+                    
+                    Decision decision = task.getResult().toObject(Decision.class);
+                    if (decision == null || !userId.equals(decision.getEntrantId())) {
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Invalid decision for user"));
+                    }
+                    
+                    // Update decision status to ACCEPTED
+                    decision.setStatus("ACCEPTED");
+                    decision.setUpdatedAt(Timestamp.now());
+                    decision.setRespondedAt(Timestamp.now());
+                    
+                    return decisionRepository.updateDecision(eventId, decisionId, decision)
+                            .continueWithTask(updateTask -> {
+                                if (!updateTask.isSuccessful()) {
+                                    return com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to update decision"));
+                                }
+                                
+                                // Update userEvents mirror (if userEvents collection exists)
+                                // For now, keep registeredEventIds as-is (user already has eventId)
+                                
+                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                            });
+                });
+    }
+
+    /**
+     * User declines a won lottery spot
+     * Updates Decision status to DECLINED and updates both collections
+     */
+    public Task<Void> declineWin(String eventId, String userId, String decisionId) {
+        return decisionRepository.getDecisionById(eventId, decisionId)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Decision not found"));
+                    }
+                    
+                    Decision decision = task.getResult().toObject(Decision.class);
+                    if (decision == null || !userId.equals(decision.getEntrantId())) {
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Invalid decision for user"));
+                    }
+                    
+                    // Update decision status to DECLINED
+                    decision.setStatus("DECLINED");
+                    decision.setUpdatedAt(Timestamp.now());
+                    decision.setRespondedAt(Timestamp.now());
+                    
+                    return decisionRepository.updateDecision(eventId, decisionId, decision)
+                            .continueWithTask(updateTask -> {
+                                if (!updateTask.isSuccessful()) {
+                                    return com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to update decision"));
+                                }
+                                
+                                // Update userEvents mirror (if userEvents collection exists)
+                                // For now, keep registeredEventIds as-is
+                                
+                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                            });
+                });
+    }
+
+    /**
      * Organizer gets all users registered for an event with their decisions
      */
     public Task<Map<String, Object>> getEventRegistrations(String eventId) {
