@@ -82,8 +82,37 @@ public class EventDetailFragment extends Fragment {
         // Setup back button
         binding.backButton.setOnClickListener(v -> navigateBack());
 
+        // Add bottom padding to account for navbar
+        setupBottomPadding();
+
         // Check user role and load event
         checkUserRoleAndLoadEvent();
+    }
+
+    private void setupBottomPadding() {
+        // Apply window insets to add padding for bottom navigation bar
+        // This ensures the content inside NestedScrollView has proper bottom padding
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, insets) -> {
+            int bottomInset = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()).bottom;
+            // The root is NestedScrollView, get its first child (the LinearLayout with content)
+            if (v instanceof androidx.core.widget.NestedScrollView) {
+                androidx.core.widget.NestedScrollView scrollView = (androidx.core.widget.NestedScrollView) v;
+                if (scrollView.getChildCount() > 0) {
+                    View contentView = scrollView.getChildAt(0);
+                    // Bottom nav bar is typically 56dp, add extra padding for comfort
+                    int bottomNavHeight = (int) (56 * getResources().getDisplayMetrics().density);
+                    int extraPadding = (int) (16 * getResources().getDisplayMetrics().density);
+                    int totalBottomPadding = Math.max(bottomInset, bottomNavHeight) + extraPadding;
+                    contentView.setPadding(
+                        contentView.getPaddingLeft(),
+                        contentView.getPaddingTop(),
+                        contentView.getPaddingRight(),
+                        totalBottomPadding
+                    );
+                }
+            }
+            return insets;
+        });
     }
 
     private void checkUserRoleAndLoadEvent() {
