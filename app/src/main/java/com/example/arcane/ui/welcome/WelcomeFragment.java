@@ -13,6 +13,7 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentWelcomePageBinding;
+import com.example.arcane.service.UserService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -31,11 +32,10 @@ public class WelcomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // If already signed in, go straight to Home
+        // If already signed in, route by role
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            NavController navController = NavHostFragment.findNavController(this);
-            navController.navigate(R.id.navigation_home);
+            routeByRole(currentUser);
             return;
         }
 
@@ -48,6 +48,33 @@ public class WelcomeFragment extends Fragment {
             NavController navController = NavHostFragment.findNavController(this);
             navController.navigate(R.id.navigation_login);
         });
+    }
+
+    private void routeByRole(@NonNull FirebaseUser user) {
+        UserService userService = new UserService();
+        userService.getUserById(user.getUid())
+                .addOnSuccessListener(snapshot -> {
+                    String role = null;
+                    if (snapshot.exists()) {
+                        com.example.arcane.model.Users u = snapshot.toObject(com.example.arcane.model.Users.class);
+                        if (u != null) role = u.getRole();
+                    }
+                    NavController navController = NavHostFragment.findNavController(this);
+                    if (role != null) {
+                        String r = role.toUpperCase();
+                        if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                            navController.navigate(R.id.navigation_home);
+                            return;
+                        }
+                    }
+                    // Default to user events for USER role or if role is null
+                    navController.navigate(R.id.navigation_user_events);
+                })
+                .addOnFailureListener(e -> {
+                    // Default to user events on failure
+                    NavController navController = NavHostFragment.findNavController(this);
+                    navController.navigate(R.id.navigation_user_events);
+                });
     }
 
     @Override

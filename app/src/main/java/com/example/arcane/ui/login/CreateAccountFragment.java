@@ -116,8 +116,8 @@ public class CreateAccountFragment extends Fragment {
                                 .addOnCompleteListener(writeTask -> {
                                     binding.btnSubmit.setEnabled(true);
                                     if (writeTask.isSuccessful()) {
-                                        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                                        navController.navigate(R.id.navigation_home);
+                                        // Route by role after account creation
+                                        routeByRole(user, selectedRole);
                                     } else {
                                         String msg = writeTask.getException() != null ? writeTask.getException().getMessage() : "Failed to save profile";
                                         Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
@@ -125,6 +125,19 @@ public class CreateAccountFragment extends Fragment {
                                 });
                     });
         });
+    }
+
+    private void routeByRole(@NonNull FirebaseUser user, String role) {
+        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+        if (role != null) {
+            String r = role.toUpperCase();
+            if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                navController.navigate(R.id.navigation_home);
+                return;
+            }
+        }
+        // Default to user events for USER role or if role is null
+        navController.navigate(R.id.navigation_user_events);
     }
 
     @Override
