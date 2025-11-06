@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/surface">
+
+    <!-- Dialog Title -->
+    <TextView
+        android:id="@+id/dialog_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Send Notification"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Invited Checkbox -->
+    <CheckBox
+        android:id="@+id/checkbox_invited"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Invited"
+        android:textSize="16sp"
+        android:textColor="@color/text_primary"
+        android:buttonTint="?attr/colorPrimary"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp" />
+
+    <!-- Cancelled Checkbox -->
+    <CheckBox
+        android:id="@+id/checkbox_cancelled"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancelled"
+        android:textSize="16sp"
+        android:textColor="@color/text_primary"
+        android:buttonTint="?attr/colorPrimary"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp" />
+
+    <!-- Enrolled Checkbox -->
+    <CheckBox
+        android:id="@+id/checkbox_enrolled"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enrolled"
+        android:textSize="16sp"
+        android:textColor="@color/text_primary"
+        android:buttonTint="?attr/colorPrimary"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp" />
+
+    <!-- Lost Checkbox -->
+    <CheckBox
+        android:id="@+id/checkbox_lost"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Lost"
+        android:textSize="16sp"
+        android:textColor="@color/text_primary"
+        android:buttonTint="?attr/colorPrimary"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Button Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <!-- Reset Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_reset"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Reset"
+            android:textColor="@color/text_secondary"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Ok Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_ok"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ok"
+            android:textColor="?attr/colorOnPrimary"
+            android:backgroundTint="?attr/colorPrimary"
+            android:minWidth="80dp" />
+    </LinearLayout>
+
+</LinearLayout>
+

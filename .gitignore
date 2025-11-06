@@ -53,4 +53,5 @@ test-output/
 # Local configuration files (user-specific, should not be committed)
 local.properties
 config.properties
+
 **/config.properties
