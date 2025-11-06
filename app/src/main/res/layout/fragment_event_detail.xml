@@ -383,6 +383,7 @@
 
             <!-- Date row -->
             <TextView
+                android:id="@+id/eventDateText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingStart="16dp"
@@ -399,6 +400,7 @@
 
             <!-- Organization row -->
             <TextView
+                android:id="@+id/organizerNameText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingStart="16dp"
@@ -414,6 +416,7 @@
 
             <!-- Location row -->
             <TextView
+                android:id="@+id/eventLocationText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingStart="16dp"
@@ -429,6 +432,7 @@
 
             <!-- Price row -->
             <TextView
+                android:id="@+id/eventPriceText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingStart="16dp"
