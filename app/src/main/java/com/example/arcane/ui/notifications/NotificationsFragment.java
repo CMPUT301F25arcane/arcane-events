@@ -1,5 +1,6 @@
 package com.example.arcane.ui.notifications;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -41,6 +42,8 @@ public class NotificationsFragment extends Fragment {
         // Logout button functionality
         binding.logoutButton.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
+            // Clear cached user role on logout
+            clearCachedUserRole();
             NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
             navController.navigate(R.id.navigation_welcome);
         });
@@ -85,6 +88,13 @@ public class NotificationsFragment extends Fragment {
             binding.editPhone.setText(user.getPhone());
         }
         // Note: Pronouns field is not in the Users model, so we leave it as is
+    }
+
+    private void clearCachedUserRole() {
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove("user_role");
+        editor.apply();
     }
 
     @Override

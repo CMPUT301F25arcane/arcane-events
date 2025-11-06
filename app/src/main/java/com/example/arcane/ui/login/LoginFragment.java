@@ -1,5 +1,6 @@
 package com.example.arcane.ui.login;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -38,7 +39,7 @@ public class LoginFragment extends Fragment {
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            // If already logged in, route by role
+            // If already logged in, route by role (this will also cache the role)
             routeByRole(currentUser);
             return;
         }
@@ -102,6 +103,10 @@ public class LoginFragment extends Fragment {
                         com.example.arcane.model.Users u = snapshot.toObject(com.example.arcane.model.Users.class);
                         if (u != null) role = u.getRole();
                     }
+                    
+                    // Cache role in SharedPreferences for bottom nav routing
+                    cacheUserRole(role);
+                    
                     NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
                     if (role != null) {
                         String r = role.toUpperCase();
@@ -110,13 +115,25 @@ public class LoginFragment extends Fragment {
                             return;
                         }
                     }
-                    navController.navigate(R.id.navigation_user_events);
+                    navController.navigate(R.id.navigation_home);
                 })
                 .addOnFailureListener(e -> {
-                    // Default to user events on failure
+                    // Default to user events on failure, cache null role
+                    cacheUserRole(null);
                     NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                    navController.navigate(R.id.navigation_user_events);
+                    navController.navigate(R.id.navigation_home);
                 });
+    }
+
+    private void cacheUserRole(String role) {
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        if (role != null) {
+            editor.putString("user_role", role);
+        } else {
+            editor.remove("user_role");
+        }
+        editor.apply();
     }
 
     @Override
