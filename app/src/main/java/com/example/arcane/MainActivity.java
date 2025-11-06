@@ -3,6 +3,8 @@ package com.example.arcane;
 import android.os.Bundle;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
@@ -12,6 +14,8 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.example.arcane.databinding.ActivityMainBinding;
 import com.example.arcane.R;
+import com.example.arcane.model.Users;
+import com.example.arcane.service.UserService;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,6 +43,19 @@ public class MainActivity extends AppCompatActivity {
                 binding.navView.setVisibility(android.view.View.GONE);
             } else {
                 binding.navView.setVisibility(android.view.View.VISIBLE);
+            }
+            
+            // Update action bar title based on role for home destination
+            if (destination.getId() == R.id.navigation_home) {
+                updateActionBarTitleForHome();
+            }
+            
+            // Disable back button for top-level destinations (no back button should show)
+            if (getSupportActionBar() != null) {
+                boolean isTopLevel = destination.getId() == R.id.navigation_home || 
+                                     destination.getId() == R.id.navigation_dashboard || 
+                                     destination.getId() == R.id.navigation_notifications;
+                getSupportActionBar().setDisplayHomeAsUpEnabled(!isTopLevel);
             }
 
             // Hide action bar for welcome and create event pages (they have their own toolbars)
@@ -76,6 +93,42 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void updateActionBarTitleForHome() {
+        if (getSupportActionBar() == null) return;
+        
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            getSupportActionBar().setTitle("My Events");
+            return;
+        }
+
+        UserService userService = new UserService();
+        userService.getUserById(currentUser.getUid())
+                .addOnSuccessListener(snapshot -> {
+                    String role = null;
+                    if (snapshot.exists()) {
+                        Users user = snapshot.toObject(Users.class);
+                        if (user != null) {
+                            role = user.getRole();
+                        }
+                    }
+                    
+                    if (role != null) {
+                        String r = role.toUpperCase();
+                        if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                            getSupportActionBar().setTitle("My Events (Organizer)");
+                        } else {
+                            getSupportActionBar().setTitle("My Events");
+                        }
+                    } else {
+                        getSupportActionBar().setTitle("My Events");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    getSupportActionBar().setTitle("My Events");
+                });
     }
 
     @Override
