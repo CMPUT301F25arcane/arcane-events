@@ -115,13 +115,13 @@ public class LoginFragment extends Fragment {
                             return;
                         }
                     }
-                    navController.navigate(R.id.navigation_user_events);
+                    navController.navigate(R.id.navigation_home);
                 })
                 .addOnFailureListener(e -> {
                     // Default to user events on failure, cache null role
                     cacheUserRole(null);
                     NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                    navController.navigate(R.id.navigation_user_events);
+                    navController.navigate(R.id.navigation_home);
                 });
     }
 

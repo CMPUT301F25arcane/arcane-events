@@ -54,7 +54,7 @@ public class GlobalEventsFragment extends Fragment {
         binding.primaryNavButton.setText("Back to My Events");
         binding.primaryNavButton.setOnClickListener(v -> {
             androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
-            navController.navigate(com.example.arcane.R.id.navigation_user_events);
+            navController.navigate(com.example.arcane.R.id.navigation_home);
         });
 
         // Setup search functionality
