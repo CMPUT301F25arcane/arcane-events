@@ -1,9 +1,8 @@
 package com.example.arcane.model;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentId;
 
-public class Profile {
+public class Users {
 
     private String id;         // use auth.uid as doc id
     private String name;
@@ -13,9 +12,9 @@ public class Profile {
     private Timestamp createdAt;
 
     // Required public no-arg constructor (Firestore uses this)
-    public Profile() {}
+    public Users() {}
 
-    public Profile(String id, String name, String email, String phone, String deviceId, Timestamp createdAt) {
+    public Users(String id, String name, String email, String phone, String deviceId, Timestamp createdAt) {
         this.id = id;
         this.name = name;
         this.email = email;
