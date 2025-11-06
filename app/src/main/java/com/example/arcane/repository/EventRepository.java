@@ -1,3 +1,15 @@
+/**
+ * EventRepository.java
+ * 
+ * Purpose: Data access layer for event operations in Firestore.
+ * 
+ * Design Pattern: Repository pattern. Encapsulates Firestore queries and operations
+ * for events, providing a clean abstraction for the service layer.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.repository;
 
 import com.example.arcane.model.Event;

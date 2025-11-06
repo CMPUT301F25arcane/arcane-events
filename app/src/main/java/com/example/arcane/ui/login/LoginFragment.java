@@ -1,3 +1,15 @@
+/**
+ * LoginFragment.java
+ * 
+ * Purpose: Handles user authentication and navigation based on user role.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Service Layer for business logic.
+ * Uses ViewBinding for type-safe view access and Navigation Component for navigation.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.login;
 
 import android.os.Bundle;

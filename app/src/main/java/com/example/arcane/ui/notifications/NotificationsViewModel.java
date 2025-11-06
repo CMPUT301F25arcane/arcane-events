@@ -1,3 +1,16 @@
+/**
+ * NotificationsViewModel.java
+ * 
+ * Purpose: ViewModel for the NotificationsFragment following MVVM architecture.
+ * 
+ * Design Pattern: MVVM (Model-View-ViewModel) pattern. Manages UI-related data
+ * and survives configuration changes.
+ * 
+ * Outstanding Issues: Currently only provides placeholder text; should be extended
+ * with actual notification data management.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.notifications;
 
 import androidx.lifecycle.LiveData;

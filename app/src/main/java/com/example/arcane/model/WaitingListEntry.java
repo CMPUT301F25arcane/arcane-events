@@ -1,3 +1,15 @@
+/**
+ * WaitingListEntry.java
+ * 
+ * Purpose: Represents an entry in the waiting list for an event.
+ * 
+ * Design Pattern: Domain Model pattern. Models the relationship between
+ * an entrant and an event's waiting list.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.model;
 
 import com.google.firebase.Timestamp;

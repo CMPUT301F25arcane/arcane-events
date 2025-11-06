@@ -1,3 +1,16 @@
+/**
+ * MainActivity.java
+ * 
+ * Purpose: Main activity that hosts all fragments and manages navigation.
+ * 
+ * Design Pattern: Single Activity pattern with Navigation Component. Manages
+ * bottom navigation visibility and action bar visibility based on current destination.
+ * Uses ViewBinding for type-safe view access.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane;
 
 import android.os.Bundle;

@@ -1,3 +1,16 @@
+/**
+ * DashboardViewModel.java
+ * 
+ * Purpose: ViewModel for the DashboardFragment following MVVM architecture.
+ * 
+ * Design Pattern: MVVM (Model-View-ViewModel) pattern. Manages UI-related data
+ * and survives configuration changes.
+ * 
+ * Outstanding Issues: Currently only provides placeholder text; should be extended
+ * with actual dashboard data management.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.dashboard;
 
 import androidx.lifecycle.LiveData;

@@ -1,3 +1,15 @@
+/**
+ * UserRepository.java
+ * 
+ * Purpose: Data access layer for user profile operations in Firestore.
+ * 
+ * Design Pattern: Repository pattern. Encapsulates Firestore queries and operations
+ * for user profiles, providing a clean abstraction for the service layer.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.repository;
 
 import com.example.arcane.model.UserProfile;

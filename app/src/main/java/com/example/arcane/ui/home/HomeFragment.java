@@ -1,3 +1,15 @@
+/**
+ * HomeFragment.java
+ * 
+ * Purpose: Home screen for organizers with navigation to create events.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with ViewBinding for
+ * type-safe view access and Navigation Component for navigation.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.home;
 
 import android.os.Bundle;

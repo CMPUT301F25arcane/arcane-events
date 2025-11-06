@@ -1,3 +1,20 @@
+/**
+ * Event.java
+ * 
+ * Purpose: Domain model representing an event that users can register for and attend.
+ * 
+ * Design Pattern: This class follows the Domain Model pattern and uses OOP Composition
+ * to manage related entities (waiting list entries and decisions) in-memory.
+ * The class is designed to work with Firestore for persistence.
+ * 
+ * Outstanding Issues:
+ * - Waiting list and decisions are loaded separately and composed in-memory;
+ *   this requires explicit loading via EventService.getEventWithDetails()
+ * - Description field is currently not used in the CreateEventFragment UI
+ * - Poster image URL and geolocation are set to null and need to be implemented
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.model;
 
 import com.google.firebase.Timestamp;

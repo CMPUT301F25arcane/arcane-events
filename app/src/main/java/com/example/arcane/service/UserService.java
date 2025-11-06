@@ -1,3 +1,15 @@
+/**
+ * UserService.java
+ * 
+ * Purpose: Service layer for managing user operations and business logic.
+ * 
+ * Design Pattern: Service Layer pattern. Provides a clean interface for user-related
+ * operations, abstracting Firestore implementation details from UI components.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.service;
 
 import androidx.annotation.NonNull;

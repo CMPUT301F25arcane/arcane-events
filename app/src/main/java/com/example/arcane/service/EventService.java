@@ -1,3 +1,21 @@
+/**
+ * EventService.java
+ * 
+ * Purpose: Service layer for orchestrating complex event-related operations.
+ * 
+ * Design Pattern: Service Layer pattern with Facade pattern. Coordinates multiple
+ * repositories (EventRepository, WaitingListRepository, DecisionRepository, UserRepository)
+ * to provide high-level business operations. Implements OOP Composition by loading
+ * related entities (waiting list, decisions) into Event objects.
+ * 
+ * Outstanding Issues:
+ * - The joinWaitingList method has complex nested Task continuations that could be
+ *   simplified with better error handling
+ * - The workaround for updating user's registeredEventIds should be refactored
+ *   to use proper subcollection queries
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.service;
 
 import com.example.arcane.model.Decision;

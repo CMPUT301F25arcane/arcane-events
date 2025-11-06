@@ -1,3 +1,15 @@
+/**
+ * CreateAccountFragment.java
+ * 
+ * Purpose: Handles user registration with role selection (USER or ORGANISER).
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Service Layer for business logic.
+ * Uses ViewBinding for type-safe view access and Navigation Component for navigation.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.login;
 
 import android.os.Bundle;

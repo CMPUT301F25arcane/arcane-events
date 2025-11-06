@@ -1,3 +1,15 @@
+/**
+ * Decision.java
+ * 
+ * Purpose: Represents an invitation/decision record for a waiting-list entry.
+ * 
+ * Design Pattern: Domain Model pattern. This class models the decision/invitation
+ * status for users who have joined an event's waiting list.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.model;
 
 import com.google.firebase.Timestamp;

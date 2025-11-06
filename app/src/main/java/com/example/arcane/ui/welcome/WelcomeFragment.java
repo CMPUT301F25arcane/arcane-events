@@ -1,3 +1,15 @@
+/**
+ * WelcomeFragment.java
+ * 
+ * Purpose: Welcome/landing screen for the application.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern. Uses ViewBinding for
+ * type-safe view access and Navigation Component for navigation.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.welcome;
 
 import android.os.Bundle;

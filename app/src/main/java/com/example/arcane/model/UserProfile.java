@@ -1,3 +1,18 @@
+/**
+ * UserProfile.java
+ * 
+ * Purpose: Represents a user profile in the system with extended profile information.
+ * 
+ * Design Pattern: Domain Model pattern. This class provides a more detailed user profile
+ * compared to the Users class, including geolocation and notification preferences.
+ * 
+ * Outstanding Issues:
+ * - The registeredEventIds field is a workaround for tracking user's registered events;
+ *   ideally this should be managed through subcollections or queries
+ * - Device ID field may not be necessary if using Firebase Auth
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.model;
 
 import com.google.firebase.firestore.DocumentId;

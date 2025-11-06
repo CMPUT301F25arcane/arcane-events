@@ -1,3 +1,16 @@
+/**
+ * DashboardFragment.java
+ * 
+ * Purpose: Dashboard screen for displaying dashboard information.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with ViewBinding for
+ * type-safe view access.
+ * 
+ * Outstanding Issues: Currently displays placeholder text; should be extended
+ * with actual dashboard functionality.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.dashboard;
 
 import android.os.Bundle;

@@ -1,3 +1,16 @@
+/**
+ * EventCardAdapter.java
+ * 
+ * Purpose: RecyclerView adapter for displaying event cards in a list.
+ * 
+ * Design Pattern: Adapter pattern for RecyclerView. Implements the standard
+ * RecyclerView.Adapter interface to bind event data to view holders.
+ * 
+ * Outstanding Issues:
+ * - Image loading uses placeholder; should integrate Glide or Picasso for poster images
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.events;
 
 import android.view.LayoutInflater;

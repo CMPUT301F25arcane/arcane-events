@@ -1,3 +1,17 @@
+/**
+ * NotificationsFragment.java
+ * 
+ * Purpose: Displays user profile information and provides logout functionality.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Repository pattern for data access.
+ * Uses ViewBinding for type-safe view access and Service Layer for business logic.
+ * 
+ * Outstanding Issues:
+ * - Uses FragmentProfileBinding (binding name doesn't match fragment name)
+ * - Pronouns field is not in the Users model and cannot be displayed
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.notifications;
 
 import android.os.Bundle;

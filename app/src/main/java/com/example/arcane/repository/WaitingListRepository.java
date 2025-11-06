@@ -1,3 +1,16 @@
+/**
+ * WaitingListRepository.java
+ * 
+ * Purpose: Data access layer for waiting list entry operations in Firestore.
+ * 
+ * Design Pattern: Repository pattern. Manages waiting list entries stored as
+ * subcollections under events in Firestore.
+ * 
+ * Outstanding Issues:
+ * - Collection group queries require Firebase Console index configuration
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.repository;
 
 import com.example.arcane.model.WaitingListEntry;
