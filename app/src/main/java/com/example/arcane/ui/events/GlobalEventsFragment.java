@@ -40,7 +40,13 @@ public class GlobalEventsFragment extends Fragment {
 
         eventRepository = new EventRepository();
         adapter = new EventCardAdapter(event -> {
-            // Click handling for global events can open details later
+            // Navigate to event detail
+            if (event.getEventId() != null) {
+                androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
+                Bundle args = new Bundle();
+                args.putString("eventId", event.getEventId());
+                navController.navigate(com.example.arcane.R.id.navigation_event_detail, args);
+            }
         });
 
         binding.eventsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -54,7 +60,7 @@ public class GlobalEventsFragment extends Fragment {
         binding.primaryNavButton.setText("Back to My Events");
         binding.primaryNavButton.setOnClickListener(v -> {
             androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
-            navController.navigate(com.example.arcane.R.id.navigation_user_events);
+            navController.navigate(com.example.arcane.R.id.navigation_home);
         });
 
         // Setup search functionality
