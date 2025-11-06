@@ -52,84 +52,228 @@
                 tools:src="@mipmap/ic_launcher" />
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/eventTitle"
+        <!-- Title with Edit Icon (for organizer) -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Air Show"
-            android:textColor="@color/brand_primary"
-            android:textStyle="bold"
-            android:textSize="26sp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginTop="16dp" />
+            android:layout_marginTop="16dp">
 
-        <!-- Status label -->
+            <TextView
+                android:id="@+id/eventTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Air Show"
+                android:textColor="@color/brand_primary"
+                android:textStyle="bold"
+                android:textSize="26sp" />
+
+            <!-- Edit Icon (shown for organizer) -->
+            <ImageButton
+                android:id="@+id/editEventButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Edit Event"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="@color/brand_primary"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Lottery Status Text (for organizer) -->
         <TextView
-            android:id="@+id/statusLabel"
+            android:id="@+id/lotteryStatusText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Status:"
+            android:text="Lottery Open"
             android:textColor="@color/text_primary"
             android:textStyle="bold"
+            android:textSize="16sp"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp" />
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
 
-        <!-- Status chip -->
-        <TextView
-            android:id="@+id/statusChip"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="PENDING"
-            android:textStyle="bold"
-            android:textColor="@color/status_pending"
-            android:background="@color/status_pending_bg"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="8dp" />
-
-        <!-- Button Row: Abandon and Send Notification -->
+        <!-- Status and Decision Row (for users) -->
         <LinearLayout
+            android:id="@+id/statusDecisionContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp">
+
+            <!-- Status label and chip -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/statusLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Status:"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="8dp" />
+
+                <!-- Status chip -->
+                <TextView
+                    android:id="@+id/statusChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PENDING"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="@color/status_pending"
+                    android:background="@color/status_pending_bg"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp" />
+            </LinearLayout>
+
+            <!-- Decision label and chip (shown when status is won/accepted/declined) -->
+            <LinearLayout
+                android:id="@+id/decisionRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/decisionLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Decision:"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="8dp" />
+
+                <!-- Decision chip -->
+                <TextView
+                    android:id="@+id/decisionChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="NONE"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:background="@color/surface_alt"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- User Action Buttons Container (for joined users) -->
+        <!-- Abandon Button (shown when status == waiting) -->
+        <LinearLayout
+            android:id="@+id/abandonButtonContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="12dp"
+            android:visibility="gone">
 
-            <!-- Abandon button (Entrant View) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/abandonButton"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Abandon"
+                android:text="Abandon Waitlist"
                 android:textColor="@color/text_primary"
-                app:strokeColor="@color/border"
-                app:iconGravity="textStart"
-                android:visibility="visible" />
+                app:strokeColor="@color/border" />
+        </LinearLayout>
 
-            <View
+        <!-- Accept and Decline Buttons (shown when status == won and decision == none) -->
+        <LinearLayout
+            android:id="@+id/acceptDeclineButtonsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/acceptButton"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Accept"
+                android:textColor="?attr/colorOnPrimary"
+                android:backgroundTint="?attr/colorPrimary" />
 
-            <!-- Send Notification button (Organizer View) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/declineButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Decline"
+                android:textColor="@color/text_primary"
+                app:strokeColor="@color/border" />
+        </LinearLayout>
+
+        <!-- Join Button (for Global Events - not joined yet) -->
+        <LinearLayout
+            android:id="@+id/joinButtonContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/joinButton"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Join Waitlist"
+                android:textColor="?attr/colorOnPrimary"
+                android:backgroundTint="?attr/colorPrimary" />
+        </LinearLayout>
+
+        <!-- Send Notification button (Organizer View) -->
+        <LinearLayout
+            android:id="@+id/sendNotificationContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone">
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/sendNotificationButton"
-                style="@style/Widget.MaterialComponents.Button"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Send Notification"
-                android:textColor="?attr/colorOnPrimary"
-                android:backgroundTint="?attr/colorPrimary"
-                android:visibility="gone" />
+                android:textColor="@color/text_primary"
+                app:strokeColor="@color/border" />
         </LinearLayout>
 
         <!-- Attendees avatar stack (static demo) -->
@@ -304,50 +448,55 @@
             android:id="@+id/organizerActionButtons"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="24dp"
             android:layout_marginBottom="24dp"
-            android:gravity="center"
             android:visibility="gone">
 
-            <!-- QR Code Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/qrCodeButton"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
+            <!-- Top Row: QR Code and Entrants (side by side) -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="QR Code"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <!-- QR Code Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/qrCodeButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="QR Code"
+                    android:textColor="@color/text_primary"
+                    app:strokeColor="@color/border"
+                    app:cornerRadius="8dp" />
+
+                <!-- Entrants Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/entrantsButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Entrants"
+                    android:textColor="@color/text_primary"
+                    app:strokeColor="@color/border"
+                    app:cornerRadius="8dp" />
+            </LinearLayout>
+
+            <!-- Draw Lottery Button (centered, full width) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/drawLotteryButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Draw Lottery!"
                 android:textColor="@color/text_primary"
                 app:strokeColor="@color/border"
-                app:cornerRadius="8dp" />
-
-            <!-- Entrants Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/entrantsButton"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="Entrants"
-                android:textColor="@color/text_primary"
-                app:strokeColor="@color/border"
-                app:cornerRadius="8dp" />
-
-            <!-- Draw Replacement Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/drawReplacementButton"
-                style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Draw Replacement"
-                android:textColor="?attr/colorOnPrimary"
-                android:backgroundTint="?attr/colorPrimary"
                 app:cornerRadius="8dp" />
         </LinearLayout>
     </LinearLayout>
