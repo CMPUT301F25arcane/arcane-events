@@ -41,13 +41,38 @@ public class MainActivity extends AppCompatActivity {
                 binding.navView.setVisibility(android.view.View.VISIBLE);
             }
 
-            if (destination.getId() == R.id.navigation_welcome) {
+            // Hide action bar for welcome and create event pages (they have their own toolbars)
+            if (destination.getId() == R.id.navigation_welcome || destination.getId() == R.id.navigation_create_event) {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
+                }
+                // Remove top padding to eliminate gap
+                if (destination.getId() == R.id.navigation_create_event) {
+                    binding.container.setPadding(
+                        binding.container.getPaddingLeft(),
+                        0,
+                        binding.container.getPaddingRight(),
+                        binding.container.getPaddingBottom()
+                    );
                 }
             } else {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().show();
+                }
+                // Restore top padding for other pages
+                if (destination.getId() != R.id.navigation_welcome && destination.getId() != R.id.navigation_create_event) {
+                    android.util.TypedValue tv = new android.util.TypedValue();
+                    if (getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
+                        int actionBarSize = android.util.TypedValue.complexToDimensionPixelSize(
+                            tv.data, getResources().getDisplayMetrics()
+                        );
+                        binding.container.setPadding(
+                            binding.container.getPaddingLeft(),
+                            actionBarSize,
+                            binding.container.getPaddingRight(),
+                            binding.container.getPaddingBottom()
+                        );
+                    }
                 }
             }
         });

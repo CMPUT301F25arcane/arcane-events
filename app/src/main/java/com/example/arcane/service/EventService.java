@@ -10,6 +10,7 @@ import com.example.arcane.repository.UserRepository;
 import com.example.arcane.repository.WaitingListRepository;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -38,7 +39,7 @@ public class EventService {
     /**
      * Create a new event
      */
-    public Task<Void> createEvent(Event event) {
+    public Task<DocumentReference> createEvent(Event event) {
         return eventRepository.createEvent(event);
     }
 

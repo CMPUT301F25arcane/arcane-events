@@ -40,4 +40,11 @@
         android:name="com.example.arcane.ui.notifications.NotificationsFragment"
         android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_create_event"
+        android:name="com.example.arcane.ui.createevent.CreateEventFragment"
+        android:label="Create Event"
+        tools:layout="@layout/fragment_create_event" />
+
 </navigation>

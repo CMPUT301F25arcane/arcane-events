@@ -18,10 +18,34 @@ public class EventRepository {
 
     /**
      * Create a new event
+     * If eventId is null, auto-generates a new document ID using .add()
      */
-    public Task<Void> createEvent(Event event) {
-        DocumentReference docRef = db.collection(COLLECTION_NAME).document(event.getEventId());
-        return docRef.set(event);
+    public Task<DocumentReference> createEvent(Event event) {
+        if (event.getEventId() == null || event.getEventId().isEmpty()) {
+            // New event - auto-generate ID using .add()
+            return db.collection(COLLECTION_NAME)
+                    .add(event)
+                    .continueWith(task -> {
+                        if (task.isSuccessful()) {
+                            DocumentReference docRef = task.getResult();
+                            // Update event with the generated ID
+                            event.setEventId(docRef.getId());
+                            return docRef;
+                        } else {
+                            throw task.getException();
+                        }
+                    });
+        } else {
+            // Existing event with ID - use .set()
+            DocumentReference docRef = db.collection(COLLECTION_NAME).document(event.getEventId());
+            return docRef.set(event).continueWith(task -> {
+                if (task.isSuccessful()) {
+                    return docRef;
+                } else {
+                    throw task.getException();
+                }
+            });
+        }
     }
 
     /**
