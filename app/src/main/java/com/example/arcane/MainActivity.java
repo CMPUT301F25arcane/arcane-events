@@ -13,10 +13,23 @@ import androidx.navigation.ui.NavigationUI;
 import com.example.arcane.databinding.ActivityMainBinding;
 import com.example.arcane.R;
 
+/**
+ * Main activity for the Arcane application.
+ *
+ * <p>Manages navigation, bottom navigation bar visibility, and action bar visibility
+ * based on the current destination.</p>
+ *
+ * @version 1.0
+ */
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
 
+    /**
+     * Called when the activity is created.
+     *
+     * @param savedInstanceState the saved instance state
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,6 +91,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Handles navigation up action.
+     *
+     * @return true if navigation was handled, false otherwise
+     */
     @Override
     public boolean onSupportNavigateUp() {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);

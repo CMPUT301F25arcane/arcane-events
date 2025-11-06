@@ -20,8 +20,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Service class to orchestrate event-related operations
- * Handles OOP composition while managing Firebase subcollections
+ * Service class to orchestrate event-related operations.
+ *
+ * <p>Handles OOP composition while managing Firebase subcollections.
+ * Coordinates between EventRepository, WaitingListRepository, DecisionRepository,
+ * and UserRepository to provide high-level event management functionality.</p>
+ *
+ * @version 1.0
  */
 public class EventService {
     private final EventRepository eventRepository;
@@ -29,6 +34,9 @@ public class EventService {
     private final DecisionRepository decisionRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Constructs a new EventService instance.
+     */
     public EventService() {
         this.eventRepository = new EventRepository();
         this.waitingListRepository = new WaitingListRepository();
@@ -37,14 +45,20 @@ public class EventService {
     }
 
     /**
-     * Create a new event
+     * Creates a new event.
+     *
+     * @param event the event to create
+     * @return a Task that completes with the document reference of the created event
      */
     public Task<DocumentReference> createEvent(Event event) {
         return eventRepository.createEvent(event);
     }
 
     /**
-     * Get event with all waiting list entries and decisions loaded (OOP composition)
+     * Gets an event with all waiting list entries and decisions loaded (OOP composition).
+     *
+     * @param eventId the event ID to retrieve
+     * @return a Task that completes with the event including waiting list and decisions
      */
     public Task<Event> getEventWithDetails(String eventId) {
         return eventRepository.getEventById(eventId)
@@ -68,7 +82,10 @@ public class EventService {
     }
 
     /**
-     * Load waiting list into Event object (OOP composition)
+     * Loads waiting list into Event object (OOP composition).
+     *
+     * @param event the event to load waiting list into
+     * @param eventId the event ID
      */
     private void loadWaitingList(Event event, String eventId) {
         waitingListRepository.getWaitingListForEvent(eventId)
@@ -84,7 +101,10 @@ public class EventService {
     }
 
     /**
-     * Load decisions into Event object (OOP composition)
+     * Loads decisions into Event object (OOP composition).
+     *
+     * @param event the event to load decisions into
+     * @param eventId the event ID
      */
     private void loadDecisions(Event event, String eventId) {
         decisionRepository.getDecisionsForEvent(eventId)
@@ -100,8 +120,13 @@ public class EventService {
     }
 
     /**
-     * User joins waiting list for an event
-     * Creates both WaitingListEntry and Decision
+     * User joins waiting list for an event.
+     *
+     * <p>Creates both WaitingListEntry and Decision records.</p>
+     *
+     * @param eventId the event ID
+     * @param entrantId the entrant's user ID
+     * @return a Task that completes with a map containing status and IDs
      */
     public Task<Map<String, String>> joinWaitingList(String eventId, String entrantId) {
         // Check if already in waiting list
@@ -171,8 +196,14 @@ public class EventService {
     }
 
     /**
-     * User leaves waiting list for an event
-     * Removes WaitingListEntry and updates user's registeredEventIds
+     * User leaves waiting list for an event.
+     *
+     * <p>Removes WaitingListEntry and updates user's registeredEventIds.</p>
+     *
+     * @param eventId the event ID
+     * @param entrantId the entrant's user ID
+     * @param entryId the waiting list entry ID to remove
+     * @return a Task that completes when the user has left the waiting list
      */
     public Task<Void> leaveWaitingList(String eventId, String entrantId, String entryId) {
         // Remove from waiting list
@@ -198,7 +229,12 @@ public class EventService {
     }
 
     /**
-     * Organizer gets all users registered for an event with their decisions
+     * Gets all users registered for an event with their decisions.
+     *
+     * <p>Used by organizers to view all registrations and their statuses.</p>
+     *
+     * @param eventId the event ID
+     * @return a Task that completes with a map containing registrations and status
      */
     public Task<Map<String, Object>> getEventRegistrations(String eventId) {
         // Get waiting list entries

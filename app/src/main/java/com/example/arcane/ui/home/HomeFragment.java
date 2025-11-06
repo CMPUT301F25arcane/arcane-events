@@ -16,10 +16,25 @@ import androidx.navigation.Navigation;
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentHomeBinding;
 
+/**
+ * Home screen fragment for organizers.
+ *
+ * <p>Displays the home screen with a floating action button to create events.</p>
+ *
+ * @version 1.0
+ */
 public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
 
+    /**
+     * Creates and returns the view hierarchy for this fragment.
+     *
+     * @param inflater the layout inflater
+     * @param container the parent view group
+     * @param savedInstanceState the saved instance state
+     * @return the root view
+     */
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         HomeViewModel homeViewModel =
@@ -33,6 +48,12 @@ public class HomeFragment extends Fragment {
         return root;
     }
 
+    /**
+     * Called immediately after onCreateView has returned.
+     *
+     * @param view the view returned by onCreateView
+     * @param savedInstanceState the saved instance state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -44,6 +65,9 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    /**
+     * Called when the view hierarchy is being removed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
