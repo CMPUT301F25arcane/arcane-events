@@ -3,135 +3,198 @@ package com.example.arcane.model;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.GeoPoint;
-
-import java.util.ArrayList;
 import java.util.List;
 
 public class Event {
     @DocumentId
-    private String id;
+    private String eventId;
 
-    // --- Metadata ---
-    private String name;
+    private String organizerId;  // Reference to UserProfile
+    private String eventName;
     private String description;
-    private Long capacity;                 // change to String if your Firestore field is string
-    private Long attendeeCount;
-    private Timestamp registrationStart;
-    private Timestamp registrationEnd;
-    private String locationName;
-    private GeoPoint geo;
-    private String posterUrl;
+    private GeoPoint geolocation;  // Optional
+    private String posterImageUrl;  // Optional
+    private Timestamp eventDate;
+    private String location;
+    private Double cost;
+    private Timestamp registrationStartDate;
+    private Timestamp registrationEndDate;
+    private Integer maxEntrants;  // Optional
+    private Integer numberOfWinners;
     private Boolean geolocationRequired;
-    private Timestamp createdAt;
+    private String status;  // "DRAFT", "OPEN", "CLOSED", "DRAWN", "COMPLETED"
 
-    // Organizer is a User object kept in metadata
-    private Users organizer;
+    // OOP Composition - Lists for in-memory operations (NOT saved to Firestore)
+    private List<WaitingListEntry> waitingList;  // Loaded separately from subcollection
+    private List<Decision> decisions;  // Loaded separately from subcollection
 
-    // --- Waiting queue (entrant user IDs) ---
-    // Stored as an array in Firestore; treated as a FIFO queue with helpers below.
-    private List<String> waitingQueue;
+    // Required no-arg constructor for Firestore
+    public Event() {}
 
-    public Event() {
-        this.waitingQueue = new ArrayList<>();
-    }
-
-    public Event(String id,
-                 String name,
-                 String description,
-                 Long capacity,
-                 Long attendeeCount,
-                 Timestamp registrationStart,
-                 Timestamp registrationEnd,
-                 String locationName,
-                 GeoPoint geo,
-                 String posterUrl,
-                 Boolean geolocationRequired,
-                 Timestamp createdAt,
-                 Users organizer,
-                 List<String> waitingQueue) {
-        this.id = id;
-        this.name = name;
+    public Event(String eventId, String organizerId, String eventName, String description,
+                 GeoPoint geolocation, String posterImageUrl, Timestamp eventDate, String location,
+                 Double cost, Timestamp registrationStartDate, Timestamp registrationEndDate,
+                 Integer maxEntrants, Integer numberOfWinners, Boolean geolocationRequired,
+                 String status) {
+        this.eventId = eventId;
+        this.organizerId = organizerId;
+        this.eventName = eventName;
         this.description = description;
-        this.capacity = capacity;
-        this.attendeeCount = attendeeCount;
-        this.registrationStart = registrationStart;
-        this.registrationEnd = registrationEnd;
-        this.locationName = locationName;
-        this.geo = geo;
-        this.posterUrl = posterUrl;
+        this.geolocation = geolocation;
+        this.posterImageUrl = posterImageUrl;
+        this.eventDate = eventDate;
+        this.location = location;
+        this.cost = cost;
+        this.registrationStartDate = registrationStartDate;
+        this.registrationEndDate = registrationEndDate;
+        this.maxEntrants = maxEntrants;
+        this.numberOfWinners = numberOfWinners;
+        this.geolocationRequired = geolocationRequired != null ? geolocationRequired : false;
+        this.status = status;
+    }
+
+    // OOP Methods
+    public void addToWaitingList(WaitingListEntry entry) {
+        if (waitingList == null) {
+            waitingList = new java.util.ArrayList<>();
+        }
+        waitingList.add(entry);
+    }
+
+    public List<WaitingListEntry> getWaitingList() {
+        return waitingList;
+    }
+
+    public void setWaitingList(List<WaitingListEntry> waitingList) {
+        this.waitingList = waitingList;
+    }
+
+    public List<Decision> getDecisions() {
+        return decisions;
+    }
+
+    public void setDecisions(List<Decision> decisions) {
+        this.decisions = decisions;
+    }
+
+    // Getters and Setters
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
+    public String getOrganizerId() {
+        return organizerId;
+    }
+
+    public void setOrganizerId(String organizerId) {
+        this.organizerId = organizerId;
+    }
+
+    public String getEventName() {
+        return eventName;
+    }
+
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public GeoPoint getGeolocation() {
+        return geolocation;
+    }
+
+    public void setGeolocation(GeoPoint geolocation) {
+        this.geolocation = geolocation;
+    }
+
+    public String getPosterImageUrl() {
+        return posterImageUrl;
+    }
+
+    public void setPosterImageUrl(String posterImageUrl) {
+        this.posterImageUrl = posterImageUrl;
+    }
+
+    public Timestamp getEventDate() {
+        return eventDate;
+    }
+
+    public void setEventDate(Timestamp eventDate) {
+        this.eventDate = eventDate;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public Double getCost() {
+        return cost;
+    }
+
+    public void setCost(Double cost) {
+        this.cost = cost;
+    }
+
+    public Timestamp getRegistrationStartDate() {
+        return registrationStartDate;
+    }
+
+    public void setRegistrationStartDate(Timestamp registrationStartDate) {
+        this.registrationStartDate = registrationStartDate;
+    }
+
+    public Timestamp getRegistrationEndDate() {
+        return registrationEndDate;
+    }
+
+    public void setRegistrationEndDate(Timestamp registrationEndDate) {
+        this.registrationEndDate = registrationEndDate;
+    }
+
+    public Integer getMaxEntrants() {
+        return maxEntrants;
+    }
+
+    public void setMaxEntrants(Integer maxEntrants) {
+        this.maxEntrants = maxEntrants;
+    }
+
+    public Integer getNumberOfWinners() {
+        return numberOfWinners;
+    }
+
+    public void setNumberOfWinners(Integer numberOfWinners) {
+        this.numberOfWinners = numberOfWinners;
+    }
+
+    public Boolean getGeolocationRequired() {
+        return geolocationRequired;
+    }
+
+    public void setGeolocationRequired(Boolean geolocationRequired) {
         this.geolocationRequired = geolocationRequired;
-        this.createdAt = createdAt;
-        this.organizer = organizer;
-        this.waitingQueue = (waitingQueue != null) ? waitingQueue : new ArrayList<>();
     }
 
-    // ---------- Queue helpers ----------
-    public void enqueueEntrant(String userId) {
-        if (waitingQueue == null) waitingQueue = new ArrayList<>();
-        waitingQueue.add(userId); // push to back
+    public String getStatus() {
+        return status;
     }
 
-    public String dequeueEntrant() {
-        if (waitingQueue == null || waitingQueue.isEmpty()) return null;
-        return waitingQueue.remove(0); // pop from front (FIFO)
-    }
-
-    public String peekNextEntrant() {
-        if (waitingQueue == null || waitingQueue.isEmpty()) return null;
-        return waitingQueue.get(0);
-    }
-
-    public boolean removeEntrant(String userId) {
-        if (waitingQueue == null) return false;
-        return waitingQueue.remove(userId);
-    }
-
-    public int getQueueSize() {
-        return (waitingQueue == null) ? 0 : waitingQueue.size();
-    }
-
-    // ---------- Getters / Setters ----------
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public Long getCapacity() { return capacity; }
-    public void setCapacity(Long capacity) { this.capacity = capacity; }
-
-    public Long getAttendeeCount() { return attendeeCount; }
-    public void setAttendeeCount(Long attendeeCount) { this.attendeeCount = attendeeCount; }
-
-    public Timestamp getRegistrationStart() { return registrationStart; }
-    public void setRegistrationStart(Timestamp registrationStart) { this.registrationStart = registrationStart; }
-
-    public Timestamp getRegistrationEnd() { return registrationEnd; }
-    public void setRegistrationEnd(Timestamp registrationEnd) { this.registrationEnd = registrationEnd; }
-
-    public String getLocationName() { return locationName; }
-    public void setLocationName(String locationName) { this.locationName = locationName; }
-
-    public GeoPoint getGeo() { return geo; }
-    public void setGeo(GeoPoint geo) { this.geo = geo; }
-
-    public String getPosterUrl() { return posterUrl; }
-    public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
-
-    public Boolean getGeolocationRequired() { return geolocationRequired; }
-    public void setGeolocationRequired(Boolean geolocationRequired) { this.geolocationRequired = geolocationRequired; }
-
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
-
-    public Users getOrganizer() { return organizer; }
-    public void setOrganizer(Users organizer) { this.organizer = organizer; }
-
-    public List<String> getWaitingQueue() { return waitingQueue; }
-    public void setWaitingQueue(List<String> waitingQueue) {
-        this.waitingQueue = (waitingQueue != null) ? waitingQueue : new ArrayList<>();
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
