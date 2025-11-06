@@ -25,9 +25,9 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="com.example.arcane.ui.home.HomeFragment"
-        android:label="@string/title_events"
-        tools:layout="@layout/fragment_home" />
+        android:name="com.example.arcane.ui.events.OrganizerEventsFragment"
+        android:label="My Events (Organizer)"
+        tools:layout="@layout/fragment_events" />
 
     <fragment
         android:id="@+id/navigation_dashboard"
@@ -46,5 +46,17 @@
         android:name="com.example.arcane.ui.createevent.CreateEventFragment"
         android:label="Create Event"
         tools:layout="@layout/fragment_create_event" />
+
+    <fragment
+        android:id="@+id/navigation_user_events"
+        android:name="com.example.arcane.ui.events.UserEventsFragment"
+        android:label="My Events (User)"
+        tools:layout="@layout/fragment_events" />
+
+    <fragment
+        android:id="@+id/navigation_global_events"
+        android:name="com.example.arcane.ui.events.GlobalEventsFragment"
+        android:label="User Global Events"
+        tools:layout="@layout/fragment_events" />
 
 </navigation>

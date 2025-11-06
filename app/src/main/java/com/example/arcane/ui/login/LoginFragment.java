@@ -38,8 +38,8 @@ public class LoginFragment extends Fragment {
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-            navController.navigate(R.id.navigation_home);
+            // If already logged in, route by role
+            routeByRole(currentUser);
             return;
         }
 
@@ -62,8 +62,10 @@ public class LoginFragment extends Fragment {
                     .addOnCompleteListener(task -> {
                         binding.loginButton.setEnabled(true);
                         if (task.isSuccessful()) {
-                            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                            navController.navigate(R.id.navigation_home);
+                            FirebaseUser signedIn = FirebaseAuth.getInstance().getCurrentUser();
+                            if (signedIn != null) {
+                                routeByRole(signedIn);
+                            }
                         } else {
                             Exception e = task.getException();
                             String message = "Login failed";
@@ -89,6 +91,32 @@ public class LoginFragment extends Fragment {
             NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
             navController.navigate(R.id.navigation_create_account);
         });
+    }
+
+    private void routeByRole(@NonNull FirebaseUser user) {
+        com.example.arcane.service.UserService userService = new com.example.arcane.service.UserService();
+        userService.getUserById(user.getUid())
+                .addOnSuccessListener(snapshot -> {
+                    String role = null;
+                    if (snapshot.exists()) {
+                        com.example.arcane.model.Users u = snapshot.toObject(com.example.arcane.model.Users.class);
+                        if (u != null) role = u.getRole();
+                    }
+                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                    if (role != null) {
+                        String r = role.toUpperCase();
+                        if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                            navController.navigate(R.id.navigation_home);
+                            return;
+                        }
+                    }
+                    navController.navigate(R.id.navigation_user_events);
+                })
+                .addOnFailureListener(e -> {
+                    // Default to user events on failure
+                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                    navController.navigate(R.id.navigation_user_events);
+                });
     }
 
     @Override
