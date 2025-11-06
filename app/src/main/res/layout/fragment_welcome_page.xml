@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:text="CREATE ACCOUNT"
             android:textAllCaps="true"
-            android:cornerRadius="24dp"
+            app:cornerRadius="24dp"
             android:layout_marginBottom="12dp"
             style="?attr/materialButtonOutlinedStyle" />
 
@@ -81,7 +81,7 @@
             android:layout_height="wrap_content"
             android:text="LOGIN"
             android:textAllCaps="true"
-            android:cornerRadius="24dp" />
+            app:cornerRadius="24dp" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
