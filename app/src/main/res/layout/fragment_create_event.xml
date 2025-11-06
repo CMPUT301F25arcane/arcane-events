@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="24dp">
+
+        <!-- Top App Bar -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/create_event_toolbar"
+            android:layout_width="0dp"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:title="Event Details"
+            app:titleTextColor="?attr/colorOnPrimary"
+            app:navigationIcon="?attr/homeAsUpIndicator"
+            app:navigationIconTint="?attr/colorOnPrimary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Form Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/form_card"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/surface"
+            app:layout_constraintTop_toBottomOf="@id/create_event_toolbar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <!-- Image Upload Section -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/image_upload_card"
+                    android:layout_width="0dp"
+                    android:layout_height="200dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?android:attr/selectableItemBackground"
+                    app:cardCornerRadius="8dp"
+                    app:cardBackgroundColor="@color/surface_alt"
+                    app:strokeColor="@color/border"
+                    app:strokeWidth="1dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <ImageView
+                            android:id="@+id/upload_icon"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:src="@android:drawable/ic_menu_camera"
+                            android:tint="@color/text_muted"
+                            android:contentDescription="Upload image"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toTopOf="@id/upload_text"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent" />
+
+                        <TextView
+                            android:id="@+id/upload_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Upload a background"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_muted"
+                            app:layout_constraintTop_toBottomOf="@id/upload_icon"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent" />
+
+                        <ImageView
+                            android:id="@+id/uploaded_image"
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone"
+                            android:contentDescription="Event poster"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- EVENT DETAILS Header -->
+                <TextView
+                    android:id="@+id/event_details_header"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="EVENT DETAILS"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/image_upload_card"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <!-- Event Name -->
+                <TextView
+                    android:id="@+id/event_name_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Event Name"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    app:layout_constraintTop_toBottomOf="@id/event_details_header"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/event_name_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/event_name_label"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/event_name_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Enter event name"
+                        android:inputType="text"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Cost -->
+                <TextView
+                    android:id="@+id/cost_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Cost"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    app:layout_constraintTop_toBottomOf="@id/event_name_input_layout"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/cost_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:prefixText="$"
+                    app:layout_constraintTop_toBottomOf="@id/cost_label"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/cost_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="0.00"
+                        android:inputType="numberDecimal"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Duration -->
+                <TextView
+                    android:id="@+id/duration_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Duration"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    app:layout_constraintTop_toBottomOf="@id/cost_input_layout"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <!-- Start Date -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/start_date_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginEnd="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/duration_label"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/end_date_input_layout"
+                    app:layout_constraintWidth_percent="0.48">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/start_date_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Start date"
+                        android:inputType="none"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Plus Sign -->
+                <TextView
+                    android:id="@+id/plus_sign"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="+"
+                    android:textSize="20sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="8dp"
+                    app:layout_constraintTop_toBottomOf="@id/duration_label"
+                    app:layout_constraintStart_toEndOf="@id/start_date_input_layout"
+                    app:layout_constraintEnd_toStartOf="@id/end_date_input_layout" />
+
+                <!-- End Date -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/end_date_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:endIconMode="custom"
+                    app:endIconDrawable="@android:drawable/ic_menu_my_calendar"
+                    app:endIconTint="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/duration_label"
+                    app:layout_constraintStart_toEndOf="@id/plus_sign"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintWidth_percent="0.48">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/end_date_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="End date"
+                        android:inputType="none"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Location -->
+                <TextView
+                    android:id="@+id/location_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Location"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    app:layout_constraintTop_toBottomOf="@id/start_date_input_layout"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/location_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/location_label"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/location_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Enter location"
+                        android:inputType="text"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Limit Entrants (optional) -->
+                <TextView
+                    android:id="@+id/limit_entrants_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Limit Entrants (optional)"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    app:layout_constraintTop_toBottomOf="@id/location_input_layout"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/limit_entrants_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/limit_entrants_label"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/limit_entrants_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Enter limit"
+                        android:inputType="number"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Number of Winners -->
+                <TextView
+                    android:id="@+id/winners_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Number of Winners"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    app:layout_constraintTop_toBottomOf="@id/limit_entrants_input_layout"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/winners_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/winners_label"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/winners_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Enter number"
+                        android:inputType="number"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Registration Deadline -->
+                <TextView
+                    android:id="@+id/registration_deadline_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Registration Deadline"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    app:layout_constraintTop_toBottomOf="@id/winners_input_layout"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/registration_deadline_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:endIconMode="custom"
+                    app:endIconDrawable="@android:drawable/ic_menu_my_calendar"
+                    app:endIconTint="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/registration_deadline_label"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/registration_deadline_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Date"
+                        android:inputType="none"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Enable Geolocation Checkbox -->
+                <CheckBox
+                    android:id="@+id/enable_geolocation_checkbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Enable Geolocation"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    android:buttonTint="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/registration_deadline_input_layout"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <!-- Create Event Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/create_event_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Create Event"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:backgroundTint="?attr/colorPrimary"
+                    app:cornerRadius="8dp"
+                    app:layout_constraintTop_toBottomOf="@id/enable_geolocation_checkbox"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.core.widget.NestedScrollView>
+
