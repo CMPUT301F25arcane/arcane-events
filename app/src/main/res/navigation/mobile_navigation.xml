@@ -3,13 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/navigation_login">
+    app:startDestination="@+id/navigation_welcome">
+
+    <fragment
+        android:id="@+id/navigation_welcome"
+        android:name="com.example.arcane.ui.welcome.WelcomeFragment"
+        android:label="Welcome"
+        tools:layout="@layout/fragment_welcome_page" />
 
     <fragment
         android:id="@+id/navigation_login"
         android:name="com.example.arcane.ui.login.LoginFragment"
         android:label="@string/login_title"
         tools:layout="@layout/fragment_login" />
+
+    <fragment
+        android:id="@+id/navigation_create_account"
+        android:name="com.example.arcane.ui.login.CreateAccountFragment"
+        android:label="Create Account"
+        tools:layout="@layout/fragment_create_account" />
 
     <fragment
         android:id="@+id/navigation_home"

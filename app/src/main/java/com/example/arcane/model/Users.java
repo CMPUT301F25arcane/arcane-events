@@ -1,6 +1,8 @@
 package com.example.arcane.model;
 
 import com.google.firebase.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Users {
 
@@ -10,6 +12,8 @@ public class Users {
     private String phone;      // optional
     private String deviceId;   // optional
     private Timestamp createdAt;
+    private String role;       // e.g., "USER" or "ORGANISER"
+    private List<String> registeredEventIds; // workaround array for My Events
 
     // Required public no-arg constructor (Firestore uses this)
     public Users() {}
@@ -21,6 +25,8 @@ public class Users {
         this.phone = phone;
         this.deviceId = deviceId;
         this.createdAt = createdAt;
+        this.role = null;
+        this.registeredEventIds = new ArrayList<>();
     }
 
     // Getters & setters
@@ -41,5 +47,11 @@ public class Users {
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
+    public List<String> getRegisteredEventIds() { return registeredEventIds; }
+    public void setRegisteredEventIds(List<String> registeredEventIds) { this.registeredEventIds = registeredEventIds; }
 }
 

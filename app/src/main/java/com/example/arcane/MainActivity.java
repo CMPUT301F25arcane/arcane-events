@@ -35,12 +35,28 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(binding.navView, navController);
 
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-            if (destination.getId() == R.id.navigation_login) {
+            if (destination.getId() == R.id.navigation_welcome || destination.getId() == R.id.navigation_login || destination.getId() == R.id.navigation_create_account) {
                 binding.navView.setVisibility(android.view.View.GONE);
             } else {
                 binding.navView.setVisibility(android.view.View.VISIBLE);
             }
+
+            if (destination.getId() == R.id.navigation_welcome) {
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().hide();
+                }
+            } else {
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().show();
+                }
+            }
         });
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
+        return navController.navigateUp() || super.onSupportNavigateUp();
     }
 
 }

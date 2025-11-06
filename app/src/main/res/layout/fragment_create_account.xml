@@ -52,7 +52,7 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutName"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Jane Doe">
@@ -76,7 +76,7 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutEmail"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="janedoe@ualberta.ca">
@@ -100,7 +100,7 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutPhone"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="+1 000 000 0000">
@@ -124,7 +124,7 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutPassword"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Enter password"

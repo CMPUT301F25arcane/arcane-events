@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/surface"
+    android:fitsSystemWindows="false"
     tools:context=".ui.notifications.NotificationsFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -228,6 +229,27 @@
                 android:textSize="16sp" />
 
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/logoutButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/logout"
+            android:textColor="@color/on_brand"
+            android:backgroundTint="@color/brand_primary"
+            android:layout_marginTop="32dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/toggle_geolocation_container" />
+
+        <View
+            android:id="@+id/bottomSpacer"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/logoutButton" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
