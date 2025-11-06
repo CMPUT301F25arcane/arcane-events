@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.example.arcane.model.Users;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class UserService {
@@ -19,6 +20,10 @@ public class UserService {
             throw new IllegalArgumentException("User id (auth uid) cannot be null");
         }
         return db.collection("users").document(user.getId()).set(user);
+    }
+
+    public Task<DocumentSnapshot> getUserById(@NonNull String userId) {
+        return db.collection("users").document(userId).get();
     }
 }
 
