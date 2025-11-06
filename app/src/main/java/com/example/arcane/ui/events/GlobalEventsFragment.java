@@ -1,6 +1,8 @@
 package com.example.arcane.ui.events;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +25,7 @@ public class GlobalEventsFragment extends Fragment {
     private FragmentEventsBinding binding;
     private EventCardAdapter adapter;
     private EventRepository eventRepository;
+    private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
 
     @Nullable
     @Override
@@ -54,7 +57,50 @@ public class GlobalEventsFragment extends Fragment {
             navController.navigate(com.example.arcane.R.id.navigation_user_events);
         });
 
+        // Setup search functionality
+        setupSearch();
+
         loadAllEvents();
+    }
+
+    private void setupSearch() {
+        // Search button click
+        binding.searchButton.setOnClickListener(v -> performSearch());
+
+        // Search on text change (real-time search)
+        binding.searchEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                performSearch();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    private void performSearch() {
+        String query = binding.searchEditText.getText() != null ? 
+                binding.searchEditText.getText().toString().trim() : "";
+        
+        if (query.isEmpty()) {
+            // Show all events if search is empty
+            adapter.setItems(allEvents);
+        } else {
+            // Filter events case-insensitively
+            List<Event> filtered = new ArrayList<>();
+            String queryLower = query.toLowerCase();
+            for (Event event : allEvents) {
+                if (event.getEventName() != null && 
+                    event.getEventName().toLowerCase().contains(queryLower)) {
+                    filtered.add(event);
+                }
+            }
+            adapter.setItems(filtered);
+        }
     }
 
     private void loadAllEvents() {
@@ -66,7 +112,9 @@ public class GlobalEventsFragment extends Fragment {
                         event.setEventId(doc.getId());
                         items.add(event);
                     }
-                    adapter.setItems(items);
+                    // Store all events and apply current search filter
+                    allEvents = items;
+                    performSearch();
                 });
     }
 
