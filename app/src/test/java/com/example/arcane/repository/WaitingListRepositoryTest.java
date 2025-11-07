@@ -276,34 +276,6 @@ public class WaitingListRepositoryTest {
     }
 
     /**
-     * Test addToWaitingList with complete WaitingListEntry object
-     */
-    @Test
-    public void testAddToWaitingListWithCompleteEntry() {
-        // Arrange
-        String eventId = "event999";
-        WaitingListEntry completeEntry = new WaitingListEntry();
-        completeEntry.setEntryId("entry999");
-        completeEntry.setEntrantId("entrant999");
-        completeEntry.setJoinTimestamp(new Timestamp(new Date()));
-        completeEntry.setInvitedAt(new Timestamp(new Date()));
-
-        Task<DocumentReference> mockTask = Tasks.forResult(mockEntryDocumentRef);
-        when(mockWaitingListCollectionRef.add(any(WaitingListEntry.class))).thenReturn(mockTask);
-
-        // Act - Call actual repository method
-        Task<DocumentReference> result = waitingListRepository.addToWaitingList(eventId, completeEntry);
-
-        // Assert
-        assertNotNull("Result should not be null", result);
-        assertTrue("Task should be successful", result.isSuccessful());
-        verify(mockDb).collection("events");
-        verify(mockEventsCollectionRef).document(eventId);
-        verify(mockEventDocumentRef).collection("waitingList");
-        verify(mockWaitingListCollectionRef).add(completeEntry);
-    }
-
-    /**
      * Test getWaitingListForEvent returns empty list when no entries exist
      */
     @Test

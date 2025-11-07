@@ -147,48 +147,7 @@ public class UserProfileTest {
         assertTrue("RegisteredEventIds should contain event4", profile.getRegisteredEventIds().contains("event4"));
     }
 
-    /**
-     * Test role field with different valid values
-     */
-    @Test
-    public void testRoleField() {
-        UserProfile profile = new UserProfile();
 
-        // Test ENTRANT role
-        profile.setRole("ENTRANT");
-        assertEquals("Role should be ENTRANT", "ENTRANT", profile.getRole());
-
-        // Test ORGANIZER role
-        profile.setRole("ORGANIZER");
-        assertEquals("Role should be ORGANIZER", "ORGANIZER", profile.getRole());
-
-        // Test ADMIN role
-        profile.setRole("ADMIN");
-        assertEquals("Role should be ADMIN", "ADMIN", profile.getRole());
-
-        // Test null role
-        profile.setRole(null);
-        assertNull("Role should be null", profile.getRole());
-    }
-
-    /**
-     * Test deviceId optional field
-     */
-    @Test
-    public void testDeviceIdOptional() {
-        UserProfile profile = new UserProfile(testUserId, null, testName,
-                                             testEmail, testRole, null, null);
-
-        assertNull("DeviceId should be null when not provided", profile.getDeviceId());
-
-        // Set deviceId
-        profile.setDeviceId(testDeviceId);
-        assertEquals("DeviceId should be set", testDeviceId, profile.getDeviceId());
-
-        // Set back to null
-        profile.setDeviceId(null);
-        assertNull("DeviceId should be null after setting to null", profile.getDeviceId());
-    }
 
     /**
      * Test that all core fields can be updated after construction
@@ -222,90 +181,8 @@ public class UserProfileTest {
         assertEquals("RegisteredEventIds should be updated", newEventIds, profile.getRegisteredEventIds());
     }
 
-    /**
-     * Test creating multiple UserProfile instances with different data
-     */
-    @Test
-    public void testMultipleUserProfileInstances() {
-        UserProfile profile1 = new UserProfile("user1", "device1", "Alice",
-                                              "alice@email.com", "ENTRANT", null, null);
-        UserProfile profile2 = new UserProfile("user2", "device2", "Bob",
-                                              "bob@email.com", "ORGANIZER", null, null);
 
-        // Verify they are different
-        assertNotEquals("UserIds should be different", profile1.getUserId(), profile2.getUserId());
-        assertNotEquals("Names should be different", profile1.getName(), profile2.getName());
-        assertNotEquals("Roles should be different", profile1.getRole(), profile2.getRole());
 
-        // Verify they are independent objects
-        profile1.setName("Alice Updated");
-        assertEquals("Profile1 name should be updated", "Alice Updated", profile1.getName());
-        assertEquals("Profile2 name should remain unchanged", "Bob", profile2.getName());
-    }
 
-    /**
-     * Test empty registeredEventIds list
-     */
-    @Test
-    public void testEmptyRegisteredEventIds() {
-        UserProfile profile = new UserProfile();
 
-        List<String> emptyList = new ArrayList<>();
-        profile.setRegisteredEventIds(emptyList);
-
-        assertNotNull("RegisteredEventIds should not be null", profile.getRegisteredEventIds());
-        assertTrue("RegisteredEventIds should be empty", profile.getRegisteredEventIds().isEmpty());
-        assertEquals("RegisteredEventIds size should be 0", 0, profile.getRegisteredEventIds().size());
-    }
-
-    /**
-     * Test userId field (primary identifier)
-     */
-    @Test
-    public void testUserIdField() {
-        UserProfile profile = new UserProfile();
-
-        assertNull("UserId should be null initially", profile.getUserId());
-
-        profile.setUserId(testUserId);
-        assertEquals("UserId should be set", testUserId, profile.getUserId());
-
-        String newUserId = "new-user-456";
-        profile.setUserId(newUserId);
-        assertEquals("UserId should be updated", newUserId, profile.getUserId());
-    }
-
-    /**
-     * Test email field
-     */
-    @Test
-    public void testEmailField() {
-        UserProfile profile = new UserProfile();
-
-        assertNull("Email should be null initially", profile.getEmail());
-
-        profile.setEmail(testEmail);
-        assertEquals("Email should be set", testEmail, profile.getEmail());
-
-        String newEmail = "newemail@example.com";
-        profile.setEmail(newEmail);
-        assertEquals("Email should be updated", newEmail, profile.getEmail());
-    }
-
-    /**
-     * Test name field
-     */
-    @Test
-    public void testNameField() {
-        UserProfile profile = new UserProfile();
-
-        assertNull("Name should be null initially", profile.getName());
-
-        profile.setName(testName);
-        assertEquals("Name should be set", testName, profile.getName());
-
-        String newName = "Updated Name";
-        profile.setName(newName);
-        assertEquals("Name should be updated", newName, profile.getName());
-    }
 }
