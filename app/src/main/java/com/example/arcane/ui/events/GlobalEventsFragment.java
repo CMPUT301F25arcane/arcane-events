@@ -26,6 +26,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * GlobalEventsFragment.java
+ * 
+ * Purpose: Displays all available events in the system for browsing and registration.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Repository pattern for data access.
+ * Uses ViewBinding for type-safe view access and RecyclerView with adapter pattern for list display.
+ * 
+ * Outstanding Issues:
+ * - Event click handling is not yet implemented (placeholder comment on line 43)
+ * 
+ * @version 1.0
+ */
 public class GlobalEventsFragment extends Fragment {
 
     private FragmentEventsBinding binding;
@@ -34,6 +47,14 @@ public class GlobalEventsFragment extends Fragment {
     private DecisionRepository decisionRepository;
     private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
 
+    /**
+     * Creates and returns the view hierarchy for this fragment.
+     *
+     * @param inflater the layout inflater
+     * @param container the parent view group
+     * @param savedInstanceState the saved instance state
+     * @return the root view
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -41,6 +62,12 @@ public class GlobalEventsFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned.
+     *
+     * @param view the view returned by onCreateView
+     * @param savedInstanceState the saved instance state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -80,6 +107,9 @@ public class GlobalEventsFragment extends Fragment {
         loadAllEvents();
     }
 
+    /**
+     * Sets up the search functionality with real-time text filtering.
+     */
     private void setupSearch() {
         // Search button click
         binding.searchButton.setOnClickListener(v -> performSearch());
@@ -99,6 +129,9 @@ public class GlobalEventsFragment extends Fragment {
         });
     }
 
+    /**
+     * Performs a case-insensitive search on event names.
+     */
     private void performSearch() {
         String query = binding.searchEditText.getText() != null ? 
                 binding.searchEditText.getText().toString().trim() : "";
@@ -120,6 +153,9 @@ public class GlobalEventsFragment extends Fragment {
         }
     }
 
+    /**
+     * Loads all available events from the repository.
+     */
     private void loadAllEvents() {
         eventRepository.getAllEvents()
                 .addOnSuccessListener(querySnapshot -> {
@@ -136,6 +172,12 @@ public class GlobalEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Loads user decisions for all events to display status chips.
+     *
+     * <p>Uses a collection group query to retrieve all decisions for the current user
+     * across all events, then maps them to event IDs for status display.</p>
+     */
     private void loadUserDecisions() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -169,6 +211,9 @@ public class GlobalEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Called when the view hierarchy is being removed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

@@ -1,3 +1,18 @@
+/**
+ * EntrantsFragment.java
+ * 
+ * Purpose: Displays a list of all entrants registered for an event, showing their
+ * status and contact information for organizers.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Repository pattern for data access.
+ * Uses ViewBinding for type-safe view access and RecyclerView with adapter pattern for list display.
+ * 
+ * Outstanding Issues:
+ * - View map functionality is not yet implemented
+ * - Location information is not available in the Users model
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.events;
 
 import android.os.Bundle;
@@ -25,6 +40,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Fragment for displaying event entrants list.
+ *
+ * <p>Shows all users who have registered for an event, including their status
+ * (PENDING, INVITED, ACCEPTED, DECLINED, LOST) and contact information.
+ * Used by organizers to manage event registrations.</p>
+ *
+ * @version 1.0
+ */
 public class EntrantsFragment extends Fragment {
 
     private FragmentEntrantsBinding binding;

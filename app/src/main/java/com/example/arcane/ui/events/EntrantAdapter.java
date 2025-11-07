@@ -1,3 +1,15 @@
+/**
+ * EntrantAdapter.java
+ * 
+ * Purpose: RecyclerView adapter for displaying entrant cards in a list.
+ * 
+ * Design Pattern: Adapter pattern for RecyclerView. Implements the standard
+ * RecyclerView.Adapter interface to bind entrant data to view holders.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.events;
 
 import android.view.LayoutInflater;
@@ -15,6 +27,14 @@ import com.google.android.material.chip.Chip;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * RecyclerView adapter for displaying entrant cards.
+ *
+ * <p>Manages the display of entrant information in a RecyclerView,
+ * including name, email, phone, and status chip with color coding.</p>
+ *
+ * @version 1.0
+ */
 public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.EntrantViewHolder> {
 
     private List<EntrantsFragment.EntrantItem> items = new ArrayList<>();

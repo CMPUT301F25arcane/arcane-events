@@ -1,3 +1,15 @@
+/**
+ * WelcomeFragment.java
+ * 
+ * Purpose: Welcome/landing screen for the application.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern. Uses ViewBinding for
+ * type-safe view access and Navigation Component for navigation.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.welcome;
 
 import android.os.Bundle;
@@ -16,10 +28,26 @@ import com.example.arcane.databinding.FragmentWelcomePageBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+/**
+ * Welcome screen fragment.
+ *
+ * <p>Displays the welcome screen with options to create an account or login.
+ * Automatically navigates to home if the user is already signed in.</p>
+ *
+ * @version 1.0
+ */
 public class WelcomeFragment extends Fragment {
 
     private FragmentWelcomePageBinding binding;
 
+    /**
+     * Creates and returns the view hierarchy for this fragment.
+     *
+     * @param inflater the layout inflater
+     * @param container the parent view group
+     * @param savedInstanceState the saved instance state
+     * @return the root view
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -27,6 +55,12 @@ public class WelcomeFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned.
+     *
+     * @param view the view returned by onCreateView
+     * @param savedInstanceState the saved instance state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -50,11 +84,12 @@ public class WelcomeFragment extends Fragment {
         });
     }
 
+    /**
+     * Called when the view hierarchy is being removed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
     }
 }
-
-

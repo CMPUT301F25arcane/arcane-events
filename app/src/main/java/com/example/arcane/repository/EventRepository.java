@@ -1,3 +1,15 @@
+/**
+ * EventRepository.java
+ * 
+ * Purpose: Data access layer for event operations in Firestore.
+ * 
+ * Design Pattern: Repository pattern. Encapsulates Firestore queries and operations
+ * for events, providing a clean abstraction for the service layer.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.repository;
 
 import com.example.arcane.model.Event;
@@ -8,6 +20,13 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import java.util.List;
 
+/**
+ * Repository class for managing events in Firestore.
+ *
+ * <p>Handles CRUD operations for events stored in the "events" collection.</p>
+ *
+ * @version 1.0
+ */
 public class EventRepository {
     private static final String COLLECTION_NAME = "events";
     private final FirebaseFirestore db;
@@ -27,8 +46,12 @@ public class EventRepository {
     }
 
     /**
-     * Create a new event
-     * If eventId is null, auto-generates a new document ID using .add()
+     * Creates a new event.
+     *
+     * <p>If eventId is null, auto-generates a new document ID using .add().</p>
+     *
+     * @param event the event to create
+     * @return a Task that completes with the document reference of the created event
      */
     public Task<DocumentReference> createEvent(Event event) {
         if (event.getEventId() == null || event.getEventId().isEmpty()) {
@@ -59,35 +82,49 @@ public class EventRepository {
     }
 
     /**
-     * Get event by ID
+     * Gets an event by ID.
+     *
+     * @param eventId the event ID to retrieve
+     * @return a Task that completes with the event document snapshot
      */
     public Task<DocumentSnapshot> getEventById(String eventId) {
         return db.collection(COLLECTION_NAME).document(eventId).get();
     }
 
     /**
-     * Update event
+     * Updates an event.
+     *
+     * @param event the event to update
+     * @return a Task that completes when the event is updated
      */
     public Task<Void> updateEvent(Event event) {
         return db.collection(COLLECTION_NAME).document(event.getEventId()).set(event);
     }
 
     /**
-     * Delete event
+     * Deletes an event.
+     *
+     * @param eventId the event ID to delete
+     * @return a Task that completes when the event is deleted
      */
     public Task<Void> deleteEvent(String eventId) {
         return db.collection(COLLECTION_NAME).document(eventId).delete();
     }
 
     /**
-     * Get all events
+     * Gets all events.
+     *
+     * @return a Task that completes with the query snapshot of all events
      */
     public Task<QuerySnapshot> getAllEvents() {
         return db.collection(COLLECTION_NAME).get();
     }
 
     /**
-     * Get events by organizer
+     * Gets events by organizer.
+     *
+     * @param organizerId the organizer's user ID
+     * @return a Task that completes with the query snapshot of events
      */
     public Task<QuerySnapshot> getEventsByOrganizer(String organizerId) {
         return db.collection(COLLECTION_NAME)
@@ -96,7 +133,9 @@ public class EventRepository {
     }
 
     /**
-     * Get open events (for registration)
+     * Gets open events (for registration).
+     *
+     * @return a Task that completes with the query snapshot of open events
      */
     public Task<QuerySnapshot> getOpenEvents() {
         return db.collection(COLLECTION_NAME)

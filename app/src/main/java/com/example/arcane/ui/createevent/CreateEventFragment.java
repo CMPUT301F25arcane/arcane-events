@@ -28,6 +28,22 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+/**
+ * CreateEventFragment.java
+ * 
+ * Purpose: Allows organizers to create new events with comprehensive event details.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Service Layer pattern for business logic.
+ * Uses ViewBinding for type-safe view access and implements form validation.
+ * 
+ * Outstanding Issues:
+ * - Description field is not included in the form (set to empty string)
+ * - Poster image upload is not implemented (set to null)
+ * - Geolocation is set to null even when geolocationRequired is true
+ * - Date validation could be more robust (e.g., check if dates are in the past)
+ * 
+ * @version 1.0
+ */
 public class CreateEventFragment extends Fragment {
 
     private FragmentCreateEventBinding binding;
@@ -38,6 +54,11 @@ public class CreateEventFragment extends Fragment {
     private Calendar registrationDeadlineCalendar;
     private SimpleDateFormat dateTimeFormat;
 
+    /**
+     * Called when the fragment is created.
+     *
+     * @param savedInstanceState the saved instance state
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +70,14 @@ public class CreateEventFragment extends Fragment {
         dateTimeFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
     }
 
+    /**
+     * Creates and returns the view hierarchy for this fragment.
+     *
+     * @param inflater the layout inflater
+     * @param container the parent view group
+     * @param savedInstanceState the saved instance state
+     * @return the root view
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -56,6 +85,12 @@ public class CreateEventFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned.
+     *
+     * @param view the view returned by onCreateView
+     * @param savedInstanceState the saved instance state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -75,6 +110,13 @@ public class CreateEventFragment extends Fragment {
         binding.createEventButton.setOnClickListener(v -> createEvent());
     }
 
+    /**
+     * Sets up a date and time picker for the specified edit text field.
+     *
+     * @param editText the text input field to attach the picker to
+     * @param calendar the calendar instance to store the selected date/time
+     * @param title the title to display in the picker dialog
+     */
     private void setupDatePicker(TextInputEditText editText, Calendar calendar, String title) {
         editText.setOnClickListener(v -> {
             // First pick date
@@ -109,6 +151,12 @@ public class CreateEventFragment extends Fragment {
         });
     }
 
+    /**
+     * Validates form inputs and creates a new event.
+     * 
+     * <p>Performs validation on all required fields, parses numeric inputs,
+     * validates date constraints, and creates the event via EventService.</p>
+     */
     private void createEvent() {
         // Validate required fields
         String eventName = binding.eventNameInput.getText() != null ? 
@@ -247,6 +295,9 @@ public class CreateEventFragment extends Fragment {
                 });
     }
 
+    /**
+     * Called when the view hierarchy is being removed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

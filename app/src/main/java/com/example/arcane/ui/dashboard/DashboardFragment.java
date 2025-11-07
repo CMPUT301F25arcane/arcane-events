@@ -1,3 +1,16 @@
+/**
+ * DashboardFragment.java
+ * 
+ * Purpose: Dashboard screen for displaying dashboard information.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with ViewBinding for
+ * type-safe view access.
+ * 
+ * Outstanding Issues: Currently displays placeholder text; should be extended
+ * with actual dashboard functionality.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.dashboard;
 
 import android.os.Bundle;
@@ -12,10 +25,25 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.arcane.databinding.FragmentDashboardBinding;
 
+/**
+ * Dashboard screen fragment.
+ *
+ * <p>Displays the dashboard screen with dashboard information.</p>
+ *
+ * @version 1.0
+ */
 public class DashboardFragment extends Fragment {
 
     private FragmentDashboardBinding binding;
 
+    /**
+     * Creates and returns the view hierarchy for this fragment.
+     *
+     * @param inflater the layout inflater
+     * @param container the parent view group
+     * @param savedInstanceState the saved instance state
+     * @return the root view
+     */
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         DashboardViewModel dashboardViewModel =
@@ -29,6 +57,9 @@ public class DashboardFragment extends Fragment {
         return root;
     }
 
+    /**
+     * Called when the view hierarchy is being removed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

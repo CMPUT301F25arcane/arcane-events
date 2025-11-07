@@ -1,3 +1,16 @@
+/**
+ * EventsRouterFragment.java
+ * 
+ * Purpose: Router fragment that dynamically displays either OrganizerEventsFragment
+ * or UserEventsFragment based on the user's role stored in SharedPreferences.
+ * 
+ * Design Pattern: Router/Container pattern. Acts as a container that manages child fragments
+ * based on user role, implementing dynamic fragment switching without navigation.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.events;
 
 import android.content.Context;
@@ -14,6 +27,15 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.example.arcane.R;
 
+/**
+ * Router fragment for managing events display based on user role.
+ *
+ * <p>Dynamically displays either OrganizerEventsFragment or UserEventsFragment
+ * based on the user's role. Listens to SharedPreferences changes to update
+ * the displayed fragment when the role changes.</p>
+ *
+ * @version 1.0
+ */
 public class EventsRouterFragment extends Fragment {
 
     private static final String CHILD_TAG = "events_router_child";

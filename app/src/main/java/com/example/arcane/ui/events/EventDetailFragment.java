@@ -1,3 +1,20 @@
+/**
+ * EventDetailFragment.java
+ * 
+ * Purpose: Displays detailed information about an event and provides different views
+ * for organizers and regular users, including waitlist management and lottery functionality.
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Repository pattern for data access.
+ * Uses ViewBinding for type-safe view access and Service Layer for business logic.
+ * 
+ * Outstanding Issues:
+ * - QR code functionality is not yet implemented
+ * - Send notification functionality is not yet implemented
+ * - Edit event functionality is not yet implemented
+ * - Poster image loading is not yet implemented (uses placeholder)
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.events;
 
 import android.content.SharedPreferences;
@@ -30,6 +47,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * Fragment for displaying event details with role-based views.
+ *
+ * <p>Shows different UI for organizers (lottery management, entrants list) and regular users
+ * (join waitlist, accept/decline invitations). Handles event registration, waitlist management,
+ * and lottery drawing functionality.</p>
+ *
+ * @version 1.0
+ */
 public class EventDetailFragment extends Fragment {
 
     private FragmentEventDetailBinding binding;
