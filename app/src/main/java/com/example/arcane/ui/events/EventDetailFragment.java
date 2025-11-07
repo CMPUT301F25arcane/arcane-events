@@ -260,6 +260,9 @@ public class EventDetailFragment extends Fragment {
                                             } else if ("DECLINED".equals(decisionStatus) || "CANCELLED".equals(decisionStatus)) {
                                                 userStatus = "DECLINED";
                                                 userDecision = "declined";
+                                            } else if ("LOST".equals(decisionStatus)) {
+                                                userStatus = "LOST";
+                                                userDecision = "none";
                                             } else {
                                                 // Default to WAITING if unknown status
                                                 userStatus = "WAITING";
@@ -322,14 +325,15 @@ public class EventDetailFragment extends Fragment {
         });
 
         binding.entrantsButton.setOnClickListener(v -> {
-            // TODO: Navigate to entrants fragment (Step 9)
-            Toast.makeText(requireContext(), "Show Entrants - Coming soon", Toast.LENGTH_SHORT).show();
+            if (eventId != null) {
+                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                Bundle args = new Bundle();
+                args.putString("eventId", eventId);
+                navController.navigate(R.id.navigation_entrants, args);
+            }
         });
 
-        binding.drawLotteryButton.setOnClickListener(v -> {
-            // TODO: Implement draw lottery (Step 10)
-            Toast.makeText(requireContext(), "Draw Lottery - Coming soon", Toast.LENGTH_SHORT).show();
-        });
+        binding.drawLotteryButton.setOnClickListener(v -> handleDrawLottery());
 
         binding.sendNotificationButton.setOnClickListener(v -> {
             // TODO: Send notification functionality
@@ -469,14 +473,8 @@ public class EventDetailFragment extends Fragment {
         } else if ("WON".equals(userStatus) && ("none".equals(userDecision) || userDecision == null)) {
             // Show Accept/Decline buttons (actions to be implemented later)
             binding.acceptDeclineButtonsContainer.setVisibility(View.VISIBLE);
-            binding.acceptButton.setOnClickListener(v -> {
-                // TODO: Implement accept (Step 6)
-                Toast.makeText(requireContext(), "Accept - Coming soon", Toast.LENGTH_SHORT).show();
-            });
-            binding.declineButton.setOnClickListener(v -> {
-                // TODO: Implement decline (Step 6)
-                Toast.makeText(requireContext(), "Decline - Coming soon", Toast.LENGTH_SHORT).show();
-            });
+            binding.acceptButton.setOnClickListener(v -> handleAcceptWin());
+            binding.declineButton.setOnClickListener(v -> handleDeclineWin());
         }
         // For LOST, ACCEPTED, DECLINED, ABANDONED - no buttons shown
     }
@@ -559,6 +557,91 @@ public class EventDetailFragment extends Fragment {
                     Toast.makeText(requireContext(), "Error leaving waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     binding.abandonButton.setEnabled(true);
                     binding.abandonButton.setText("Abandon Waitlist");
+                });
+    }
+
+    private void handleAcceptWin() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || decisionId == null) {
+            Toast.makeText(requireContext(), "Unable to accept", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = currentUser.getUid();
+        binding.acceptButton.setEnabled(false);
+        binding.declineButton.setEnabled(false);
+        binding.acceptButton.setText("Accepting...");
+
+        eventService.acceptWin(eventId, userId, decisionId)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(requireContext(), "Successfully accepted!", Toast.LENGTH_SHORT).show();
+                    // Reload user status to update UI
+                    loadUserStatus();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Error accepting: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    binding.acceptButton.setEnabled(true);
+                    binding.declineButton.setEnabled(true);
+                    binding.acceptButton.setText("Accept");
+                });
+    }
+
+    private void handleDeclineWin() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || decisionId == null) {
+            Toast.makeText(requireContext(), "Unable to decline", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = currentUser.getUid();
+        binding.acceptButton.setEnabled(false);
+        binding.declineButton.setEnabled(false);
+        binding.declineButton.setText("Declining...");
+
+        eventService.declineWin(eventId, userId, decisionId)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(requireContext(), "Successfully declined", Toast.LENGTH_SHORT).show();
+                    // Reload user status to update UI
+                    loadUserStatus();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Error declining: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    binding.acceptButton.setEnabled(true);
+                    binding.declineButton.setEnabled(true);
+                    binding.declineButton.setText("Decline");
+                });
+    }
+
+    private void handleDrawLottery() {
+        if (eventId == null) {
+            Toast.makeText(requireContext(), "Event ID is required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        binding.drawLotteryButton.setEnabled(false);
+        binding.drawLotteryButton.setText("Drawing...");
+
+        eventService.drawLottery(eventId)
+                .addOnSuccessListener(result -> {
+                    String status = (String) result.get("status");
+                    if ("success".equals(status)) {
+                        Integer winnersCount = (Integer) result.get("winnersCount");
+                        Integer losersCount = (Integer) result.get("losersCount");
+                        String message = "Lottery drawn! " + winnersCount + " winners, " + losersCount + " losers.";
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                        // Reload event to refresh UI (organizer view)
+                        loadEvent();
+                    } else {
+                        String errorMsg = (String) result.get("message");
+                        Toast.makeText(requireContext(), "Error: " + errorMsg, Toast.LENGTH_SHORT).show();
+                        binding.drawLotteryButton.setEnabled(true);
+                        binding.drawLotteryButton.setText("Draw Lottery!");
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Error drawing lottery: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    binding.drawLotteryButton.setEnabled(true);
+                    binding.drawLotteryButton.setText("Draw Lottery!");
                 });
     }
 

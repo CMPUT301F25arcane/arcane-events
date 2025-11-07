@@ -63,4 +63,14 @@
             app:argType="string" />
     </fragment>
 
+    <fragment
+        android:id="@+id/navigation_entrants"
+        android:name="com.example.arcane.ui.events.EntrantsFragment"
+        android:label="Entrants"
+        tools:layout="@layout/fragment_entrants">
+        <argument
+            android:name="eventId"
+            app:argType="string" />
+    </fragment>
+
 </navigation>
