@@ -11,8 +11,18 @@ public class DecisionRepository {
     private static final String SUBCOLLECTION_NAME = "decisions";
     private final FirebaseFirestore db;
 
+    /**
+     * Default constructor for production use
+     */
     public DecisionRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public DecisionRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**
