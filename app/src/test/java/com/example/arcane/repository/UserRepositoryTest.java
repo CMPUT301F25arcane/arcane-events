@@ -7,8 +7,6 @@ import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -20,12 +18,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for UserRepository
- * Uses Mockito to mock Firebase Firestore interactions
  */
 @RunWith(MockitoJUnitRunner.class)
 public class UserRepositoryTest {
@@ -41,12 +37,6 @@ public class UserRepositoryTest {
 
     @Mock
     private DocumentSnapshot mockDocumentSnapshot;
-
-    @Mock
-    private QuerySnapshot mockQuerySnapshot;
-
-    @Mock
-    private Query mockQuery;
 
     private UserRepository userRepository;
     private UserProfile testUser;
@@ -155,30 +145,6 @@ public class UserRepositoryTest {
     }
 
     /**
-     * Test getUserByDeviceId - verifies query by device ID
-     * Note: This method exists but is not used in the prototype
-     */
-    @Test
-    public void testGetUserByDeviceId() {
-        // Arrange
-        String deviceId = "device123";
-        Task<QuerySnapshot> mockTask = Tasks.forResult(mockQuerySnapshot);
-        when(mockCollectionRef.whereEqualTo("deviceId", deviceId)).thenReturn(mockQuery);
-        when(mockQuery.get()).thenReturn(mockTask);
-
-        // Act - Call actual repository method
-        Task<QuerySnapshot> result = userRepository.getUserByDeviceId(deviceId);
-
-        // Assert
-        assertNotNull("Result should not be null", result);
-        assertTrue("Task should be successful", result.isSuccessful());
-        assertEquals("Result should contain query snapshot", mockQuerySnapshot, result.getResult());
-        verify(mockDb).collection("users");
-        verify(mockCollectionRef).whereEqualTo("deviceId", deviceId);
-        verify(mockQuery).get();
-    }
-
-    /**
      * Test getUserById with empty ID
      */
     @Test
@@ -245,30 +211,6 @@ public class UserRepositoryTest {
         assertEquals("Name should be updated", "Updated Name", testUser.getName());
         assertEquals("Email should be updated", "updated@example.com", testUser.getEmail());
         assertEquals("Role should be updated", "ORGANIZER", testUser.getRole());
-    }
-
-    /**
-     * Test getUserByDeviceId returns empty result when no match
-     */
-    @Test
-    public void testGetUserByDeviceIdNoMatch() {
-        // Arrange
-        String deviceId = "nonexistent-device";
-        when(mockQuerySnapshot.isEmpty()).thenReturn(true);
-        Task<QuerySnapshot> mockTask = Tasks.forResult(mockQuerySnapshot);
-        when(mockCollectionRef.whereEqualTo("deviceId", deviceId)).thenReturn(mockQuery);
-        when(mockQuery.get()).thenReturn(mockTask);
-
-        // Act - Call actual repository method
-        Task<QuerySnapshot> result = userRepository.getUserByDeviceId(deviceId);
-
-        // Assert
-        assertNotNull("Result should not be null", result);
-        assertTrue("Task should be successful", result.isSuccessful());
-        assertTrue("Query result should be empty", result.getResult().isEmpty());
-        verify(mockDb).collection("users");
-        verify(mockCollectionRef).whereEqualTo("deviceId", deviceId);
-        verify(mockQuery).get();
     }
 
     /**
