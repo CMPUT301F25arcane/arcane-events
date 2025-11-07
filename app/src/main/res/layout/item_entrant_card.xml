@@ -101,8 +101,26 @@
             app:layout_constraintTop_toBottomOf="@id/entrant_email"
             app:layout_constraintStart_toEndOf="@id/entrant_avatar"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
             tools:text="Edmonton, AB" />
+
+        <!-- Status Chip -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/entrant_status"
+            style="@style/Widget.MaterialComponents.Chip.Entry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="6dp"
+            android:text="WAITING"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:chipStrokeWidth="0dp"
+            app:chipMinHeight="28dp"
+            app:closeIconEnabled="false"
+            app:layout_constraintTop_toBottomOf="@id/entrant_location"
+            app:layout_constraintStart_toEndOf="@id/entrant_avatar"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="WAITING" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -13,18 +13,25 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.arcane.databinding.FragmentEventsBinding;
+import com.example.arcane.model.Decision;
 import com.example.arcane.model.Event;
+import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.EventRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GlobalEventsFragment extends Fragment {
 
     private FragmentEventsBinding binding;
     private EventCardAdapter adapter;
     private EventRepository eventRepository;
+    private DecisionRepository decisionRepository;
     private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
 
     @Nullable
@@ -39,6 +46,7 @@ public class GlobalEventsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         eventRepository = new EventRepository();
+        decisionRepository = new DecisionRepository();
         adapter = new EventCardAdapter(event -> {
             // Navigate to event detail
             if (event.getEventId() != null) {
@@ -51,6 +59,9 @@ public class GlobalEventsFragment extends Fragment {
 
         binding.eventsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.eventsRecyclerView.setAdapter(adapter);
+
+        // Show status chips for users (only if they've joined)
+        adapter.setShowStatus(true);
 
         // No create in global view
         binding.fabAddEvent.setVisibility(View.GONE);
@@ -120,6 +131,40 @@ public class GlobalEventsFragment extends Fragment {
                     }
                     // Store all events and apply current search filter
                     allEvents = items;
+                    // Load user decisions to show status
+                    loadUserDecisions();
+                });
+    }
+
+    private void loadUserDecisions() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            performSearch();
+            return;
+        }
+
+        String userId = currentUser.getUid();
+        // Get all decisions for this user (collection group query)
+        decisionRepository.getDecisionsByUser(userId)
+                .addOnSuccessListener(querySnapshot -> {
+                    Map<String, String> statusMap = new HashMap<>();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        Decision decision = doc.toObject(Decision.class);
+                        if (decision != null && decision.getStatus() != null) {
+                            // Extract eventId from document path: events/{eventId}/decisions/{decisionId}
+                            String path = doc.getReference().getPath();
+                            String[] pathParts = path.split("/");
+                            if (pathParts.length >= 2 && "events".equals(pathParts[0])) {
+                                String eventId = pathParts[1];
+                                statusMap.put(eventId, decision.getStatus());
+                            }
+                        }
+                    }
+                    adapter.setEventStatusMap(statusMap);
+                    performSearch();
+                })
+                .addOnFailureListener(e -> {
+                    // On failure, just show events without status
                     performSearch();
                 });
     }

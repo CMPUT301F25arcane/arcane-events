@@ -12,9 +12,12 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -290,6 +293,113 @@ public class EventService {
                                 // For now, keep registeredEventIds as-is
                                 
                                 return com.google.android.gms.tasks.Tasks.forResult(null);
+                            });
+                });
+    }
+
+    /**
+     * Draw lottery for an event - randomly select winners from PENDING decisions
+     * Winners get status INVITED, losers get status LOST
+     */
+    public Task<Map<String, Object>> drawLottery(String eventId) {
+        // Get event to check numberOfWinners
+        return eventRepository.getEventById(eventId)
+                .continueWithTask(eventTask -> {
+                    if (!eventTask.isSuccessful() || eventTask.getResult() == null || !eventTask.getResult().exists()) {
+                        Map<String, Object> errorResult = new HashMap<>();
+                        errorResult.put("status", "error");
+                        errorResult.put("message", "Event not found");
+                        return com.google.android.gms.tasks.Tasks.forResult(errorResult);
+                    }
+
+                    Event event = eventTask.getResult().toObject(Event.class);
+                    if (event == null || event.getNumberOfWinners() == null || event.getNumberOfWinners() <= 0) {
+                        Map<String, Object> errorResult = new HashMap<>();
+                        errorResult.put("status", "error");
+                        errorResult.put("message", "Event does not have valid numberOfWinners");
+                        return com.google.android.gms.tasks.Tasks.forResult(errorResult);
+                    }
+
+                    int numberOfWinners = event.getNumberOfWinners();
+
+                    // Get all PENDING decisions for this event
+                    return decisionRepository.getDecisionsByStatus(eventId, "PENDING")
+                            .continueWithTask(pendingTask -> {
+                                if (!pendingTask.isSuccessful()) {
+                                    Map<String, Object> errorResult = new HashMap<>();
+                                    errorResult.put("status", "error");
+                                    errorResult.put("message", "Failed to get pending decisions");
+                                    return com.google.android.gms.tasks.Tasks.forResult(errorResult);
+                                }
+
+                                List<Decision> pendingDecisions = new ArrayList<>();
+                                List<String> decisionIds = new ArrayList<>();
+                                
+                                for (QueryDocumentSnapshot doc : pendingTask.getResult()) {
+                                    Decision decision = doc.toObject(Decision.class);
+                                    decision.setDecisionId(doc.getId());
+                                    pendingDecisions.add(decision);
+                                    decisionIds.add(doc.getId());
+                                }
+
+                                if (pendingDecisions.isEmpty()) {
+                                    Map<String, Object> errorResult = new HashMap<>();
+                                    errorResult.put("status", "error");
+                                    errorResult.put("message", "No pending entries to draw from");
+                                    return com.google.android.gms.tasks.Tasks.forResult(errorResult);
+                                }
+
+                                // Shuffle randomly
+                                Collections.shuffle(pendingDecisions);
+
+                                // Determine winners (if fewer users than winners, all win)
+                                int winnersCount = Math.min(numberOfWinners, pendingDecisions.size());
+                                List<Decision> winners = pendingDecisions.subList(0, winnersCount);
+                                List<Decision> losers = pendingDecisions.subList(winnersCount, pendingDecisions.size());
+
+                                // Batch update decisions
+                                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                                WriteBatch batch = db.batch();
+                                Timestamp now = Timestamp.now();
+
+                                // Update winners to INVITED
+                                for (Decision winner : winners) {
+                                    winner.setStatus("INVITED");
+                                    winner.setUpdatedAt(now);
+                                    DocumentReference winnerRef = db.collection("events")
+                                            .document(eventId)
+                                            .collection("decisions")
+                                            .document(winner.getDecisionId());
+                                    batch.set(winnerRef, winner);
+                                }
+
+                                // Update losers to LOST
+                                for (Decision loser : losers) {
+                                    loser.setStatus("LOST");
+                                    loser.setUpdatedAt(now);
+                                    DocumentReference loserRef = db.collection("events")
+                                            .document(eventId)
+                                            .collection("decisions")
+                                            .document(loser.getDecisionId());
+                                    batch.set(loserRef, loser);
+                                }
+
+                                // Execute batch
+                                return batch.commit()
+                                        .continueWith(batchTask -> {
+                                            Map<String, Object> result = new HashMap<>();
+                                            if (batchTask.isSuccessful()) {
+                                                result.put("status", "success");
+                                                result.put("winnersCount", winners.size());
+                                                result.put("losersCount", losers.size());
+                                                result.put("message", "Lottery drawn successfully");
+                                            } else {
+                                                result.put("status", "error");
+                                                result.put("message", "Failed to update decisions: " + 
+                                                    (batchTask.getException() != null ? batchTask.getException().getMessage() : "Unknown error"));
+                                            }
+                                            return result;
+                                        });
                             });
                 });
     }
