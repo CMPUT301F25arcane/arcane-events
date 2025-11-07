@@ -33,10 +33,17 @@ public class WaitingListRepository {
     private final FirebaseFirestore db;
 
     /**
-     * Constructs a new WaitingListRepository instance.
+     * Default constructor for normal use
      */
     public WaitingListRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public WaitingListRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**

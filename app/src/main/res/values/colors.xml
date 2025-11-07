@@ -27,8 +27,18 @@
     <!-- Badges / status chips -->
     <color name="status_pending">#FFF59E0B</color>
     <color name="status_pending_bg">#FFFEF3C7</color>
+    <color name="status_waiting">#FF3B82F6</color>
+    <color name="status_waiting_bg">#FFDBEAFE</color>
     <color name="status_won">#FF10B981</color>
-    <color name="status_lost">#FFEF4444</color>
+    <color name="status_won_bg">#FFD1FAE5</color>
+    <color name="status_lost">#FF6B7280</color>
+    <color name="status_lost_bg">#FFF3F4F6</color>
+    <color name="status_accepted">#FF10B981</color>
+    <color name="status_accepted_bg">#FFD1FAE5</color>
+    <color name="status_declined">#FFF59E0B</color>
+    <color name="status_declined_bg">#FFFEF3C7</color>
+    <color name="status_abandoned">#FF6B7280</color>
+    <color name="status_abandoned_bg">#FFF3F4F6</color>
 
     <!-- Search/input fields -->
     <color name="search_bg">#FFF3F4F6</color>

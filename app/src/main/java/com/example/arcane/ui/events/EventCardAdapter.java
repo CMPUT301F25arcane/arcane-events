@@ -20,13 +20,17 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.arcane.R;
 import com.example.arcane.model.Event;
+import com.google.android.material.chip.Chip;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * RecyclerView adapter for displaying event cards.
@@ -44,6 +48,8 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
 
     private final List<Event> events = new ArrayList<>();
     private final OnEventClickListener listener;
+    private final Map<String, String> eventStatusMap = new HashMap<>(); // eventId -> status
+    private boolean showStatus = true; // Hide for organizers
 
     /**
      * Constructs a new EventCardAdapter.
@@ -62,6 +68,17 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
     public void setItems(@NonNull List<Event> items) {
         events.clear();
         events.addAll(items);
+        notifyDataSetChanged();
+    }
+
+    public void setEventStatusMap(@NonNull Map<String, String> statusMap) {
+        eventStatusMap.clear();
+        eventStatusMap.putAll(statusMap);
+        notifyDataSetChanged();
+    }
+
+    public void setShowStatus(boolean show) {
+        this.showStatus = show;
         notifyDataSetChanged();
     }
 
@@ -97,12 +114,69 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
             holder.dateView.setText("");
         }
 
+        // Set status chip if enabled and status exists
+        if (showStatus && event.getEventId() != null) {
+            String status = eventStatusMap.get(event.getEventId());
+            if (status != null && !status.isEmpty()) {
+                holder.statusChip.setVisibility(View.VISIBLE);
+                setStatusChip(holder.statusChip, status);
+            } else {
+                holder.statusChip.setVisibility(View.GONE);
+            }
+        } else {
+            holder.statusChip.setVisibility(View.GONE);
+        }
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onEventClick(event);
         });
 
         // Placeholder image; integrate Glide/Picasso later if needed
         holder.imageView.setImageResource(android.R.drawable.ic_menu_gallery);
+    }
+
+    private void setStatusChip(@NonNull Chip chip, @NonNull String decisionStatus) {
+        // Map Decision status to display status
+        String displayStatus;
+        int textColor;
+        int bgColor;
+
+        switch (decisionStatus.toUpperCase()) {
+            case "PENDING":
+                displayStatus = "WAITING";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.status_pending);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.status_pending_bg);
+                break;
+            case "INVITED":
+                displayStatus = "WON";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.status_won);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.status_won_bg);
+                break;
+            case "ACCEPTED":
+                displayStatus = "ACCEPTED";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.status_accepted);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.status_accepted_bg);
+                break;
+            case "DECLINED":
+                displayStatus = "DECLINED";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.status_declined);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.status_declined_bg);
+                break;
+            case "LOST":
+            case "CANCELLED":
+                displayStatus = "LOST";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.status_lost);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.status_lost_bg);
+                break;
+            default:
+                displayStatus = "WAITING";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.status_pending);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.status_pending_bg);
+        }
+
+        chip.setText(displayStatus);
+        chip.setTextColor(textColor);
+        chip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(bgColor));
     }
 
     /**
@@ -125,6 +199,7 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
         TextView titleView;
         TextView dateView;
         TextView locationView;
+        Chip statusChip;
 
         /**
          * Constructs a new EventViewHolder.
@@ -137,6 +212,7 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
             titleView = itemView.findViewById(R.id.event_name);
             dateView = itemView.findViewById(R.id.event_date);
             locationView = itemView.findViewById(R.id.event_location);
+            statusChip = itemView.findViewById(R.id.waitlist_status);
         }
     }
 }

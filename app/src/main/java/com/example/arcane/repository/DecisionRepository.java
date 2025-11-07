@@ -33,10 +33,17 @@ public class DecisionRepository {
     private final FirebaseFirestore db;
 
     /**
-     * Constructs a new DecisionRepository instance.
+     * Default constructor for production use
      */
     public DecisionRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public DecisionRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**

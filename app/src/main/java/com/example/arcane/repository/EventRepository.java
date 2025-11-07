@@ -32,10 +32,17 @@ public class EventRepository {
     private final FirebaseFirestore db;
 
     /**
-     * Constructs a new EventRepository instance.
+     * Default constructor for normal use
      */
     public EventRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public EventRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**
