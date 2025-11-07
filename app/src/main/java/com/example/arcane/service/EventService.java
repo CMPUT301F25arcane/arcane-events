@@ -1,5 +1,7 @@
 package com.example.arcane.service;
 
+import androidx.annotation.NonNull;
+
 import com.example.arcane.model.Decision;
 import com.example.arcane.model.Event;
 import com.example.arcane.model.UserProfile;
@@ -32,11 +34,26 @@ public class EventService {
     private final DecisionRepository decisionRepository;
     private final UserRepository userRepository;
 
+
+    /**
+     * Default constructor for normal use
+     */
     public EventService() {
-        this.eventRepository = new EventRepository();
-        this.waitingListRepository = new WaitingListRepository();
-        this.decisionRepository = new DecisionRepository();
-        this.userRepository = new UserRepository();
+        this(new EventRepository(), new WaitingListRepository(), new DecisionRepository(), new UserRepository());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public EventService(
+            @NonNull EventRepository eventRepository,
+            @NonNull WaitingListRepository waitingListRepository,
+            @NonNull DecisionRepository decisionRepository,
+            @NonNull UserRepository userRepository) {
+        this.eventRepository = eventRepository;
+        this.waitingListRepository = waitingListRepository;
+        this.decisionRepository = decisionRepository;
+        this.userRepository = userRepository;
     }
 
     /**
