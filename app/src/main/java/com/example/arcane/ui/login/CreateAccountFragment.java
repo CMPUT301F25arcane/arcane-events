@@ -1,5 +1,21 @@
 package com.example.arcane.ui.login;
 
+/**
+ * This file defines the CreateAccountFragment class, which handles user account creation.
+ * Allows users to select a role (USER or ORGANISER), enter their information, and create
+ * an account with Firebase Authentication. After successful account creation, creates a
+ * user profile in Firestore and navigates to the home screen.
+ *
+ * Design Pattern: MVVM (Model-View-ViewModel) - Fragment acts as View
+ * - Uses FirebaseAuth for account creation
+ * - Uses UserService to create user profile in Firestore
+ * - Uses Navigation Component for routing
+ * - Uses ViewBinding for type-safe view access
+ *
+ * Outstanding Issues:
+ * - Error handling could be improved with more specific error messages
+ * - Password validation could be enhanced
+ */
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -26,11 +42,25 @@ import com.example.arcane.service.UserService;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment that handles user account creation with role selection.
+ * Creates Firebase Auth account and user profile in Firestore.
+ *
+ * @version 1.0
+ */
 public class CreateAccountFragment extends Fragment {
 
     private FragmentCreateAccountBinding binding;
     private String selectedRole = "USER"; // default
 
+    /**
+     * Creates and returns the view hierarchy associated with the fragment.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     * @return The root View for the fragment's layout
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -38,6 +68,13 @@ public class CreateAccountFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned, but before any saved state has been restored.
+     * Sets up role selection buttons and account creation form submission.
+     *
+     * @param view The View returned by onCreateView
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -127,6 +164,10 @@ public class CreateAccountFragment extends Fragment {
         });
     }
 
+    /**
+     * Called when the view hierarchy associated with the fragment is being removed.
+     * Cleans up the binding reference to prevent memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

@@ -1,5 +1,26 @@
 package com.example.arcane.ui.events;
 
+/**
+ * This file defines the EventDetailFragment class, which displays detailed information
+ * about a specific event. It provides different views for organizers and regular users,
+ * handles waitlist joining/leaving, lottery drawing, and decision acceptance/decline.
+ * The fragment manages complex state including user status (WAITING, WON, LOST, ACCEPTED, DECLINED)
+ * and decision tracking through Firestore repositories.
+ *
+ * Design Pattern: MVVM (Model-View-ViewModel) - Fragment acts as View
+ * - Uses EventRepository, WaitingListRepository, and DecisionRepository for data access
+ * - Uses EventService and UserService for business logic
+ * - Follows Android Fragment lifecycle
+ * - Uses ViewBinding for type-safe view access
+ *
+ * Outstanding Issues:
+ * - Image loading uses placeholder (should integrate Glide/Picasso)
+ * - QR code functionality not implemented
+ * - Send notification functionality not implemented
+ * - Edit event functionality not implemented
+ * - Status mapping logic between Decision and WaitingListEntry could be simplified
+ * - Complex nested async callbacks could be refactored with better error handling
+ */
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -30,6 +51,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * Fragment that displays detailed information about an event.
+ * Provides different views for organizers and regular users, handles waitlist operations,
+ * lottery drawing, and decision management.
+ *
+ * @version 1.0
+ */
 public class EventDetailFragment extends Fragment {
 
     private FragmentEventDetailBinding binding;
@@ -48,6 +76,11 @@ public class EventDetailFragment extends Fragment {
     private String waitingListEntryId = null;
     private String decisionId = null;
 
+    /**
+     * Initializes the fragment and retrieves the event ID from arguments.
+     *
+     * @param savedInstanceState If the fragment is being recreated from a previous saved state, this is the state
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,6 +89,14 @@ public class EventDetailFragment extends Fragment {
         }
     }
 
+    /**
+     * Creates and returns the view hierarchy associated with the fragment.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     * @return The root View for the fragment's layout
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -63,6 +104,13 @@ public class EventDetailFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned, but before any saved state has been restored.
+     * Initializes repositories, sets up UI listeners, and loads event data.
+     *
+     * @param view The View returned by onCreateView
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -89,6 +137,10 @@ public class EventDetailFragment extends Fragment {
         checkUserRoleAndLoadEvent();
     }
 
+    /**
+     * Sets up bottom padding for the content view to account for the bottom navigation bar.
+     * Applies window insets to ensure content is not obscured by system UI.
+     */
     private void setupBottomPadding() {
         // Apply window insets to add padding for bottom navigation bar
         // This ensures the content inside NestedScrollView has proper bottom padding
@@ -115,6 +167,10 @@ public class EventDetailFragment extends Fragment {
         });
     }
 
+    /**
+     * Checks the user's role from SharedPreferences and loads the event.
+     * Determines if the user is an organizer and then loads event data accordingly.
+     */
     private void checkUserRoleAndLoadEvent() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -131,6 +187,12 @@ public class EventDetailFragment extends Fragment {
         loadEvent();
     }
 
+    /**
+     * Checks if the given role string represents an organizer role.
+     *
+     * @param role The role string to check (case-insensitive)
+     * @return true if the role is "ORGANIZER" or "ORGANISER", false otherwise
+     */
     private boolean isOrganizerRole(@Nullable String role) {
         if (role == null) {
             return false;
@@ -139,6 +201,10 @@ public class EventDetailFragment extends Fragment {
         return "ORGANIZER".equals(roleUpper) || "ORGANISER".equals(roleUpper);
     }
 
+    /**
+     * Loads the event data from Firestore and populates the UI.
+     * After loading, determines if the current user is the organizer and sets up the appropriate view.
+     */
     private void loadEvent() {
         eventRepository.getEventById(eventId)
                 .addOnSuccessListener(documentSnapshot -> {
@@ -176,6 +242,10 @@ public class EventDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Populates the event detail views with data from the current event.
+     * Sets title, description, date, location, cost, and organizer name.
+     */
     private void populateEventDetails() {
         if (currentEvent == null) return;
 
@@ -211,6 +281,11 @@ public class EventDetailFragment extends Fragment {
         // TODO: Load image from posterImageUrl when Glide/Picasso is integrated
     }
 
+    /**
+     * Loads the current user's status in the event waitlist and decision.
+     * Checks if the user is in the waiting list and retrieves their decision status.
+     * Maps Decision status to user status (WAITING, WON, LOST, ACCEPTED, DECLINED).
+     */
     private void loadUserStatus() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) return;
@@ -297,6 +372,11 @@ public class EventDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Sets up the UI for organizer view.
+     * Hides user-specific UI elements and shows organizer-specific buttons and controls.
+     * Sets up click listeners for organizer actions (QR code, entrants, draw lottery, etc.).
+     */
     private void setupOrganizerView() {
         // Hide user-specific UI
         binding.statusDecisionContainer.setVisibility(View.GONE);
@@ -346,6 +426,10 @@ public class EventDetailFragment extends Fragment {
         });
     }
 
+    /**
+     * Loads and displays the organizer's name for the current event.
+     * Attempts to load from UserProfile first, then falls back to Users model.
+     */
     private void loadOrganizerName() {
         if (currentEvent == null || currentEvent.getOrganizerId() == null) {
             return;
@@ -377,6 +461,11 @@ public class EventDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Sets up the UI for regular user view.
+     * Hides organizer-specific UI elements and shows user-specific status and action buttons.
+     * Displays join button if user hasn't joined, or status/action buttons if user has joined.
+     */
     private void setupUserView() {
         // Hide organizer-specific UI
         binding.lotteryStatusText.setVisibility(View.GONE);
@@ -401,6 +490,11 @@ public class EventDetailFragment extends Fragment {
         }
     }
 
+    /**
+     * Displays the user's current status in the waitlist.
+     * Sets the status chip text and color based on the user's status (WAITING, WON, LOST, etc.).
+     * Also displays the user's decision if applicable.
+     */
     private void showUserStatus() {
         if (userStatus == null) {
             binding.statusChip.setVisibility(View.GONE);
@@ -454,6 +548,10 @@ public class EventDetailFragment extends Fragment {
         }
     }
 
+    /**
+     * Sets up the action buttons for the user view based on their current status.
+     * Shows Abandon button for WAITING status, Accept/Decline buttons for WON status.
+     */
     private void setupUserActionButtons() {
         // Hide all button containers first
         binding.joinButtonContainer.setVisibility(View.GONE);
@@ -479,6 +577,10 @@ public class EventDetailFragment extends Fragment {
         // For LOST, ACCEPTED, DECLINED, ABANDONED - no buttons shown
     }
 
+    /**
+     * Handles the user joining the event waitlist.
+     * Calls EventService to add the user to the waiting list and updates the UI on success.
+     */
     private void handleJoinWaitlist() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -522,6 +624,10 @@ public class EventDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Handles the user leaving the event waitlist.
+     * Calls EventService to remove the user from the waiting list and updates the UI on success.
+     */
     private void handleAbandonWaitlist() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -560,6 +666,10 @@ public class EventDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Handles the user accepting a lottery win.
+     * Updates the decision status to ACCEPTED and reloads the user status.
+     */
     private void handleAcceptWin() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null || decisionId == null) {
@@ -586,6 +696,10 @@ public class EventDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Handles the user declining a lottery win.
+     * Updates the decision status to DECLINED and reloads the user status.
+     */
     private void handleDeclineWin() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null || decisionId == null) {
@@ -612,6 +726,11 @@ public class EventDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Handles the organizer drawing the lottery for the event.
+     * Calls EventService to randomly select winners from the waiting list and updates decisions.
+     * Displays the number of winners and losers after the draw.
+     */
     private void handleDrawLottery() {
         if (eventId == null) {
             Toast.makeText(requireContext(), "Event ID is required", Toast.LENGTH_SHORT).show();
@@ -645,11 +764,18 @@ public class EventDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Navigates back to the previous fragment in the navigation stack.
+     */
     private void navigateBack() {
         NavController navController = Navigation.findNavController(requireView());
         navController.navigateUp();
     }
 
+    /**
+     * Called when the view hierarchy associated with the fragment is being removed.
+     * Cleans up the binding reference to prevent memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

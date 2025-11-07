@@ -1,5 +1,21 @@
 package com.example.arcane.service;
 
+/**
+ * This file defines the EventService class, which provides business logic for event-related
+ * operations. It orchestrates complex operations involving events, waiting lists, decisions,
+ * and user registrations. Handles OOP composition by loading waiting list entries and decisions
+ * into Event objects. Manages lottery drawing, waitlist joining/leaving, and decision acceptance/decline.
+ *
+ * Design Pattern: Service Layer Pattern, Facade Pattern, OOP Composition
+ * - Provides business logic for event operations
+ * - Acts as a facade to multiple repositories (Event, WaitingList, Decision, User)
+ * - Handles OOP composition by loading related entities into Event objects
+ * - Manages complex async operations with nested Task continuations
+ *
+ * Outstanding Issues:
+ * - Nested Task continuations could be simplified with better error handling
+ * - registeredEventIds workaround may need to be replaced with proper subcollection queries
+ */
 import com.example.arcane.model.Decision;
 import com.example.arcane.model.Event;
 import com.example.arcane.model.UserProfile;
@@ -23,8 +39,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Service class to orchestrate event-related operations
- * Handles OOP composition while managing Firebase subcollections
+ * Service class that orchestrates event-related operations.
+ * Handles OOP composition while managing Firebase subcollections.
+ *
+ * @version 1.0
  */
 public class EventService {
     private final EventRepository eventRepository;
@@ -32,6 +50,11 @@ public class EventService {
     private final DecisionRepository decisionRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Constructs a new EventService with default repository instances.
+     *
+     * @version 1.0
+     */
     public EventService() {
         this.eventRepository = new EventRepository();
         this.waitingListRepository = new WaitingListRepository();
@@ -40,7 +63,14 @@ public class EventService {
     }
 
     /**
-     * Constructor for dependency injection (used in tests)
+     * Constructs a new EventService with injected repository dependencies.
+     * Used for dependency injection in tests.
+     *
+     * @param eventRepository The EventRepository instance to use
+     * @param waitingListRepository The WaitingListRepository instance to use
+     * @param decisionRepository The DecisionRepository instance to use
+     * @param userRepository The UserRepository instance to use
+     * @version 1.0
      */
     public EventService(EventRepository eventRepository, 
                        WaitingListRepository waitingListRepository,
@@ -53,14 +83,21 @@ public class EventService {
     }
 
     /**
-     * Create a new event
+     * Creates a new event in Firestore.
+     *
+     * @param event The Event object to create
+     * @return A Task that completes with the document reference of the created event
      */
     public Task<DocumentReference> createEvent(Event event) {
         return eventRepository.createEvent(event);
     }
 
     /**
-     * Get event with all waiting list entries and decisions loaded (OOP composition)
+     * Gets an event with all waiting list entries and decisions loaded (OOP composition).
+     * Loads the event from Firestore and populates its waiting list and decisions lists.
+     *
+     * @param eventId The unique identifier of the event
+     * @return A Task that completes with the Event object containing loaded waiting list and decisions
      */
     public Task<Event> getEventWithDetails(String eventId) {
         return eventRepository.getEventById(eventId)
@@ -84,7 +121,11 @@ public class EventService {
     }
 
     /**
-     * Load waiting list into Event object (OOP composition)
+     * Loads waiting list entries into the Event object (OOP composition).
+     * Fetches all waiting list entries for the event and sets them on the Event object.
+     *
+     * @param event The Event object to populate
+     * @param eventId The unique identifier of the event
      */
     private void loadWaitingList(Event event, String eventId) {
         waitingListRepository.getWaitingListForEvent(eventId)
@@ -100,7 +141,11 @@ public class EventService {
     }
 
     /**
-     * Load decisions into Event object (OOP composition)
+     * Loads decisions into the Event object (OOP composition).
+     * Fetches all decisions for the event and sets them on the Event object.
+     *
+     * @param event The Event object to populate
+     * @param eventId The unique identifier of the event
      */
     private void loadDecisions(Event event, String eventId) {
         decisionRepository.getDecisionsForEvent(eventId)
@@ -116,8 +161,13 @@ public class EventService {
     }
 
     /**
-     * User joins waiting list for an event
-     * Creates both WaitingListEntry and Decision
+     * Adds a user to the waiting list for an event.
+     * Creates both a WaitingListEntry and a Decision with PENDING status.
+     * Also updates the user's registeredEventIds as a workaround.
+     *
+     * @param eventId The unique identifier of the event
+     * @param entrantId The unique identifier of the user joining the waitlist
+     * @return A Task that completes with a map containing status, entryId, and decisionId
      */
     public Task<Map<String, String>> joinWaitingList(String eventId, String entrantId) {
         // Check if already in waiting list
@@ -187,8 +237,14 @@ public class EventService {
     }
 
     /**
-     * User leaves waiting list for an event
-     * Removes WaitingListEntry, Decision, and updates user's registeredEventIds
+     * Removes a user from the waiting list for an event.
+     * Deletes both the WaitingListEntry and Decision, and updates the user's registeredEventIds.
+     *
+     * @param eventId The unique identifier of the event
+     * @param entrantId The unique identifier of the user leaving the waitlist
+     * @param entryId The unique identifier of the waiting list entry to remove
+     * @param decisionId The unique identifier of the decision to remove (can be null, will be looked up)
+     * @return A Task that completes when the user is removed from the waitlist
      */
     public Task<Void> leaveWaitingList(String eventId, String entrantId, String entryId, String decisionId) {
         // Get decision first to find decisionId if not provided
@@ -241,8 +297,13 @@ public class EventService {
     }
 
     /**
-     * User accepts a won lottery spot
-     * Updates Decision status to ACCEPTED and updates both collections
+     * Handles a user accepting a won lottery spot.
+     * Updates the Decision status to ACCEPTED and sets the respondedAt timestamp.
+     *
+     * @param eventId The unique identifier of the event
+     * @param userId The unique identifier of the user accepting
+     * @param decisionId The unique identifier of the decision to update
+     * @return A Task that completes when the decision is updated
      */
     public Task<Void> acceptWin(String eventId, String userId, String decisionId) {
         return decisionRepository.getDecisionById(eventId, decisionId)
@@ -276,8 +337,13 @@ public class EventService {
     }
 
     /**
-     * User declines a won lottery spot
-     * Updates Decision status to DECLINED and updates both collections
+     * Handles a user declining a won lottery spot.
+     * Updates the Decision status to DECLINED and sets the respondedAt timestamp.
+     *
+     * @param eventId The unique identifier of the event
+     * @param userId The unique identifier of the user declining
+     * @param decisionId The unique identifier of the decision to update
+     * @return A Task that completes when the decision is updated
      */
     public Task<Void> declineWin(String eventId, String userId, String decisionId) {
         return decisionRepository.getDecisionById(eventId, decisionId)
@@ -311,8 +377,11 @@ public class EventService {
     }
 
     /**
-     * Draw lottery for an event - randomly select winners from PENDING decisions
-     * Winners get status INVITED, losers get status LOST
+     * Draws the lottery for an event by randomly selecting winners from PENDING decisions.
+     * Winners get status INVITED, losers get status LOST. Uses a batch write for efficiency.
+     *
+     * @param eventId The unique identifier of the event
+     * @return A Task that completes with a map containing status, winnersCount, losersCount, and message
      */
     public Task<Map<String, Object>> drawLottery(String eventId) {
         // Get event to check numberOfWinners
@@ -418,7 +487,11 @@ public class EventService {
     }
 
     /**
-     * Organizer gets all users registered for an event with their decisions
+     * Gets all users registered for an event with their decision status.
+     * Combines waiting list entries and decisions to provide complete registration information.
+     *
+     * @param eventId The unique identifier of the event
+     * @return A Task that completes with a map containing status and a list of registrations
      */
     public Task<Map<String, Object>> getEventRegistrations(String eventId) {
         // Get waiting list entries

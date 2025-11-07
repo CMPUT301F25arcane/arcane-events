@@ -1,5 +1,22 @@
 package com.example.arcane.ui.events;
 
+/**
+ * This file defines the UserEventsFragment class, which displays all events that the
+ * current user has registered for (joined the waitlist). It loads events from the user's
+ * registeredEventIds list in their UserProfile, provides search functionality to filter
+ * events by name, and allows navigation to global events. Users cannot create events.
+ * Shows status chips for events the user has joined.
+ *
+ * Design Pattern: MVVM (Model-View-ViewModel) - Fragment acts as View
+ * - Uses EventRepository, UserRepository, and DecisionRepository for data access
+ * - Uses EventCardAdapter with RecyclerView for list display
+ * - Uses ViewBinding for type-safe view access
+ *
+ * Outstanding Issues:
+ * - Event click handling is now implemented (navigates to event detail)
+ * - Uses array-based counter for async operations (could use CompletableFuture or RxJava)
+ * - registeredEventIds workaround may need to be replaced with proper subcollection queries
+ */
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -28,6 +45,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Fragment that displays all events the current user has registered for.
+ * Provides search functionality and navigation to global events.
+ *
+ * @version 1.0
+ */
 public class UserEventsFragment extends Fragment {
 
     private FragmentEventsBinding binding;
@@ -37,6 +60,14 @@ public class UserEventsFragment extends Fragment {
     private DecisionRepository decisionRepository;
     private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
 
+    /**
+     * Creates and returns the view hierarchy associated with the fragment.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     * @return The root View for the fragment's layout
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -44,6 +75,13 @@ public class UserEventsFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned, but before any saved state has been restored.
+     * Initializes repositories, sets up the RecyclerView adapter, navigation button, and loads event data.
+     *
+     * @param view The View returned by onCreateView
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -84,6 +122,10 @@ public class UserEventsFragment extends Fragment {
         loadUserEvents();
     }
 
+    /**
+     * Sets up the search functionality with real-time text filtering.
+     * Configures the search button click listener and text change listener for the search EditText.
+     */
     private void setupSearch() {
         // Search button click
         binding.searchButton.setOnClickListener(v -> performSearch());
@@ -103,6 +145,11 @@ public class UserEventsFragment extends Fragment {
         });
     }
 
+    /**
+     * Performs a case-insensitive search on event names.
+     * Filters the events list based on the search query and updates the adapter.
+     * If the search query is empty, shows all events.
+     */
     private void performSearch() {
         String query = binding.searchEditText.getText() != null ? 
                 binding.searchEditText.getText().toString().trim() : "";
@@ -124,6 +171,11 @@ public class UserEventsFragment extends Fragment {
         }
     }
 
+    /**
+     * Loads all events that the current user has registered for.
+     * Retrieves the user's registeredEventIds from UserProfile and fetches each event.
+     * Uses an array-based counter to track async operations completion.
+     */
     private void loadUserEvents() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -165,6 +217,11 @@ public class UserEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Loads user decisions for all events to determine status.
+     * Extracts event IDs from decision document paths and creates a status map
+     * that is passed to the adapter to display status chips.
+     */
     private void loadUserDecisions() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -198,6 +255,10 @@ public class UserEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Called when the view hierarchy associated with the fragment is being removed.
+     * Cleans up the binding reference to prevent memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

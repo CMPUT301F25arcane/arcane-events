@@ -1,5 +1,19 @@
 package com.example.arcane.ui.events;
 
+/**
+ * This file defines the GlobalEventsFragment class, which displays all available events
+ * in the system for browsing and registration. It provides search functionality to filter
+ * events by name and shows user status chips for events the user has joined. Users can
+ * navigate to event details by clicking on event cards.
+ *
+ * Design Pattern: MVVM (Model-View-ViewModel) - Fragment acts as View
+ * - Uses EventRepository and DecisionRepository for data access
+ * - Uses EventCardAdapter with RecyclerView for list display
+ * - Uses ViewBinding for type-safe view access
+ *
+ * Outstanding Issues:
+ * - None identified at this time (event click handling is now implemented)
+ */
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -26,6 +40,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Fragment that displays all available events in the system.
+ * Provides search functionality and shows user status for joined events.
+ *
+ * @version 1.0
+ */
 public class GlobalEventsFragment extends Fragment {
 
     private FragmentEventsBinding binding;
@@ -34,6 +54,14 @@ public class GlobalEventsFragment extends Fragment {
     private DecisionRepository decisionRepository;
     private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
 
+    /**
+     * Creates and returns the view hierarchy associated with the fragment.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     * @return The root View for the fragment's layout
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -41,6 +69,13 @@ public class GlobalEventsFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned, but before any saved state has been restored.
+     * Initializes repositories, sets up the RecyclerView adapter, and loads event data.
+     *
+     * @param view The View returned by onCreateView
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -80,6 +115,10 @@ public class GlobalEventsFragment extends Fragment {
         loadAllEvents();
     }
 
+    /**
+     * Sets up the search functionality with real-time text filtering.
+     * Configures the search button click listener and text change listener for the search EditText.
+     */
     private void setupSearch() {
         // Search button click
         binding.searchButton.setOnClickListener(v -> performSearch());
@@ -99,6 +138,11 @@ public class GlobalEventsFragment extends Fragment {
         });
     }
 
+    /**
+     * Performs a case-insensitive search on event names.
+     * Filters the events list based on the search query and updates the adapter.
+     * If the search query is empty, shows all events.
+     */
     private void performSearch() {
         String query = binding.searchEditText.getText() != null ? 
                 binding.searchEditText.getText().toString().trim() : "";
@@ -120,6 +164,10 @@ public class GlobalEventsFragment extends Fragment {
         }
     }
 
+    /**
+     * Loads all available events from the repository.
+     * After loading events, loads user decisions to show status chips for joined events.
+     */
     private void loadAllEvents() {
         eventRepository.getAllEvents()
                 .addOnSuccessListener(querySnapshot -> {
@@ -136,6 +184,11 @@ public class GlobalEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Loads user decisions for all events to determine status.
+     * Extracts event IDs from decision document paths and creates a status map
+     * that is passed to the adapter to display status chips.
+     */
     private void loadUserDecisions() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -169,6 +222,10 @@ public class GlobalEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Called when the view hierarchy associated with the fragment is being removed.
+     * Cleans up the binding reference to prevent memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

@@ -1,5 +1,22 @@
 package com.example.arcane.ui.events;
 
+/**
+ * This file defines the EntrantsFragment class, which displays a list of event entrants
+ * (registered users) for a specific event. It loads registration data from Firestore,
+ * fetches user details for each entrant, and displays them in a RecyclerView with their
+ * decision status (PENDING, INVITED, ACCEPTED, DECLINED, etc.).
+ *
+ * Design Pattern: MVVM (Model-View-ViewModel) - Fragment acts as View
+ * - Uses EventService and UserService to fetch data from repositories
+ * - Uses EntrantAdapter to display data in RecyclerView
+ * - Follows Android Fragment lifecycle
+ *
+ * Outstanding Issues:
+ * - View map button is hidden and not implemented
+ * - Uses array-based counter for async operations (could use CompletableFuture or RxJava)
+ * - Error handling could be improved with better user feedback
+ * - Location field is not displayed (not available in Users model)
+ */
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +42,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Fragment that displays a list of event entrants with their registration status.
+ * Loads event registrations and user details, then displays them in a RecyclerView.
+ *
+ * @version 1.0
+ */
 public class EntrantsFragment extends Fragment {
 
     private FragmentEntrantsBinding binding;
@@ -33,6 +56,11 @@ public class EntrantsFragment extends Fragment {
     private UserService userService;
     private String eventId;
 
+    /**
+     * Initializes the fragment and retrieves the event ID from arguments.
+     *
+     * @param savedInstanceState If the fragment is being recreated from a previous saved state, this is the state
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,6 +69,14 @@ public class EntrantsFragment extends Fragment {
         }
     }
 
+    /**
+     * Creates and returns the view hierarchy associated with the fragment.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     * @return The root View for the fragment's layout
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -48,6 +84,13 @@ public class EntrantsFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned, but before any saved state has been restored.
+     * Initializes the RecyclerView, sets up the adapter, and loads entrant data.
+     *
+     * @param view The View returned by onCreateView
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -75,6 +118,11 @@ public class EntrantsFragment extends Fragment {
         loadEntrants();
     }
 
+    /**
+     * Loads event registrations and user details for each entrant.
+     * Fetches registration data from EventService, then fetches user details
+     * for each registration and updates the adapter when all data is loaded.
+     */
     private void loadEntrants() {
         eventService.getEventRegistrations(eventId)
                 .addOnSuccessListener(result -> {
@@ -141,18 +189,30 @@ public class EntrantsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Navigates back to the previous fragment in the navigation stack.
+     */
     private void navigateBack() {
         androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireView());
         navController.navigateUp();
     }
 
+    /**
+     * Called when the view hierarchy associated with the fragment is being removed.
+     * Cleans up the binding reference to prevent memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
     }
 
-    // Simple data class for entrant display
+    /**
+     * Simple data class for holding entrant display information.
+     * Used to pass entrant data from the fragment to the adapter.
+     *
+     * @version 1.0
+     */
     static class EntrantItem {
         String name;
         String email;

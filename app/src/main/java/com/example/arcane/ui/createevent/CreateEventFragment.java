@@ -1,5 +1,21 @@
 package com.example.arcane.ui.createevent;
 
+/**
+ * This file defines the CreateEventFragment class, which allows organizers to create new events.
+ * Provides a form for entering event details including name, location, dates, cost, max entrants,
+ * and number of winners. Validates input and creates events in Firestore via EventService.
+ *
+ * Design Pattern: MVVM (Model-View-ViewModel) - Fragment acts as View
+ * - Uses EventService for business logic and data persistence
+ * - Uses ViewBinding for type-safe view access
+ * - Uses Navigation Component for routing
+ *
+ * Outstanding Issues:
+ * - Description field is not included in the form (set to empty string)
+ * - Image upload functionality not implemented (posterImageUrl set to null)
+ * - Geolocation field not fully implemented (set to null even if checkbox is checked)
+ * - Date validation could be improved
+ */
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
@@ -28,6 +44,12 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+/**
+ * Fragment that allows organizers to create new events.
+ * Provides form validation and event creation functionality.
+ *
+ * @version 1.0
+ */
 public class CreateEventFragment extends Fragment {
 
     private FragmentCreateEventBinding binding;
@@ -38,6 +60,11 @@ public class CreateEventFragment extends Fragment {
     private Calendar registrationDeadlineCalendar;
     private SimpleDateFormat dateTimeFormat;
 
+    /**
+     * Initializes the fragment and sets up services and date formatting.
+     *
+     * @param savedInstanceState If the fragment is being recreated from a previous saved state, this is the state
+     */
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +76,14 @@ public class CreateEventFragment extends Fragment {
         dateTimeFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
     }
 
+    /**
+     * Creates and returns the view hierarchy associated with the fragment.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     * @return The root View for the fragment's layout
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -56,6 +91,13 @@ public class CreateEventFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned, but before any saved state has been restored.
+     * Sets up toolbar navigation, date pickers, and create event button.
+     *
+     * @param view The View returned by onCreateView
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -75,6 +117,14 @@ public class CreateEventFragment extends Fragment {
         binding.createEventButton.setOnClickListener(v -> createEvent());
     }
 
+    /**
+     * Sets up a date and time picker for the specified EditText field.
+     * Shows a date picker first, then a time picker, and updates the EditText with formatted date/time.
+     *
+     * @param editText The TextInputEditText to display the selected date/time
+     * @param calendar The Calendar object to store the selected date/time
+     * @param title The title to display in the date/time picker dialogs
+     */
     private void setupDatePicker(TextInputEditText editText, Calendar calendar, String title) {
         editText.setOnClickListener(v -> {
             // First pick date
@@ -109,6 +159,11 @@ public class CreateEventFragment extends Fragment {
         });
     }
 
+    /**
+     * Validates form input and creates a new event in Firestore.
+     * Validates required fields, dates, and numeric inputs before creating the event.
+     * Shows error messages for validation failures and success message on completion.
+     */
     private void createEvent() {
         // Validate required fields
         String eventName = binding.eventNameInput.getText() != null ? 
@@ -247,6 +302,10 @@ public class CreateEventFragment extends Fragment {
                 });
     }
 
+    /**
+     * Called when the view hierarchy associated with the fragment is being removed.
+     * Cleans up the binding reference to prevent memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

@@ -1,5 +1,20 @@
 package com.example.arcane.ui.events;
 
+/**
+ * This file defines the OrganizerEventsFragment class, which displays all events
+ * created by the current organizer. It provides search functionality to filter events
+ * by name and allows organizers to create new events via a floating action button.
+ * The fragment automatically refreshes when returning from creating a new event.
+ * Can also fall back to user view if the user is not an organizer.
+ *
+ * Design Pattern: MVVM (Model-View-ViewModel) - Fragment acts as View
+ * - Uses EventRepository and UserRepository for data access
+ * - Uses EventCardAdapter with RecyclerView for list display
+ * - Uses ViewBinding for type-safe view access
+ *
+ * Outstanding Issues:
+ * - Event click handling is now implemented (navigates to event detail)
+ */
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -26,6 +41,12 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment that displays all events created by the current organizer.
+ * Provides search functionality and allows creating new events.
+ *
+ * @version 1.0
+ */
 public class OrganizerEventsFragment extends Fragment {
 
     private FragmentEventsBinding binding;
@@ -35,6 +56,14 @@ public class OrganizerEventsFragment extends Fragment {
     private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
     private boolean isOrganizer = false;
 
+    /**
+     * Creates and returns the view hierarchy associated with the fragment.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     * @return The root View for the fragment's layout
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -42,6 +71,13 @@ public class OrganizerEventsFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned, but before any saved state has been restored.
+     * Initializes repositories, sets up the RecyclerView adapter, FAB for creating events, and loads event data.
+     *
+     * @param view The View returned by onCreateView
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -71,6 +107,11 @@ public class OrganizerEventsFragment extends Fragment {
         checkUserRoleAndSetVisibility();
     }
 
+    /**
+     * Checks the user's role and sets up the appropriate UI (organizer or user view).
+     * Shows FAB for creating events if user is an organizer, otherwise shows navigation button to global events.
+     * Loads appropriate events based on role.
+     */
     private void checkUserRoleAndSetVisibility() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -131,6 +172,10 @@ public class OrganizerEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Sets up the search functionality with real-time text filtering.
+     * Configures the search button click listener and text change listener for the search EditText.
+     */
     private void setupSearch() {
         // Search button click
         binding.searchButton.setOnClickListener(v -> performSearch());
@@ -150,6 +195,11 @@ public class OrganizerEventsFragment extends Fragment {
         });
     }
 
+    /**
+     * Performs a case-insensitive search on event names.
+     * Filters the events list based on the search query and updates the adapter.
+     * If the search query is empty, shows all events.
+     */
     private void performSearch() {
         String query = binding.searchEditText.getText() != null ? 
                 binding.searchEditText.getText().toString().trim() : "";
@@ -171,6 +221,10 @@ public class OrganizerEventsFragment extends Fragment {
         }
     }
 
+    /**
+     * Loads all events created by the current organizer from the repository.
+     * Filters events based on the organizer's user ID and updates the adapter.
+     */
     private void loadOrganizerEvents() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -191,6 +245,11 @@ public class OrganizerEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Loads all events that the current user has registered for.
+     * Retrieves the user's registeredEventIds from UserProfile and fetches each event.
+     * Uses an array-based counter to track async operations completion.
+     */
     private void loadUserEvents() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -231,6 +290,10 @@ public class OrganizerEventsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Called when the fragment becomes visible to the user.
+     * Refreshes the events list when returning to this fragment (e.g., after creating an event).
+     */
     @Override
     public void onResume() {
         super.onResume();
@@ -242,6 +305,10 @@ public class OrganizerEventsFragment extends Fragment {
         }
     }
 
+    /**
+     * Called when the view hierarchy associated with the fragment is being removed.
+     * Cleans up the binding reference to prevent memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
