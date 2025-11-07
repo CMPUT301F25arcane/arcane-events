@@ -1,5 +1,23 @@
 package com.example.arcane.ui.login;
 
+/**
+ * This file defines the LoginFragment class, which handles user authentication
+ * via email and password. It validates user input, authenticates with Firebase Auth,
+ * and routes users to the appropriate screen based on their role (organizer or regular user).
+ * If a user is already logged in, it automatically routes them without showing the login form.
+ * Caches user role in SharedPreferences for use by other components.
+ *
+ * Design Pattern: MVVM (Model-View-ViewModel) - Fragment acts as View
+ * - Uses FirebaseAuth for authentication
+ * - Uses UserService to retrieve user role information
+ * - Uses Navigation Component for routing
+ * - Uses ViewBinding for type-safe view access
+ * - Uses SharedPreferences to cache user role
+ *
+ * Outstanding Issues:
+ * - Error handling could be improved with more specific error messages
+ * - Role routing logic could be extracted to a separate utility class
+ */
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -22,10 +40,24 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.FirebaseNetworkException;
 
+/**
+ * Fragment that handles user login via email and password authentication.
+ * Routes users to appropriate screens based on their role after successful login.
+ *
+ * @version 1.0
+ */
 public class LoginFragment extends Fragment {
 
     private FragmentLoginBinding binding;
 
+    /**
+     * Creates and returns the view hierarchy associated with the fragment.
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     * @return The root View for the fragment's layout
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -33,6 +65,13 @@ public class LoginFragment extends Fragment {
         return binding.getRoot();
     }
 
+    /**
+     * Called immediately after onCreateView has returned, but before any saved state has been restored.
+     * Sets up login button click listener, create account navigation, and checks if user is already logged in.
+     *
+     * @param view The View returned by onCreateView
+     * @param savedInstanceState If non-null, this fragment is being reconstructed from a previous saved state
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -94,6 +133,12 @@ public class LoginFragment extends Fragment {
         });
     }
 
+    /**
+     * Routes the user to the appropriate screen based on their role.
+     * Fetches the user's role from Firestore, caches it in SharedPreferences, and navigates accordingly.
+     *
+     * @param user The FirebaseUser object representing the logged-in user
+     */
     private void routeByRole(@NonNull FirebaseUser user) {
         com.example.arcane.service.UserService userService = new com.example.arcane.service.UserService();
         userService.getUserById(user.getUid())
@@ -125,6 +170,12 @@ public class LoginFragment extends Fragment {
                 });
     }
 
+    /**
+     * Caches the user's role in SharedPreferences for use by other components.
+     * Stores the role if provided, or removes it if null.
+     *
+     * @param role The user's role to cache (or null to remove)
+     */
     private void cacheUserRole(String role) {
         SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
@@ -136,6 +187,10 @@ public class LoginFragment extends Fragment {
         editor.apply();
     }
 
+    /**
+     * Called when the view hierarchy associated with the fragment is being removed.
+     * Cleans up the binding reference to prevent memory leaks.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

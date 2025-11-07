@@ -1,5 +1,19 @@
 package com.example.arcane;
 
+/**
+ * This file defines the MainActivity class, which serves as the single activity for the application.
+ * Manages navigation between fragments using Navigation Component, controls bottom navigation visibility,
+ * and updates action bar titles based on user role. Follows the Single Activity architecture pattern.
+ *
+ * Design Pattern: Single Activity Architecture
+ * - Uses Navigation Component for fragment navigation
+ * - Uses BottomNavigationView for main navigation
+ * - Manages action bar visibility and titles dynamically
+ * - Uses ViewBinding for type-safe view access
+ *
+ * Outstanding Issues:
+ * - None identified at this time
+ */
 import android.os.Bundle;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -17,10 +31,21 @@ import com.example.arcane.R;
 import com.example.arcane.model.Users;
 import com.example.arcane.service.UserService;
 
+/**
+ * Main activity that hosts all fragments and manages navigation.
+ * Controls bottom navigation visibility and action bar based on current destination.
+ *
+ * @version 1.0
+ */
 public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
 
+    /**
+     * Initializes the activity, sets up navigation, and configures action bar.
+     *
+     * @param savedInstanceState If the activity is being re-initialized after previously being shut down, this contains the data
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,6 +123,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Updates the action bar title for the home destination based on user role.
+     * Fetches user role from Firestore and sets appropriate title.
+     */
     private void updateActionBarTitleForHome() {
         if (getSupportActionBar() == null) return;
         
@@ -134,6 +163,11 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Handles the up navigation action in the action bar.
+     *
+     * @return true if navigation was handled, false otherwise
+     */
     @Override
     public boolean onSupportNavigateUp() {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
