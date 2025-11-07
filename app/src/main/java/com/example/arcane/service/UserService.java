@@ -1,7 +1,6 @@
 package com.example.arcane.service;
 
 import androidx.annotation.NonNull;
-
 import com.example.arcane.model.Users;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -11,8 +10,18 @@ public class UserService {
 
     private final FirebaseFirestore db;
 
+    /**
+     * Default constructor for normal use
+     */
     public UserService() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public UserService(FirebaseFirestore db) {
+        this.db = db;
     }
 
     public Task<Void> createUser(@NonNull Users user) {
