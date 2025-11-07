@@ -23,21 +23,6 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * UserEventsFragment.java
- * 
- * Purpose: Displays events that the current user has registered for.
- * 
- * Design Pattern: Follows MVVM architecture pattern with Repository pattern for data access.
- * Uses ViewBinding for type-safe view access and RecyclerView with adapter pattern for list display.
- * 
- * Outstanding Issues:
- * - Event click handling is not yet implemented (placeholder comment on line 48)
- * - Uses registeredEventIds workaround from UserProfile; should ideally query waiting list subcollections
- * - Race condition possible when loading multiple events asynchronously (remaining counter approach)
- * 
- * @version 1.0
- */
 public class UserEventsFragment extends Fragment {
 
     private FragmentEventsBinding binding;
@@ -46,14 +31,6 @@ public class UserEventsFragment extends Fragment {
     private EventRepository eventRepository;
     private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
 
-    /**
-     * Creates and returns the view hierarchy for this fragment.
-     *
-     * @param inflater the layout inflater
-     * @param container the parent view group
-     * @param savedInstanceState the saved instance state
-     * @return the root view
-     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -61,12 +38,6 @@ public class UserEventsFragment extends Fragment {
         return binding.getRoot();
     }
 
-    /**
-     * Called immediately after onCreateView has returned.
-     *
-     * @param view the view returned by onCreateView
-     * @param savedInstanceState the saved instance state
-     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -97,9 +68,6 @@ public class UserEventsFragment extends Fragment {
         loadUserEvents();
     }
 
-    /**
-     * Sets up the search functionality with real-time text filtering.
-     */
     private void setupSearch() {
         // Search button click
         binding.searchButton.setOnClickListener(v -> performSearch());
@@ -119,9 +87,6 @@ public class UserEventsFragment extends Fragment {
         });
     }
 
-    /**
-     * Performs a case-insensitive search on event names.
-     */
     private void performSearch() {
         String query = binding.searchEditText.getText() != null ? 
                 binding.searchEditText.getText().toString().trim() : "";
@@ -143,9 +108,6 @@ public class UserEventsFragment extends Fragment {
         }
     }
 
-    /**
-     * Loads events that the current user has registered for.
-     */
     private void loadUserEvents() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -186,9 +148,6 @@ public class UserEventsFragment extends Fragment {
                 });
     }
 
-    /**
-     * Called when the view hierarchy is being removed.
-     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

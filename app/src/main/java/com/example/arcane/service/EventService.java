@@ -1,21 +1,3 @@
-/**
- * EventService.java
- * 
- * Purpose: Service layer for orchestrating complex event-related operations.
- * 
- * Design Pattern: Service Layer pattern with Facade pattern. Coordinates multiple
- * repositories (EventRepository, WaitingListRepository, DecisionRepository, UserRepository)
- * to provide high-level business operations. Implements OOP Composition by loading
- * related entities (waiting list, decisions) into Event objects.
- * 
- * Outstanding Issues:
- * - The joinWaitingList method has complex nested Task continuations that could be
- *   simplified with better error handling
- * - The workaround for updating user's registeredEventIds should be refactored
- *   to use proper subcollection queries
- * 
- * @version 1.0
- */
 package com.example.arcane.service;
 
 import com.example.arcane.model.Decision;
@@ -38,13 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Service class to orchestrate event-related operations.
- *
- * <p>Handles OOP composition while managing Firebase subcollections.
- * Coordinates between EventRepository, WaitingListRepository, DecisionRepository,
- * and UserRepository to provide high-level event management functionality.</p>
- *
- * @version 1.0
+ * Service class to orchestrate event-related operations
+ * Handles OOP composition while managing Firebase subcollections
  */
 public class EventService {
     private final EventRepository eventRepository;
@@ -52,9 +29,6 @@ public class EventService {
     private final DecisionRepository decisionRepository;
     private final UserRepository userRepository;
 
-    /**
-     * Constructs a new EventService instance.
-     */
     public EventService() {
         this.eventRepository = new EventRepository();
         this.waitingListRepository = new WaitingListRepository();
@@ -63,20 +37,14 @@ public class EventService {
     }
 
     /**
-     * Creates a new event.
-     *
-     * @param event the event to create
-     * @return a Task that completes with the document reference of the created event
+     * Create a new event
      */
     public Task<DocumentReference> createEvent(Event event) {
         return eventRepository.createEvent(event);
     }
 
     /**
-     * Gets an event with all waiting list entries and decisions loaded (OOP composition).
-     *
-     * @param eventId the event ID to retrieve
-     * @return a Task that completes with the event including waiting list and decisions
+     * Get event with all waiting list entries and decisions loaded (OOP composition)
      */
     public Task<Event> getEventWithDetails(String eventId) {
         return eventRepository.getEventById(eventId)
@@ -100,10 +68,7 @@ public class EventService {
     }
 
     /**
-     * Loads waiting list into Event object (OOP composition).
-     *
-     * @param event the event to load waiting list into
-     * @param eventId the event ID
+     * Load waiting list into Event object (OOP composition)
      */
     private void loadWaitingList(Event event, String eventId) {
         waitingListRepository.getWaitingListForEvent(eventId)
@@ -119,10 +84,7 @@ public class EventService {
     }
 
     /**
-     * Loads decisions into Event object (OOP composition).
-     *
-     * @param event the event to load decisions into
-     * @param eventId the event ID
+     * Load decisions into Event object (OOP composition)
      */
     private void loadDecisions(Event event, String eventId) {
         decisionRepository.getDecisionsForEvent(eventId)
@@ -138,13 +100,8 @@ public class EventService {
     }
 
     /**
-     * User joins waiting list for an event.
-     *
-     * <p>Creates both WaitingListEntry and Decision records.</p>
-     *
-     * @param eventId the event ID
-     * @param entrantId the entrant's user ID
-     * @return a Task that completes with a map containing status and IDs
+     * User joins waiting list for an event
+     * Creates both WaitingListEntry and Decision
      */
     public Task<Map<String, String>> joinWaitingList(String eventId, String entrantId) {
         // Check if already in waiting list
@@ -214,14 +171,8 @@ public class EventService {
     }
 
     /**
-     * User leaves waiting list for an event.
-     *
-     * <p>Removes WaitingListEntry and updates user's registeredEventIds.</p>
-     *
-     * @param eventId the event ID
-     * @param entrantId the entrant's user ID
-     * @param entryId the waiting list entry ID to remove
-     * @return a Task that completes when the user has left the waiting list
+     * User leaves waiting list for an event
+     * Removes WaitingListEntry and updates user's registeredEventIds
      */
     public Task<Void> leaveWaitingList(String eventId, String entrantId, String entryId) {
         // Remove from waiting list
@@ -247,12 +198,7 @@ public class EventService {
     }
 
     /**
-     * Gets all users registered for an event with their decisions.
-     *
-     * <p>Used by organizers to view all registrations and their statuses.</p>
-     *
-     * @param eventId the event ID
-     * @return a Task that completes with a map containing registrations and status
+     * Organizer gets all users registered for an event with their decisions
      */
     public Task<Map<String, Object>> getEventRegistrations(String eventId) {
         // Get waiting list entries
