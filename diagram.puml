@@ -2,6 +2,10 @@
 scale 0.4
 skinparam classAttributeIconSize 0
 skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 30
+skinparam ranksep 50
+left to right direction
 
 package "Model" {
 class Event {
@@ -120,7 +124,10 @@ class EventService {
   + createEvent(event: Event) : Task<DocumentReference>
   + getEventWithDetails(eventId: String) : Task<Event>
   + joinWaitingList(eventId: String, entrantId: String) : Task<Map<String,String>>
-  + leaveWaitingList(eventId: String, entrantId: String, entryId: String) : Task<Void>
+  + leaveWaitingList(eventId: String, entrantId: String, entryId: String, decisionId: String) : Task<Void>
+  + acceptWin(eventId: String, userId: String, decisionId: String) : Task<Void>
+  + declineWin(eventId: String, userId: String, decisionId: String) : Task<Void>
+  + drawLottery(eventId: String) : Task<Map<String,Object>>
   + getEventRegistrations(eventId: String) : Task<Map<String,Object>>
 }
 
@@ -240,14 +247,14 @@ class UserEventsFragment {
 
 class EventCardAdapter {
   - events : List<Event>
-  - listener : EventCardClickListener
+  - listener : OnEventClickListener
   + setItems(items: List<Event>) : void
   + onCreateViewHolder(parent: ViewGroup, viewType: int) : EventViewHolder
   + onBindViewHolder(holder: EventViewHolder, position: int) : void
   + getItemCount() : int
 }
 
-interface EventCardClickListener {
+interface OnEventClickListener {
   + onEventClick(event: Event) : void
 }
 }
@@ -258,6 +265,12 @@ class RecyclerViewAdapter <<AndroidX>>
 class FirebaseAuth <<Firebase>>
 class FirebaseUser <<Firebase>>
 class FirebaseFirestore <<Firebase>>
+
+' Force vertical layout with hidden relationships
+Event -[hidden]-> EventRepository
+EventRepository -[hidden]-> EventService
+EventService -[hidden]-> MainActivity
+MainActivity -[hidden]-> CreateEventFragment
 
 MainActivity --|> AppCompatActivity
 HomeFragment --|> Fragment
@@ -314,7 +327,7 @@ UserEventsFragment *-- UserRepository
 UserEventsFragment *-- EventRepository
 UserEventsFragment ..> FirebaseAuth
 
-EventCardAdapter o-- EventCardClickListener
+EventCardAdapter o-- OnEventClickListener
 EventCardAdapter --> Event
 
 LoginFragment ..> FirebaseAuth
