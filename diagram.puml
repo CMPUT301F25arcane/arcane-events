@@ -1,0 +1,350 @@
+@startuml
+scale 0.4
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 30
+skinparam ranksep 50
+left to right direction
+
+package "Model" {
+class Event {
+  - eventId : String
+  - organizerId : String
+  - eventName : String
+  - description : String
+  - geolocation : GeoPoint
+  - posterImageUrl : String
+  - eventDate : Timestamp
+  - location : String
+  - cost : Double
+  - registrationStartDate : Timestamp
+  - registrationEndDate : Timestamp
+  - maxEntrants : Integer
+  - numberOfWinners : Integer
+  - geolocationRequired : Boolean
+  - status : String
+  - waitingList : List<WaitingListEntry>
+  - decisions : List<Decision>
+  + addToWaitingList(entry: WaitingListEntry) : void
+  + setWaitingList(waitingList: List<WaitingListEntry>) : void
+  + setDecisions(decisions: List<Decision>) : void
+}
+
+class WaitingListEntry {
+  - entryId : String
+  - entrantId : String
+  - joinTimestamp : Timestamp
+  - invitedAt : Timestamp
+}
+
+class Decision {
+  - decisionId : String
+  - entrantId : String
+  - entryId : String
+  - status : String
+  - respondedAt : Timestamp
+  - updatedAt : Timestamp
+}
+
+class UserProfile {
+  - userId : String
+  - deviceId : String
+  - name : String
+  - email : String
+  - role : String
+  - geolocation : GeoPoint
+  - notificationOptOut : Boolean
+  - registeredEventIds : List<String>
+}
+
+class Users {
+  - id : String
+  - name : String
+  - email : String
+  - phone : String
+  - deviceId : String
+  - createdAt : Timestamp
+  - role : String
+  - registeredEventIds : List<String>
+}
+}
+
+package "Repository" {
+class EventRepository {
+  - db : FirebaseFirestore
+  + createEvent(event: Event) : Task<DocumentReference>
+  + getEventById(eventId: String) : Task<DocumentSnapshot>
+  + updateEvent(event: Event) : Task<Void>
+  + deleteEvent(eventId: String) : Task<Void>
+  + getAllEvents() : Task<QuerySnapshot>
+  + getEventsByOrganizer(organizerId: String) : Task<QuerySnapshot>
+  + getOpenEvents() : Task<QuerySnapshot>
+}
+
+class UserRepository {
+  - db : FirebaseFirestore
+  + createUser(user: UserProfile) : Task<Void>
+  + getUserById(userId: String) : Task<DocumentSnapshot>
+  + updateUser(user: UserProfile) : Task<Void>
+  + deleteUser(userId: String) : Task<Void>
+  + getUserByDeviceId(deviceId: String) : Task<QuerySnapshot>
+}
+
+class WaitingListRepository {
+  - db : FirebaseFirestore
+  + addToWaitingList(eventId: String, entry: WaitingListEntry) : Task<DocumentReference>
+  + getWaitingListForEvent(eventId: String) : Task<QuerySnapshot>
+  + getWaitingListEntry(eventId: String, entryId: String) : Task<DocumentSnapshot>
+  + checkUserInWaitingList(eventId: String, entrantId: String) : Task<QuerySnapshot>
+  + removeFromWaitingList(eventId: String, entryId: String) : Task<Void>
+  + updateWaitingListEntry(eventId: String, entryId: String, entry: WaitingListEntry) : Task<Void>
+  + getWaitingListEntriesByUser(entrantId: String) : Task<QuerySnapshot>
+}
+
+class DecisionRepository {
+  - db : FirebaseFirestore
+  + createDecision(eventId: String, decision: Decision) : Task<DocumentReference>
+  + getDecisionsForEvent(eventId: String) : Task<QuerySnapshot>
+  + getDecisionForUser(eventId: String, entrantId: String) : Task<QuerySnapshot>
+  + getDecisionById(eventId: String, decisionId: String) : Task<DocumentSnapshot>
+  + updateDecision(eventId: String, decisionId: String, decision: Decision) : Task<Void>
+  + deleteDecision(eventId: String, decisionId: String) : Task<Void>
+  + getDecisionsByUser(entrantId: String) : Task<QuerySnapshot>
+  + getDecisionsByStatus(eventId: String, status: String) : Task<QuerySnapshot>
+}
+}
+
+package "Service" {
+class EventService {
+  - eventRepository : EventRepository
+  - waitingListRepository : WaitingListRepository
+  - decisionRepository : DecisionRepository
+  - userRepository : UserRepository
+  + createEvent(event: Event) : Task<DocumentReference>
+  + getEventWithDetails(eventId: String) : Task<Event>
+  + joinWaitingList(eventId: String, entrantId: String) : Task<Map<String,String>>
+  + leaveWaitingList(eventId: String, entrantId: String, entryId: String, decisionId: String) : Task<Void>
+  + acceptWin(eventId: String, userId: String, decisionId: String) : Task<Void>
+  + declineWin(eventId: String, userId: String, decisionId: String) : Task<Void>
+  + drawLottery(eventId: String) : Task<Map<String,Object>>
+  + getEventRegistrations(eventId: String) : Task<Map<String,Object>>
+}
+
+class UserService {
+  - db : FirebaseFirestore
+  + createUser(user: Users) : Task<Void>
+  + getUserById(userId: String) : Task<DocumentSnapshot>
+}
+}
+
+package "UI / Core" {
+class MainActivity {
+  - binding : ActivityMainBinding
+  + onCreate(savedInstanceState: Bundle) : void
+  + onSupportNavigateUp() : boolean
+}
+
+class WelcomeFragment {
+  - binding : FragmentWelcomePageBinding
+  + onViewCreated(view: View, savedInstanceState: Bundle) : void
+}
+
+class LoginFragment {
+  - binding : FragmentLoginBinding
+  + onViewCreated(view: View, savedInstanceState: Bundle) : void
+  + routeByRole(user: FirebaseUser) : void
+}
+
+class CreateAccountFragment {
+  - binding : FragmentCreateAccountBinding
+  - selectedRole : String
+  + onViewCreated(view: View, savedInstanceState: Bundle) : void
+}
+
+class HomeFragment {
+  - binding : FragmentHomeBinding
+  + onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) : View
+  + onViewCreated(view: View, savedInstanceState: Bundle) : void
+}
+
+class HomeViewModel {
+  - mText : MutableLiveData<String>
+  + getText() : LiveData<String>
+}
+
+class DashboardFragment {
+  - binding : FragmentDashboardBinding
+  + onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) : View
+}
+
+class DashboardViewModel {
+  - mText : MutableLiveData<String>
+  + getText() : LiveData<String>
+}
+
+class NotificationsFragment {
+  - binding : FragmentProfileBinding
+  - userService : UserService
+  + onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle) : View
+  - loadUserProfile() : void
+  - populateProfileFields(user: Users) : void
+}
+
+class NotificationsViewModel {
+  - mText : MutableLiveData<String>
+  + getText() : LiveData<String>
+}
+}
+
+package "UI / Events" {
+class CreateEventFragment {
+  - binding : FragmentCreateEventBinding
+  - eventService : EventService
+  - auth : FirebaseAuth
+  - startDateCalendar : Calendar
+  - endDateCalendar : Calendar
+  - registrationDeadlineCalendar : Calendar
+  + onCreate(savedInstanceState: Bundle) : void
+  + onViewCreated(view: View, savedInstanceState: Bundle) : void
+  - setupDatePicker(editText: TextInputEditText, calendar: Calendar, title: String) : void
+  - createEvent() : void
+}
+
+class GlobalEventsFragment {
+  - binding : FragmentEventsBinding
+  - adapter : EventCardAdapter
+  - eventRepository : EventRepository
+  - allEvents : List<Event>
+  + onViewCreated(view: View, savedInstanceState: Bundle) : void
+  - setupSearch() : void
+  - performSearch() : void
+  - loadAllEvents() : void
+}
+
+class OrganizerEventsFragment {
+  - binding : FragmentEventsBinding
+  - adapter : EventCardAdapter
+  - eventRepository : EventRepository
+  - allEvents : List<Event>
+  + onViewCreated(view: View, savedInstanceState: Bundle) : void
+  - setupSearch() : void
+  - performSearch() : void
+  - loadOrganizerEvents() : void
+}
+
+class UserEventsFragment {
+  - binding : FragmentEventsBinding
+  - adapter : EventCardAdapter
+  - userRepository : UserRepository
+  - eventRepository : EventRepository
+  - allEvents : List<Event>
+  + onViewCreated(view: View, savedInstanceState: Bundle) : void
+  - setupSearch() : void
+  - performSearch() : void
+  - loadUserEvents() : void
+}
+
+class EventCardAdapter {
+  - events : List<Event>
+  - listener : OnEventClickListener
+  + setItems(items: List<Event>) : void
+  + onCreateViewHolder(parent: ViewGroup, viewType: int) : EventViewHolder
+  + onBindViewHolder(holder: EventViewHolder, position: int) : void
+  + getItemCount() : int
+}
+
+interface OnEventClickListener {
+  + onEventClick(event: Event) : void
+}
+}
+class Fragment <<AndroidX>>
+class AppCompatActivity <<AndroidX>>
+class ViewModel <<AndroidX>>
+class RecyclerViewAdapter <<AndroidX>>
+class FirebaseAuth <<Firebase>>
+class FirebaseUser <<Firebase>>
+class FirebaseFirestore <<Firebase>>
+
+' Force vertical layout with hidden relationships
+Event -[hidden]-> EventRepository
+EventRepository -[hidden]-> EventService
+EventService -[hidden]-> MainActivity
+MainActivity -[hidden]-> CreateEventFragment
+
+MainActivity --|> AppCompatActivity
+HomeFragment --|> Fragment
+DashboardFragment --|> Fragment
+NotificationsFragment --|> Fragment
+WelcomeFragment --|> Fragment
+LoginFragment --|> Fragment
+CreateAccountFragment --|> Fragment
+CreateEventFragment --|> Fragment
+GlobalEventsFragment --|> Fragment
+OrganizerEventsFragment --|> Fragment
+UserEventsFragment --|> Fragment
+EventCardAdapter --|> RecyclerViewAdapter
+HomeViewModel --|> ViewModel
+DashboardViewModel --|> ViewModel
+NotificationsViewModel --|> ViewModel
+
+Event "1" *-- "0..*" WaitingListEntry : waitingList
+Event "1" *-- "0..*" Decision : decisions
+Event ..> UserProfile : organizerId
+WaitingListEntry ..> UserProfile : entrantId
+Decision ..> WaitingListEntry : entryId
+Decision ..> UserProfile : entrantId
+UserProfile ..> Event : registeredEventIds
+Users ..> Event : registeredEventIds
+
+EventRepository *-- FirebaseFirestore
+UserRepository *-- FirebaseFirestore
+WaitingListRepository *-- FirebaseFirestore
+DecisionRepository *-- FirebaseFirestore
+UserService *-- FirebaseFirestore
+EventService *-- EventRepository
+EventService *-- WaitingListRepository
+EventService *-- DecisionRepository
+EventService *-- UserRepository
+EventService ..> Event
+EventService ..> WaitingListEntry
+EventService ..> Decision
+EventService ..> UserProfile
+
+CreateEventFragment *-- EventService
+CreateEventFragment ..> Event
+CreateEventFragment ..> FirebaseAuth
+
+GlobalEventsFragment *-- EventCardAdapter
+GlobalEventsFragment *-- EventRepository
+
+OrganizerEventsFragment *-- EventCardAdapter
+OrganizerEventsFragment *-- EventRepository
+OrganizerEventsFragment ..> FirebaseAuth
+
+UserEventsFragment *-- EventCardAdapter
+UserEventsFragment *-- UserRepository
+UserEventsFragment *-- EventRepository
+UserEventsFragment ..> FirebaseAuth
+
+EventCardAdapter o-- OnEventClickListener
+EventCardAdapter --> Event
+
+LoginFragment ..> FirebaseAuth
+LoginFragment *-- UserService
+
+CreateAccountFragment ..> FirebaseAuth
+CreateAccountFragment *-- UserService
+CreateAccountFragment ..> Users
+
+WelcomeFragment ..> FirebaseAuth
+
+NotificationsFragment *-- UserService
+NotificationsFragment ..> FirebaseAuth
+NotificationsFragment ..> Users
+
+HomeFragment ..> HomeViewModel
+DashboardFragment ..> DashboardViewModel
+NotificationsFragment ..> NotificationsViewModel
+
+@enduml
