@@ -66,26 +66,13 @@ public class EventService {
     }
 
     /**
-     * Constructor for testing
+     * Constructor for dependency injection (used in tests)
      */
     public EventService(
             @NonNull EventRepository eventRepository,
             @NonNull WaitingListRepository waitingListRepository,
             @NonNull DecisionRepository decisionRepository,
             @NonNull UserRepository userRepository) {
-        this.eventRepository = eventRepository;
-        this.waitingListRepository = waitingListRepository;
-        this.decisionRepository = decisionRepository;
-        this.userRepository = userRepository;
-    }
-
-    /**
-     * Constructor for dependency injection (used in tests)
-     */
-    public EventService(EventRepository eventRepository, 
-                       WaitingListRepository waitingListRepository,
-                       DecisionRepository decisionRepository,
-                       UserRepository userRepository) {
         this.eventRepository = eventRepository;
         this.waitingListRepository = waitingListRepository;
         this.decisionRepository = decisionRepository;
