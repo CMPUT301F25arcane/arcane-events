@@ -464,7 +464,7 @@ public class UserFragmentNavigationTest {
         // Ensure user is signed in before navigating to Profile
         ensureUserSignedIn();
         
-        // Start on Events
+        // Start on Events page first (where bottom nav is visible)
         navigateTo(R.id.navigation_home);
         waitForIdle();
         sleep(2000);
@@ -474,7 +474,6 @@ public class UserFragmentNavigationTest {
         onView(withId(R.id.navigation_dashboard)).perform(click());
         waitForIdle();
         sleep(2000);
-        waitForIdle();
         verifyDestination(R.id.navigation_dashboard, "Step 2: Should be on Scan");
         
         // Ensure user is still signed in before navigating to Profile
