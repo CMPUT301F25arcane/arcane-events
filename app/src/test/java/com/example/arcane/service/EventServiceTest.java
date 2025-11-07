@@ -19,6 +19,7 @@ import com.example.arcane.repository.WaitingListRepository;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import android.os.Looper;
@@ -145,9 +146,26 @@ public class EventServiceTest {
 
     @Test
     public void leaveWaitingList_removesEntryAndUpdatesUserProfile() throws Exception {
+        // Mock decision lookup - when decisionId is null, it queries for decision
+        QueryDocumentSnapshot decisionDoc = org.mockito.Mockito.mock(QueryDocumentSnapshot.class);
+        when(decisionDoc.getId()).thenReturn(DECISION_ID);
+        
+        QuerySnapshot decisionSnapshot = org.mockito.Mockito.mock(QuerySnapshot.class);
+        when(decisionSnapshot.isEmpty()).thenReturn(false);
+        when(decisionSnapshot.getDocuments()).thenReturn(Arrays.asList(decisionDoc));
+        
+        when(decisionRepository.getDecisionForUser(EVENT_ID, ENTRANT_ID))
+                .thenReturn(Tasks.forResult(decisionSnapshot));
+        
+        // Mock decision deletion
+        when(decisionRepository.deleteDecision(EVENT_ID, DECISION_ID))
+                .thenReturn(Tasks.forResult(null));
+        
+        // Mock waiting list removal
         when(waitingListRepository.removeFromWaitingList(EVENT_ID, ENTRY_ID))
                 .thenReturn(Tasks.forResult(null));
 
+        // Mock user profile
         UserProfile userProfile = new UserProfile();
         userProfile.setUserId(ENTRANT_ID);
         userProfile.setRegisteredEventIds(new ArrayList<>(Arrays.asList(EVENT_ID, "other")));
@@ -158,7 +176,8 @@ public class EventServiceTest {
         when(userRepository.getUserById(ENTRANT_ID)).thenReturn(Tasks.forResult(userSnapshot));
         when(userRepository.updateUser(any(UserProfile.class))).thenReturn(Tasks.forResult(null));
 
-        com.google.android.gms.tasks.Task<Void> task = subject.leaveWaitingList(EVENT_ID, ENTRANT_ID, ENTRY_ID);
+        // Call with null decisionId - it will be looked up
+        com.google.android.gms.tasks.Task<Void> task = subject.leaveWaitingList(EVENT_ID, ENTRANT_ID, ENTRY_ID, null);
         Shadows.shadowOf(Looper.getMainLooper()).idle();
 
         assertTrue(task.isComplete());
@@ -166,6 +185,9 @@ public class EventServiceTest {
         Void completion = task.getResult();
         assertNull(completion);
 
+        // Verify all operations were called
+        verify(decisionRepository).getDecisionForUser(EVENT_ID, ENTRANT_ID);
+        verify(decisionRepository).deleteDecision(EVENT_ID, DECISION_ID);
         verify(waitingListRepository).removeFromWaitingList(EVENT_ID, ENTRY_ID);
 
         ArgumentCaptor<UserProfile> profileCaptor = ArgumentCaptor.forClass(UserProfile.class);
