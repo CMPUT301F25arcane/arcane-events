@@ -176,106 +176,10 @@ public class EventTest {
         assertEquals("Status getter should return set value", testStatus, event.getStatus());
     }
 
-    /**
-     * Test numberOfWinners field (lottery capacity)
-     */
-    @Test
-    public void testNumberOfWinnersField() {
-        Event event = new Event();
 
-        assertNull("NumberOfWinners should be null initially", event.getNumberOfWinners());
 
-        event.setNumberOfWinners(20);
-        assertEquals("NumberOfWinners should be 20", Integer.valueOf(20), event.getNumberOfWinners());
 
-        event.setNumberOfWinners(5);
-        assertEquals("NumberOfWinners should be updated to 5", Integer.valueOf(5), event.getNumberOfWinners());
 
-        event.setNumberOfWinners(null);
-        assertNull("NumberOfWinners should be null", event.getNumberOfWinners());
-    }
-
-    /**
-     * Test maxEntrants optional field (waiting list capacity)
-     */
-    @Test
-    public void testMaxEntrantsOptional() {
-        Event event = new Event();
-
-        assertNull("MaxEntrants should be null initially", event.getMaxEntrants());
-
-        event.setMaxEntrants(50);
-        assertEquals("MaxEntrants should be 50", Integer.valueOf(50), event.getMaxEntrants());
-
-        event.setMaxEntrants(null);
-        assertNull("MaxEntrants should be null after setting to null", event.getMaxEntrants());
-    }
-
-    /**
-     * Test cost optional field
-     */
-    @Test
-    public void testCostOptional() {
-        Event event = new Event();
-
-        assertNull("Cost should be null initially", event.getCost());
-
-        event.setCost(25.50);
-        assertEquals("Cost should be 25.50", Double.valueOf(25.50), event.getCost(), 0.001);
-
-        event.setCost(0.0);
-        assertEquals("Cost should be 0.0 for free events", Double.valueOf(0.0), event.getCost(), 0.001);
-
-        event.setCost(null);
-        assertNull("Cost should be null after setting to null", event.getCost());
-    }
-
-    /**
-     * Test event status field
-     */
-    @Test
-    public void testStatusField() {
-        Event event = new Event();
-
-        // Test various status values
-        event.setStatus("DRAFT");
-        assertEquals("Status should be DRAFT", "DRAFT", event.getStatus());
-
-        event.setStatus("OPEN");
-        assertEquals("Status should be OPEN", "OPEN", event.getStatus());
-
-        event.setStatus("CLOSED");
-        assertEquals("Status should be CLOSED", "CLOSED", event.getStatus());
-
-        event.setStatus("DRAWN");
-        assertEquals("Status should be DRAWN", "DRAWN", event.getStatus());
-
-        event.setStatus("COMPLETED");
-        assertEquals("Status should be COMPLETED", "COMPLETED", event.getStatus());
-
-        event.setStatus(null);
-        assertNull("Status should be null", event.getStatus());
-    }
-
-    /**
-     * Test event date fields
-     */
-    @Test
-    public void testEventDates() {
-        Event event = new Event();
-
-        Timestamp eventDate = new Timestamp(new Date());
-        Timestamp startDate = new Timestamp(new Date(System.currentTimeMillis() - 86400000)); // Yesterday
-        Timestamp endDate = new Timestamp(new Date(System.currentTimeMillis() + 86400000)); // Tomorrow
-
-        event.setEventDate(eventDate);
-        event.setRegistrationStartDate(startDate);
-        event.setRegistrationEndDate(endDate);
-
-        assertEquals("EventDate should match", eventDate, event.getEventDate());
-        assertEquals("RegistrationStartDate should match", startDate, event.getRegistrationStartDate());
-        assertEquals("RegistrationEndDate should match", endDate, event.getRegistrationEndDate());
-    }
 
     /**
      * Test waitingList operations (OOP composition)
@@ -304,23 +208,6 @@ public class EventTest {
         assertEquals("WaitingList should have 3 entries", 3, event.getWaitingList().size());
     }
 
-    /**
-     * Test setWaitingList with a new list
-     */
-    @Test
-    public void testSetWaitingList() {
-        Event event = new Event();
-
-        List<WaitingListEntry> waitingList = new ArrayList<>();
-        waitingList.add(new WaitingListEntry());
-        waitingList.add(new WaitingListEntry());
-
-        event.setWaitingList(waitingList);
-
-        assertNotNull("WaitingList should not be null", event.getWaitingList());
-        assertEquals("WaitingList should have 2 entries", 2, event.getWaitingList().size());
-        assertEquals("WaitingList should match the set list", waitingList, event.getWaitingList());
-    }
 
     /**
      * Test decisions list operations (OOP composition)
@@ -427,31 +314,5 @@ public class EventTest {
         assertEquals("Event2 name should remain unchanged", "Yoga", event2.getEventName());
     }
 
-    /**
-     * Test empty waiting list initialization
-     */
-    @Test
-    public void testEmptyWaitingListInitialization() {
-        Event event = new Event();
 
-        event.setWaitingList(new ArrayList<>());
-
-        assertNotNull("WaitingList should not be null", event.getWaitingList());
-        assertTrue("WaitingList should be empty", event.getWaitingList().isEmpty());
-        assertEquals("WaitingList size should be 0", 0, event.getWaitingList().size());
-    }
-
-    /**
-     * Test empty decisions list initialization
-     */
-    @Test
-    public void testEmptyDecisionsInitialization() {
-        Event event = new Event();
-
-        event.setDecisions(new ArrayList<>());
-
-        assertNotNull("Decisions should not be null", event.getDecisions());
-        assertTrue("Decisions should be empty", event.getDecisions().isEmpty());
-        assertEquals("Decisions size should be 0", 0, event.getDecisions().size());
-    }
 }

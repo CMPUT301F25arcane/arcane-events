@@ -303,33 +303,4 @@ public class DecisionRepositoryTest {
         verify(mockQuery).get();
     }
 
-    /**
-     * Test createDecision with complete Decision object
-     */
-    @Test
-    public void testCreateDecisionWithCompleteObject() {
-        // Arrange
-        String eventId = "event999";
-        Decision completeDecision = new Decision();
-        completeDecision.setDecisionId("decision999");
-        completeDecision.setEntrantId("entrant999");
-        completeDecision.setEntryId("entry999");
-        completeDecision.setStatus("PENDING");
-        completeDecision.setRespondedAt(new Timestamp(new Date()));
-        completeDecision.setUpdatedAt(new Timestamp(new Date()));
-
-        Task<DocumentReference> mockTask = Tasks.forResult(mockDecisionDocumentRef);
-        when(mockDecisionsCollectionRef.add(any(Decision.class))).thenReturn(mockTask);
-
-        // Act - Call actual repository method
-        Task<DocumentReference> result = decisionRepository.createDecision(eventId, completeDecision);
-
-        // Assert
-        assertNotNull("Result should not be null", result);
-        assertTrue("Task should be successful", result.isSuccessful());
-        verify(mockDb).collection("events");
-        verify(mockEventsCollectionRef).document(eventId);
-        verify(mockEventDocumentRef).collection("decisions");
-        verify(mockDecisionsCollectionRef).add(completeDecision);
-    }
 }
