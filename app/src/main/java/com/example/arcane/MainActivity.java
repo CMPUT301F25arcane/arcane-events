@@ -41,7 +41,8 @@ public class MainActivity extends AppCompatActivity {
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             if (destination.getId() == R.id.navigation_welcome
                     || destination.getId() == R.id.navigation_login
-                    || destination.getId() == R.id.navigation_create_account) {
+                    || destination.getId() == R.id.navigation_create_account
+                    || destination.getId() == R.id.navigation_create_event) {
                 binding.navView.setVisibility(android.view.View.GONE);
             } else {
                 binding.navView.setVisibility(android.view.View.VISIBLE);
