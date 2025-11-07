@@ -12,8 +12,6 @@ import static org.junit.Assert.*;
 /**
  * Unit tests for UserProfile model class
  * Tests constructors, getters, setters, and field validations
- * Note: Geolocation and notification features are not implemented in the prototype,
- *       so tests focus on actually used fields: userId, deviceId, name, email, role, registeredEventIds
  */
 public class UserProfileTest {
 
