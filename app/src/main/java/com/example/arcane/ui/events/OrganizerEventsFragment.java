@@ -61,6 +61,9 @@ public class OrganizerEventsFragment extends Fragment {
         binding.eventsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.eventsRecyclerView.setAdapter(adapter);
 
+        // Hide status chips for organizers
+        adapter.setShowStatus(false);
+
         // Setup search functionality
         setupSearch();
 
