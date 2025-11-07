@@ -33,10 +33,18 @@ public class UserRepository {
     private final FirebaseFirestore db;
 
     /**
-     * Constructs a new UserRepository instance.
+     * Default constructor for production use. Delegates to the injectable
+     * constructor to simplify unit testing.
      */
     public UserRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor with dependency injection for testing
+     */
+    public UserRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**

@@ -33,10 +33,18 @@ public class WaitingListRepository {
     private final FirebaseFirestore db;
 
     /**
-     * Constructs a new WaitingListRepository instance.
+     * Default constructor for normal use. Delegates to the injectable
+     * constructor to make unit testing easier.
      */
     public WaitingListRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public WaitingListRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**
