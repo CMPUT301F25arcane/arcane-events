@@ -66,9 +66,8 @@ public class UserRepositoryTest {
         when(mockDb.collection("users")).thenReturn(mockCollectionRef);
         when(mockCollectionRef.document(anyString())).thenReturn(mockDocumentRef);
 
-        // Create UserRepository with mocked dependencies
-        // Note: We can't easily inject mockDb into UserRepository constructor
-        // For now, we'll test the logic assuming Firebase behavior
+        // Create UserRepository with mocked FirebaseFirestore (IoC)
+        userRepository = new UserRepository(mockDb);
     }
 
     /**
@@ -79,16 +78,16 @@ public class UserRepositoryTest {
         // Arrange
         Task<Void> mockTask = Tasks.forResult(null);
         when(mockDocumentRef.set(any(UserProfile.class))).thenReturn(mockTask);
-        when(mockDb.collection("users")).thenReturn(mockCollectionRef);
-        when(mockCollectionRef.document("user123")).thenReturn(mockDocumentRef);
 
-        // Act - Simulate what UserRepository.createUser() does
-        Task<Void> result = mockDocumentRef.set(testUser);
+        // Act - Call actual repository method
+        Task<Void> result = userRepository.createUser(testUser);
 
         // Assert
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
-        verify(mockDocumentRef, times(1)).set(testUser);
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).document("user123");
+        verify(mockDocumentRef).set(testUser);
     }
 
     /**
@@ -100,17 +99,17 @@ public class UserRepositoryTest {
         String userId = "user123";
         Task<DocumentSnapshot> mockTask = Tasks.forResult(mockDocumentSnapshot);
         when(mockDocumentRef.get()).thenReturn(mockTask);
-        when(mockDb.collection("users")).thenReturn(mockCollectionRef);
-        when(mockCollectionRef.document(userId)).thenReturn(mockDocumentRef);
 
-        // Act - Simulate what UserRepository.getUserById() does
-        Task<DocumentSnapshot> result = mockDocumentRef.get();
+        // Act - Call actual repository method
+        Task<DocumentSnapshot> result = userRepository.getUserById(userId);
 
         // Assert
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
         assertEquals("Result should contain document snapshot", mockDocumentSnapshot, result.getResult());
-        verify(mockDocumentRef, times(1)).get();
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).document(userId);
+        verify(mockDocumentRef).get();
     }
 
     /**
@@ -122,16 +121,16 @@ public class UserRepositoryTest {
         testUser.setName("Jane Doe Updated");
         Task<Void> mockTask = Tasks.forResult(null);
         when(mockDocumentRef.set(any(UserProfile.class))).thenReturn(mockTask);
-        when(mockDb.collection("users")).thenReturn(mockCollectionRef);
-        when(mockCollectionRef.document("user123")).thenReturn(mockDocumentRef);
 
-        // Act - Simulate what UserRepository.updateUser() does
-        Task<Void> result = mockDocumentRef.set(testUser);
+        // Act - Call actual repository method
+        Task<Void> result = userRepository.updateUser(testUser);
 
         // Assert
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
-        verify(mockDocumentRef, times(1)).set(testUser);
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).document("user123");
+        verify(mockDocumentRef).set(testUser);
     }
 
     /**
@@ -143,16 +142,16 @@ public class UserRepositoryTest {
         String userId = "user123";
         Task<Void> mockTask = Tasks.forResult(null);
         when(mockDocumentRef.delete()).thenReturn(mockTask);
-        when(mockDb.collection("users")).thenReturn(mockCollectionRef);
-        when(mockCollectionRef.document(userId)).thenReturn(mockDocumentRef);
 
-        // Act - Simulate what UserRepository.deleteUser() does
-        Task<Void> result = mockDocumentRef.delete();
+        // Act - Call actual repository method
+        Task<Void> result = userRepository.deleteUser(userId);
 
         // Assert
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
-        verify(mockDocumentRef, times(1)).delete();
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).document(userId);
+        verify(mockDocumentRef).delete();
     }
 
     /**
@@ -166,35 +165,17 @@ public class UserRepositoryTest {
         Task<QuerySnapshot> mockTask = Tasks.forResult(mockQuerySnapshot);
         when(mockCollectionRef.whereEqualTo("deviceId", deviceId)).thenReturn(mockQuery);
         when(mockQuery.get()).thenReturn(mockTask);
-        when(mockDb.collection("users")).thenReturn(mockCollectionRef);
 
-        // Act - Simulate what UserRepository.getUserByDeviceId() does
-        Query query = mockCollectionRef.whereEqualTo("deviceId", deviceId);
-        Task<QuerySnapshot> result = query.get();
+        // Act - Call actual repository method
+        Task<QuerySnapshot> result = userRepository.getUserByDeviceId(deviceId);
 
         // Assert
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
         assertEquals("Result should contain query snapshot", mockQuerySnapshot, result.getResult());
-        verify(mockCollectionRef, times(1)).whereEqualTo("deviceId", deviceId);
-        verify(mockQuery, times(1)).get();
-    }
-
-    /**
-     * Test createUser with null user - should handle gracefully
-     */
-    @Test
-    public void testCreateUserWithNull() {
-        // Arrange
-        Task<Void> mockTask = Tasks.forResult(null);
-        when(mockDocumentRef.set(null)).thenReturn(mockTask);
-
-        // Act
-        Task<Void> result = mockDocumentRef.set(null);
-
-        // Assert - Just verify the call was made
-        assertNotNull("Result should not be null", result);
-        verify(mockDocumentRef, times(1)).set(null);
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).whereEqualTo("deviceId", deviceId);
+        verify(mockQuery).get();
     }
 
     /**
@@ -206,15 +187,14 @@ public class UserRepositoryTest {
         String emptyId = "";
         Task<DocumentSnapshot> mockTask = Tasks.forResult(mockDocumentSnapshot);
         when(mockDocumentRef.get()).thenReturn(mockTask);
-        when(mockCollectionRef.document(emptyId)).thenReturn(mockDocumentRef);
 
-        // Act
-        DocumentReference docRef = mockCollectionRef.document(emptyId);
-        Task<DocumentSnapshot> result = docRef.get();
+        // Act - Call actual repository method with empty ID
+        Task<DocumentSnapshot> result = userRepository.getUserById(emptyId);
 
-        // Assert
+        // Assert - Repository should handle empty ID (Firestore allows it)
         assertNotNull("Result should not be null", result);
-        verify(mockCollectionRef, times(1)).document(emptyId);
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).document(emptyId);
     }
 
     /**
@@ -226,30 +206,16 @@ public class UserRepositoryTest {
         String userId = "nonexistent123";
         Task<Void> mockTask = Tasks.forResult(null);
         when(mockDocumentRef.delete()).thenReturn(mockTask);
-        when(mockCollectionRef.document(userId)).thenReturn(mockDocumentRef);
 
-        // Act
-        DocumentReference docRef = mockCollectionRef.document(userId);
-        Task<Void> result = docRef.delete();
+        // Act - Call actual repository method
+        Task<Void> result = userRepository.deleteUser(userId);
 
         // Assert - Delete should still succeed even if document doesn't exist
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
-        verify(mockDocumentRef, times(1)).delete();
-    }
-
-    /**
-     * Test that collection name is correct
-     */
-    @Test
-    public void testCollectionNameIsCorrect() {
-        // Act
-        when(mockDb.collection("users")).thenReturn(mockCollectionRef);
-        CollectionReference result = mockDb.collection("users");
-
-        // Assert
-        assertEquals("Should return mock collection reference", mockCollectionRef, result);
-        verify(mockDb, times(1)).collection("users");
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).document(userId);
+        verify(mockDocumentRef).delete();
     }
 
     /**
@@ -263,16 +229,17 @@ public class UserRepositoryTest {
         testUser.setRole("ORGANIZER");
 
         Task<Void> mockTask = Tasks.forResult(null);
-        when(mockDocumentRef.set(testUser)).thenReturn(mockTask);
-        when(mockCollectionRef.document("user123")).thenReturn(mockDocumentRef);
+        when(mockDocumentRef.set(any(UserProfile.class))).thenReturn(mockTask);
 
-        // Act
-        Task<Void> result = mockDocumentRef.set(testUser);
+        // Act - Call actual repository method
+        Task<Void> result = userRepository.updateUser(testUser);
 
         // Assert
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
-        verify(mockDocumentRef, times(1)).set(testUser);
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).document("user123");
+        verify(mockDocumentRef).set(testUser);
 
         // Verify the user object has updated values
         assertEquals("Name should be updated", "Updated Name", testUser.getName());
@@ -292,14 +259,16 @@ public class UserRepositoryTest {
         when(mockCollectionRef.whereEqualTo("deviceId", deviceId)).thenReturn(mockQuery);
         when(mockQuery.get()).thenReturn(mockTask);
 
-        // Act
-        Query query = mockCollectionRef.whereEqualTo("deviceId", deviceId);
-        Task<QuerySnapshot> result = query.get();
+        // Act - Call actual repository method
+        Task<QuerySnapshot> result = userRepository.getUserByDeviceId(deviceId);
 
         // Assert
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
         assertTrue("Query result should be empty", result.getResult().isEmpty());
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).whereEqualTo("deviceId", deviceId);
+        verify(mockQuery).get();
     }
 
     /**
@@ -316,15 +285,16 @@ public class UserRepositoryTest {
         completeUser.setRole("ADMIN");
 
         Task<Void> mockTask = Tasks.forResult(null);
-        when(mockDocumentRef.set(completeUser)).thenReturn(mockTask);
-        when(mockCollectionRef.document("user999")).thenReturn(mockDocumentRef);
+        when(mockDocumentRef.set(any(UserProfile.class))).thenReturn(mockTask);
 
-        // Act
-        Task<Void> result = mockDocumentRef.set(completeUser);
+        // Act - Call actual repository method
+        Task<Void> result = userRepository.createUser(completeUser);
 
         // Assert
         assertNotNull("Result should not be null", result);
         assertTrue("Task should be successful", result.isSuccessful());
-        verify(mockDocumentRef, times(1)).set(completeUser);
+        verify(mockDb).collection("users");
+        verify(mockCollectionRef).document("user999");
+        verify(mockDocumentRef).set(completeUser);
     }
 }
