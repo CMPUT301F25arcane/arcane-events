@@ -40,6 +40,19 @@ public class EventService {
     }
 
     /**
+     * Constructor for dependency injection (used in tests)
+     */
+    public EventService(EventRepository eventRepository, 
+                       WaitingListRepository waitingListRepository,
+                       DecisionRepository decisionRepository,
+                       UserRepository userRepository) {
+        this.eventRepository = eventRepository;
+        this.waitingListRepository = waitingListRepository;
+        this.decisionRepository = decisionRepository;
+        this.userRepository = userRepository;
+    }
+
+    /**
      * Create a new event
      */
     public Task<DocumentReference> createEvent(Event event) {
