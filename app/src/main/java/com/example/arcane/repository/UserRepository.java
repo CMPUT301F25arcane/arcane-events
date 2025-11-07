@@ -13,8 +13,18 @@ public class UserRepository {
     private static final String COLLECTION_NAME = "users";
     private final FirebaseFirestore db;
 
+    /**
+     * Default constructor for production use
+     */
     public UserRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor with dependency injection for testing
+     */
+    public UserRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**

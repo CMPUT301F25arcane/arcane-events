@@ -11,8 +11,18 @@ public class WaitingListRepository {
     private static final String SUBCOLLECTION_NAME = "waitingList";
     private final FirebaseFirestore db;
 
+    /**
+     * Default constructor for normal use
+     */
     public WaitingListRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public WaitingListRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**

@@ -12,8 +12,18 @@ public class EventRepository {
     private static final String COLLECTION_NAME = "events";
     private final FirebaseFirestore db;
 
+    /**
+     * Default constructor for normal use
+     */
     public EventRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Constructor for testing
+     */
+    public EventRepository(FirebaseFirestore db) {
+        this.db = db;
     }
 
     /**
