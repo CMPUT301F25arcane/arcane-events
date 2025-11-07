@@ -2,11 +2,14 @@ package com.example.arcane;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
+import static androidx.test.espresso.action.ViewActions.swipeUp;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -45,6 +48,9 @@ public class UserFragmentNavigationTest {
 
     @BeforeClass
     public static void setUpClass() {
+        // Disable animations for Espresso tests
+        disableAnimations();
+        
         // Sign out user before any activity is created
         try {
             FirebaseAuth.getInstance().signOut();
@@ -75,6 +81,25 @@ public class UserFragmentNavigationTest {
             }
         } catch (Exception e) {
             // If sign-in fails, tests will handle it
+        }
+    }
+    
+    /**
+     * Disables animations on the device to prevent Espresso click failures.
+     * This must be called before any activity is created.
+     */
+    private static void disableAnimations() {
+        try {
+            // Use InstrumentationRegistry to execute shell commands
+            android.app.UiAutomation uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+            
+            // Disable all animation scales
+            uiAutomation.executeShellCommand("settings put global animator_duration_scale 0");
+            uiAutomation.executeShellCommand("settings put global transition_animation_scale 0");
+            uiAutomation.executeShellCommand("settings put global window_animation_scale 0");
+        } catch (Exception e) {
+            // If this fails, animations might still be enabled
+            // The test might still work, but clicks might be slower
         }
     }
     
@@ -504,6 +529,126 @@ public class UserFragmentNavigationTest {
         sleep(2000);
         waitForIdle();
         verifyDestination(R.id.navigation_home, "Step 4: Should be back on Events");
+    }
+
+    /**
+     * Test: Logout functionality from Profile fragment
+     */
+    @Test
+    public void testLogout() {
+        // Ensure user is signed in before navigating to Profile
+        ensureUserSignedIn();
+        waitForIdle();
+        sleep(2000);
+        
+        // Verify user is actually signed in before proceeding
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            // User not signed in, try to sign in again with more time
+            signInTestUser();
+            sleep(5000); // Give more time for sign-in to complete
+            currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            
+            // If still null, try one more time with even more wait
+            if (currentUser == null) {
+                signInTestUser();
+                sleep(5000);
+                currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            }
+        }
+        
+        // Set user role in SharedPreferences to verify it gets cleared
+        Context context = ApplicationProvider.getApplicationContext();
+        SharedPreferences prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        prefs.edit().putString("user_role", "USER").commit();
+        
+        // Verify role is set
+        String roleBeforeLogout = prefs.getString("user_role", null);
+        assertNotNull("User role should be set before logout", roleBeforeLogout);
+        
+        // Start on Events page first (where bottom nav is visible)
+        navigateTo(R.id.navigation_home);
+        waitForIdle();
+        sleep(2000);
+        verifyDestination(R.id.navigation_home, "Should start on Events page");
+        
+        // Navigate to Profile using bottom nav
+        onView(withId(R.id.navigation_notifications)).perform(click());
+        waitForIdle();
+        sleep(3000); // Give time for Profile fragment to load
+        waitForIdle();
+        sleep(1000); // Extra wait to ensure navigation has settled
+        verifyDestination(R.id.navigation_notifications, "Should be on Profile page");
+        
+        // Wait for logout button to be available
+        waitForIdle();
+        sleep(3000); // Give more time for fragment to fully load
+        
+        // Scroll to the bottom of the screen to make the logout button visible
+        // The logout button is at the bottom of the ScrollView
+        try {
+            // Scroll to the logout button - this will scroll the ScrollView to make it visible
+            onView(withId(R.id.logoutButton)).perform(scrollTo());
+            waitForIdle();
+            sleep(1000);
+        } catch (Exception e) {
+            // If scrollTo fails, try alternative: scroll using swipe gestures
+            try {
+                // Find the ScrollView and scroll down multiple times to reach bottom
+                onView(withId(android.R.id.content)).perform(swipeUp());
+                waitForIdle();
+                sleep(500);
+                onView(withId(android.R.id.content)).perform(swipeUp());
+                waitForIdle();
+                sleep(500);
+                onView(withId(android.R.id.content)).perform(swipeUp());
+                waitForIdle();
+                sleep(1000);
+                // Try scrolling to button again after manual scroll
+                onView(withId(R.id.logoutButton)).perform(scrollTo());
+                waitForIdle();
+                sleep(1000);
+            } catch (Exception e2) {
+                // If that also fails, continue anyway - button might already be visible
+            }
+        }
+        
+        // Ensure logout button is displayed before clicking
+        waitForIdle();
+        sleep(1000);
+        try {
+            onView(withId(R.id.logoutButton)).check(matches(isDisplayed()));
+        } catch (Exception e) {
+            // Button might not be visible yet, try scrolling one more time
+            sleep(1000);
+            try {
+                onView(withId(R.id.logoutButton)).perform(scrollTo());
+                waitForIdle();
+                sleep(1000);
+            } catch (Exception e2) {
+                // Continue anyway
+            }
+        }
+        
+        waitForIdle();
+        sleep(1000);
+        
+        // Click logout button - scrollTo ensures it's visible, then click
+        onView(withId(R.id.logoutButton)).perform(scrollTo(), click());
+        waitForIdle();
+        sleep(2000); // Give time for logout to complete and navigation to happen
+        waitForIdle();
+        
+        // Verify navigation to welcome screen
+        verifyDestination(R.id.navigation_welcome, "Should navigate to welcome screen after logout");
+        
+        // Verify user is signed out
+        FirebaseUser userAfterLogout = FirebaseAuth.getInstance().getCurrentUser();
+        assertNull("User should be signed out after logout", userAfterLogout);
+        
+        // Verify SharedPreferences are cleared (user_role should be removed)
+        String roleAfterLogout = prefs.getString("user_role", null);
+        assertNull("User role should be cleared from SharedPreferences after logout", roleAfterLogout);
     }
 
     // Helper methods
