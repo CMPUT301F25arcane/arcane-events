@@ -48,6 +48,16 @@
         tools:layout="@layout/fragment_create_event" />
 
     <fragment
+        android:id="@+id/navigation_edit_event"
+        android:name="com.example.arcane.ui.createevent.EditEventFragment"
+        android:label="Edit Event"
+        tools:layout="@layout/fragment_create_event">
+        <argument
+            android:name="eventId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
         android:id="@+id/navigation_qr_code"
         android:name="com.example.arcane.ui.qrcode.QrCodeFragment"
         android:label="Event QR Code"

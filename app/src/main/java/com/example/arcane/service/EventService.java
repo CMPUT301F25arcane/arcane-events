@@ -89,6 +89,16 @@ public class EventService {
     }
 
     /**
+     * Updates an existing event.
+     *
+     * @param event the event with updated fields
+     * @return task completing when save succeeds
+     */
+    public Task<Void> updateEvent(Event event) {
+        return eventRepository.updateEvent(event);
+    }
+
+    /**
      * Partially updates an event document with provided fields.
      *
      * @param eventId the event ID

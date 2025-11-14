@@ -11,6 +11,15 @@
         android:layout_height="wrap_content"
         android:paddingBottom="100dp">
 
+        <View
+            android:id="@+id/statusSpacerCreate"
+            android:layout_width="0dp"
+            android:layout_height="24dp"
+            android:background="@android:color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
         <!-- Top App Bar -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/create_event_toolbar"
@@ -21,7 +30,7 @@
             app:titleTextColor="?attr/colorOnPrimary"
             app:navigationIcon="?attr/homeAsUpIndicator"
             app:navigationIconTint="?attr/colorOnPrimary"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/statusSpacerCreate"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
