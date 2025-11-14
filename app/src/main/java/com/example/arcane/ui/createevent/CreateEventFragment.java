@@ -3,6 +3,7 @@ package com.example.arcane.ui.createevent;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,11 +23,15 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.zxing.BarcodeFormat;
+import com.example.arcane.util.QrCodeGenerator;
+import com.google.zxing.WriterException;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * CreateEventFragment.java
@@ -45,6 +50,9 @@ import java.util.Locale;
  * @version 1.0
  */
 public class CreateEventFragment extends Fragment {
+    private static final int QR_CODE_SIZE_PX = 512;
+    private static final int QR_STYLE_VERSION = 1;
+    private static final String TAG = "CreateEventFragment";
 
     private FragmentCreateEventBinding binding;
     private EventService eventService;
@@ -284,6 +292,7 @@ public class CreateEventFragment extends Fragment {
 
         eventService.createEvent(event)
                 .addOnSuccessListener(documentReference -> {
+                    generateAndPersistQrCode(documentReference.getId());
                     Toast.makeText(requireContext(), "Event created successfully!", Toast.LENGTH_SHORT).show();
                     NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
                     navController.navigateUp();
@@ -303,5 +312,41 @@ public class CreateEventFragment extends Fragment {
         super.onDestroyView();
         binding = null;
     }
+
+    private void generateAndPersistQrCode(@Nullable String eventId) {
+        if (eventId == null || eventId.isEmpty()) {
+            return;
+        }
+        String qrData = "EVENT:" + eventId;
+        String base64;
+        try {
+            base64 = QrCodeGenerator.generateBase64(qrData, QR_CODE_SIZE_PX);
+        } catch (WriterException e) {
+            Log.e(TAG, "QR generation failed", e);
+            if (isAdded()) {
+                Toast.makeText(requireContext(), "Failed to generate QR code", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+        if (base64 == null) {
+            if (isAdded()) {
+                Toast.makeText(requireContext(), "Failed to generate QR code", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("qrCodeImageBase64", base64);
+        updates.put("qrStyleVersion", QR_STYLE_VERSION);
+
+        eventService.updateEventFields(eventId, updates)
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to save QR code", e);
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "QR code couldn't be saved: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
 }
 

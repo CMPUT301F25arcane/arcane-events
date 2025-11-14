@@ -50,6 +50,8 @@ public class Event {
     private Integer numberOfWinners;
     private Boolean geolocationRequired;
     private String status;  // "DRAFT", "OPEN", "CLOSED", "DRAWN", "COMPLETED"
+    private String qrCodeImageBase64;
+    private Integer qrStyleVersion;
 
     // OOP Composition - Lists for in-memory operations (NOT saved to Firestore)
     private List<WaitingListEntry> waitingList;  // Loaded separately from subcollection
@@ -398,6 +400,22 @@ public class Event {
      */
     public void setGeolocationRequired(Boolean geolocationRequired) {
         this.geolocationRequired = geolocationRequired;
+    }
+
+    public String getQrCodeImageBase64() {
+        return qrCodeImageBase64;
+    }
+
+    public void setQrCodeImageBase64(String qrCodeImageBase64) {
+        this.qrCodeImageBase64 = qrCodeImageBase64;
+    }
+
+    public Integer getQrStyleVersion() {
+        return qrStyleVersion;
+    }
+
+    public void setQrStyleVersion(Integer qrStyleVersion) {
+        this.qrStyleVersion = qrStyleVersion;
     }
 
     /**

@@ -105,9 +105,6 @@ public class EventDetailFragment extends Fragment {
         userService = new UserService();
         eventService = new com.example.arcane.service.EventService();
 
-        // Setup back button
-        binding.backButton.setOnClickListener(v -> navigateBack());
-
         // Add bottom padding to account for navbar
         setupBottomPadding();
 
@@ -345,10 +342,7 @@ public class EventDetailFragment extends Fragment {
         }
 
         // Setup organizer buttons
-        binding.qrCodeButton.setOnClickListener(v -> {
-            // TODO: Show QR code functionality
-            Toast.makeText(requireContext(), "QR Code - Coming soon", Toast.LENGTH_SHORT).show();
-        });
+        binding.qrCodeButton.setOnClickListener(v -> navigateToQrPage());
 
         binding.entrantsButton.setOnClickListener(v -> {
             if (eventId != null) {
@@ -367,9 +361,26 @@ public class EventDetailFragment extends Fragment {
         });
 
         binding.editEventButton.setOnClickListener(v -> {
-            // TODO: Navigate to edit event
-            Toast.makeText(requireContext(), "Edit Event - Coming soon", Toast.LENGTH_SHORT).show();
+            if (eventId == null) {
+                Toast.makeText(requireContext(), "Event not loaded yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+            Bundle args = new Bundle();
+            args.putString("eventId", eventId);
+            navController.navigate(R.id.navigation_edit_event, args);
         });
+    }
+
+    private void navigateToQrPage() {
+        if (eventId == null) {
+            Toast.makeText(requireContext(), "Event not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+        Bundle args = new Bundle();
+        args.putString("eventId", eventId);
+        navController.navigate(R.id.navigation_qr_code, args);
     }
 
     private void loadOrganizerName() {
