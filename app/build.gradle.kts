@@ -56,6 +56,8 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-auth")
+    implementation(libs.zxing.android.embedded)
+    implementation(libs.zxing.core)
 }
 
 // JavaDoc task configuration

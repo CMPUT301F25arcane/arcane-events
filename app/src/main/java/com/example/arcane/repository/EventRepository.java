@@ -18,6 +18,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import java.util.Map;
 import java.util.List;
 
 /**
@@ -99,6 +100,17 @@ public class EventRepository {
      */
     public Task<Void> updateEvent(Event event) {
         return db.collection(COLLECTION_NAME).document(event.getEventId()).set(event);
+    }
+
+    /**
+     * Partially updates an event with the provided fields.
+     *
+     * @param eventId the event ID to update
+     * @param updates the map of fields to update
+     * @return a Task that completes when the event is updated
+     */
+    public Task<Void> updateEventFields(String eventId, Map<String, Object> updates) {
+        return db.collection(COLLECTION_NAME).document(eventId).update(updates);
     }
 
     /**

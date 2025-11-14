@@ -12,6 +12,7 @@
  */
 package com.example.arcane.ui.login;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -149,6 +150,7 @@ public class CreateAccountFragment extends Fragment {
                                 .addOnCompleteListener(writeTask -> {
                                     binding.btnSubmit.setEnabled(true);
                                     if (writeTask.isSuccessful()) {
+                                        cacheUserRole(selectedRole);
                                         NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
                                         navController.navigate(R.id.navigation_home);
                                     } else {
@@ -167,6 +169,17 @@ public class CreateAccountFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    private void cacheUserRole(@Nullable String role) {
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        if (role != null) {
+            editor.putString("user_role", role);
+        } else {
+            editor.remove("user_role");
+        }
+        editor.apply();
     }
 }
 

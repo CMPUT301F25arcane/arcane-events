@@ -89,6 +89,17 @@ public class EventService {
     }
 
     /**
+     * Partially updates an event document with provided fields.
+     *
+     * @param eventId the event ID
+     * @param updates the map of fields to update
+     * @return a Task that completes when the event is updated
+     */
+    public Task<Void> updateEventFields(String eventId, Map<String, Object> updates) {
+        return eventRepository.updateEventFields(eventId, updates);
+    }
+
+    /**
      * Gets an event with all waiting list entries and decisions loaded (OOP composition).
      *
      * @param eventId the event ID to retrieve
