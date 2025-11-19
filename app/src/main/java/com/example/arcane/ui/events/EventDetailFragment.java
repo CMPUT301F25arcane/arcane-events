@@ -18,7 +18,11 @@
 package com.example.arcane.ui.events;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -228,10 +232,37 @@ public class EventDetailFragment extends Fragment {
         }
 
         // Load organizer name (for both user and organizer views)
-        loadOrganizerName();
+        // Note: Organizer name field removed from UI to match design
+        // loadOrganizerName();
 
-        // Image - placeholder for now
-        // TODO: Load image from posterImageUrl when Glide/Picasso is integrated
+        // Load event image
+        loadEventImage();
+    }
+
+    private void loadEventImage() {
+        if (currentEvent == null || currentEvent.getPosterImageUrl() == null || currentEvent.getPosterImageUrl().isEmpty()) {
+            return;
+        }
+
+        try {
+            // Check if it's a base64 string (starts with data:image or is a long base64 string)
+            String imageData = currentEvent.getPosterImageUrl();
+            
+            // If it's a base64 string, decode and display it
+            if (!imageData.startsWith("http://") && !imageData.startsWith("https://")) {
+                byte[] imageBytes = android.util.Base64.decode(imageData, android.util.Base64.NO_WRAP);
+                android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                if (bitmap != null) {
+                    binding.headerImage.setImageBitmap(bitmap);
+                }
+            } else {
+                // If it's a URL, you could use Glide/Picasso here
+                // For now, we'll just handle base64
+            }
+        } catch (Exception e) {
+            // If decoding fails, image might be in a different format
+            // Silently fail - image will just not display
+        }
     }
 
     private void loadUserStatus() {
@@ -328,18 +359,15 @@ public class EventDetailFragment extends Fragment {
         binding.joinButtonContainer.setVisibility(View.GONE);
 
         // Show organizer-specific UI
-        binding.lotteryStatusText.setVisibility(View.VISIBLE);
+        // Lottery status and send notification are in the same horizontal layout
+        binding.lotteryStatusAndNotificationContainer.setVisibility(View.VISIBLE);
         binding.editEventButton.setVisibility(View.VISIBLE);
-        binding.sendNotificationContainer.setVisibility(View.VISIBLE);
+        // Hide standalone send notification container (we use the one in the horizontal layout)
+        binding.sendNotificationContainer.setVisibility(View.GONE);
         binding.organizerActionButtons.setVisibility(View.VISIBLE);
 
-        // Set lottery status (simplified - can be enhanced based on event state)
-        if (currentEvent != null) {
-            // Check if lottery has been drawn (can enhance later based on waiting list/decisions)
-            binding.lotteryStatusText.setText("Lottery Open");
-        } else {
-            binding.lotteryStatusText.setText("Lottery Open");
-        }
+        // Set lottery status with colored text
+        updateLotteryStatusDisplay();
 
         // Setup organizer buttons
         binding.qrCodeButton.setOnClickListener(v -> navigateToQrPage());
@@ -355,11 +383,20 @@ public class EventDetailFragment extends Fragment {
 
         binding.drawLotteryButton.setOnClickListener(v -> handleDrawLottery());
 
+        // Send notification button (in horizontal layout with lottery status)
         binding.sendNotificationButton.setOnClickListener(v -> {
             // TODO: Send notification functionality
             Toast.makeText(requireContext(), "Send Notification - Coming soon", Toast.LENGTH_SHORT).show();
         });
 
+        // Also handle standalone send notification button if it exists
+        if (binding.sendNotificationButtonStandalone != null) {
+            binding.sendNotificationButtonStandalone.setOnClickListener(v -> {
+                Toast.makeText(requireContext(), "Send Notification - Coming soon", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        // Edit button is now a MaterialCardView, set click listener
         binding.editEventButton.setOnClickListener(v -> {
             if (eventId == null) {
                 Toast.makeText(requireContext(), "Event not loaded yet", Toast.LENGTH_SHORT).show();
@@ -383,40 +420,41 @@ public class EventDetailFragment extends Fragment {
         navController.navigate(R.id.navigation_qr_code, args);
     }
 
-    private void loadOrganizerName() {
-        if (currentEvent == null || currentEvent.getOrganizerId() == null) {
-            return;
-        }
-
-        userService.getUserById(currentEvent.getOrganizerId())
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        // Try UserProfile first
-                        com.example.arcane.model.UserProfile userProfile = documentSnapshot.toObject(com.example.arcane.model.UserProfile.class);
-                        if (userProfile != null && userProfile.getName() != null) {
-                            binding.organizerNameText.setText(userProfile.getName());
-                            return;
-                        }
-                        
-                        // Try Users model if UserProfile didn't work
-                        com.example.arcane.model.Users users = documentSnapshot.toObject(com.example.arcane.model.Users.class);
-                        if (users != null && users.getName() != null) {
-                            binding.organizerNameText.setText(users.getName());
-                            return;
-                        }
-                    }
-                    // Fallback to "Organizer" if name not found
-                    binding.organizerNameText.setText("Organizer");
-                })
-                .addOnFailureListener(e -> {
-                    // On failure, show default text
-                    binding.organizerNameText.setText("Organizer");
-                });
-    }
+    // Organizer name field removed from UI to match design
+    // private void loadOrganizerName() {
+    //     if (currentEvent == null || currentEvent.getOrganizerId() == null) {
+    //         return;
+    //     }
+    //
+    //     userService.getUserById(currentEvent.getOrganizerId())
+    //             .addOnSuccessListener(documentSnapshot -> {
+    //                 if (documentSnapshot.exists()) {
+    //                     // Try UserProfile first
+    //                     com.example.arcane.model.UserProfile userProfile = documentSnapshot.toObject(com.example.arcane.model.UserProfile.class);
+    //                     if (userProfile != null && userProfile.getName() != null) {
+    //                         binding.organizerNameText.setText(userProfile.getName());
+    //                         return;
+    //                     }
+    //
+    //                     // Try Users model if UserProfile didn't work
+    //                     com.example.arcane.model.Users users = documentSnapshot.toObject(com.example.arcane.model.Users.class);
+    //                     if (users != null && users.getName() != null) {
+    //                         binding.organizerNameText.setText(users.getName());
+    //                         return;
+    //                     }
+    //                 }
+    //                 // Fallback to "Organizer" if name not found
+    //                 binding.organizerNameText.setText("Organizer");
+    //             })
+    //             .addOnFailureListener(e -> {
+    //                 // On failure, show default text
+    //                 binding.organizerNameText.setText("Organizer");
+    //             });
+    // }
 
     private void setupUserView() {
         // Hide organizer-specific UI
-        binding.lotteryStatusText.setVisibility(View.GONE);
+        binding.lotteryStatusAndNotificationContainer.setVisibility(View.GONE);
         binding.editEventButton.setVisibility(View.GONE);
         binding.sendNotificationContainer.setVisibility(View.GONE);
         binding.organizerActionButtons.setVisibility(View.GONE);
@@ -680,6 +718,42 @@ public class EventDetailFragment extends Fragment {
                     binding.drawLotteryButton.setEnabled(true);
                     binding.drawLotteryButton.setText("Draw Lottery!");
                 });
+    }
+
+    /**
+     * Updates the lottery status display with colored text.
+     * Shows "Lottery Status : Open" (green) or "Lottery Status : Closed" (red).
+     */
+    private void updateLotteryStatusDisplay() {
+        if (currentEvent == null) {
+            return;
+        }
+
+        String eventStatus = currentEvent.getStatus();
+        boolean isOpen = "OPEN".equals(eventStatus);
+        
+        String statusText = isOpen ? "Open" : "Closed";
+        int statusColor = isOpen 
+            ? getResources().getColor(com.example.arcane.R.color.lottery_status_open, null)
+            : getResources().getColor(com.example.arcane.R.color.lottery_status_closed, null);
+
+        // Create the full text: "Lottery Status : Open" or "Lottery Status : Closed"
+        String fullText = "Lottery Status : " + statusText;
+        SpannableString spannableString = new SpannableString(fullText);
+        
+        // Find the start position of the status word (after "Lottery Status : ")
+        int statusStart = "Lottery Status : ".length();
+        int statusEnd = fullText.length();
+        
+        // Apply color to the status word only
+        spannableString.setSpan(
+            new ForegroundColorSpan(statusColor),
+            statusStart,
+            statusEnd,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        
+        binding.lotteryStatusText.setText(spannableString);
     }
 
     private void navigateBack() {

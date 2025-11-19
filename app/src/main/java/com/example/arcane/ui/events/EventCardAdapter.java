@@ -13,6 +13,9 @@
  */
 package com.example.arcane.ui.events;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -131,8 +134,39 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
             if (listener != null) listener.onEventClick(event);
         });
 
-        // Placeholder image; integrate Glide/Picasso later if needed
-        holder.imageView.setImageResource(android.R.drawable.ic_menu_gallery);
+        // Load event image from base64 or show placeholder
+        loadEventImage(holder.imageView, event);
+    }
+
+    /**
+     * Loads and displays the event image from base64 string or shows placeholder.
+     *
+     * @param imageView the ImageView to display the image in
+     * @param event the event containing the image data
+     */
+    private void loadEventImage(@NonNull ImageView imageView, @NonNull Event event) {
+        String imageData = event.getPosterImageUrl();
+        
+        if (imageData != null && !imageData.isEmpty()) {
+            // Check if it's a base64 string (not a URL)
+            if (!imageData.startsWith("http://") && !imageData.startsWith("https://")) {
+                try {
+                    byte[] imageBytes = Base64.decode(imageData, Base64.NO_WRAP);
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                    if (bitmap != null) {
+                        imageView.setImageBitmap(bitmap);
+                        return;
+                    }
+                } catch (Exception e) {
+                    // If decoding fails, fall through to placeholder
+                }
+            }
+            // If it's a URL, you could use Glide/Picasso here
+            // For now, fall through to placeholder
+        }
+        
+        // Show placeholder if no image or loading failed
+        imageView.setImageResource(android.R.drawable.ic_menu_gallery);
     }
 
     private void setStatusChip(@NonNull Chip chip, @NonNull String decisionStatus) {

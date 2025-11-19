@@ -2,13 +2,19 @@ package com.example.arcane.ui.createevent;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -27,6 +33,8 @@ import com.google.zxing.BarcodeFormat;
 import com.example.arcane.util.QrCodeGenerator;
 import com.google.zxing.WriterException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -42,8 +50,6 @@ import java.util.Map;
  * Uses ViewBinding for type-safe view access and implements form validation.
  * 
  * Outstanding Issues:
- * - Description field is not included in the form (set to empty string)
- * - Poster image upload is not implemented (set to null)
  * - Geolocation is set to null even when geolocationRequired is true
  * - Date validation could be more robust (e.g., check if dates are in the past)
  * 
@@ -61,6 +67,8 @@ public class CreateEventFragment extends Fragment {
     private Calendar endDateCalendar;
     private Calendar registrationDeadlineCalendar;
     private SimpleDateFormat dateTimeFormat;
+    private String selectedImageBase64;
+    private ActivityResultLauncher<String> imagePickerLauncher;
 
     /**
      * Called when the fragment is created.
@@ -76,6 +84,12 @@ public class CreateEventFragment extends Fragment {
         endDateCalendar = Calendar.getInstance();
         registrationDeadlineCalendar = Calendar.getInstance();
         dateTimeFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
+        
+        // Register image picker launcher
+        imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            this::handleImageSelection
+        );
     }
 
     /**
@@ -113,6 +127,9 @@ public class CreateEventFragment extends Fragment {
         setupDatePicker(binding.startDateInput, startDateCalendar, "Start Date & Time");
         setupDatePicker(binding.endDateInput, endDateCalendar, "End Date & Time");
         setupDatePicker(binding.registrationDeadlineInput, registrationDeadlineCalendar, "Registration Deadline");
+
+        // Setup image upload
+        binding.imageUploadCard.setOnClickListener(v -> openImagePicker());
 
         // Setup create event button
         binding.createEventButton.setOnClickListener(v -> createEvent());
@@ -171,6 +188,8 @@ public class CreateEventFragment extends Fragment {
                 binding.eventNameInput.getText().toString().trim() : "";
         String locationName = binding.locationInput.getText() != null ? 
                 binding.locationInput.getText().toString().trim() : "";
+        String description = binding.descriptionInput.getText() != null ? 
+                binding.descriptionInput.getText().toString().trim() : "";
 
         if (eventName.isEmpty()) {
             binding.eventNameInputLayout.setError("Event name is required");
@@ -262,7 +281,7 @@ public class CreateEventFragment extends Fragment {
         // Create Event object
         Event event = new Event();
         event.setEventName(eventName);
-        event.setDescription(""); // Description field not in form, can be added later
+        event.setDescription(description); // Description from form input
         event.setOrganizerId(organizerId);
         event.setLocation(locationName);
         event.setCost(cost);
@@ -284,7 +303,7 @@ public class CreateEventFragment extends Fragment {
         
         // Optional fields
         event.setGeolocation(null); // Can be set later if geolocation is enabled
-        event.setPosterImageUrl(null); // Can be set later when image upload is implemented
+        event.setPosterImageUrl(selectedImageBase64); // Set the base64 encoded image
 
         // Save to Firebase using EventService (per docs architecture)
         binding.createEventButton.setEnabled(false);
@@ -311,6 +330,95 @@ public class CreateEventFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    /**
+     * Opens the image picker to select a photo from the gallery.
+     */
+    private void openImagePicker() {
+        imagePickerLauncher.launch("image/*");
+    }
+
+    /**
+     * Handles the selected image from the gallery.
+     *
+     * @param imageUri the URI of the selected image
+     */
+    private void handleImageSelection(@Nullable Uri imageUri) {
+        if (imageUri == null) {
+            return;
+        }
+
+        try {
+            // Read the image from URI
+            InputStream inputStream = requireContext().getContentResolver().openInputStream(imageUri);
+            if (inputStream == null) {
+                Toast.makeText(requireContext(), "Failed to read image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Decode the image
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            inputStream.close();
+
+            if (bitmap == null) {
+                Toast.makeText(requireContext(), "Failed to decode image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Resize image to reduce size (max 1024px on longest side)
+            bitmap = resizeImage(bitmap, 1024);
+
+            // Convert to base64
+            selectedImageBase64 = bitmapToBase64(bitmap);
+
+            // Display the image
+            binding.uploadedImage.setImageBitmap(bitmap);
+            binding.uploadedImage.setVisibility(View.VISIBLE);
+            binding.uploadIcon.setVisibility(View.GONE);
+            binding.uploadText.setVisibility(View.GONE);
+
+            Toast.makeText(requireContext(), "Image selected successfully", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling image selection", e);
+            Toast.makeText(requireContext(), "Error loading image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Resizes a bitmap to a maximum dimension while maintaining aspect ratio.
+     *
+     * @param bitmap the original bitmap
+     * @param maxDimension the maximum width or height
+     * @return the resized bitmap
+     */
+    private Bitmap resizeImage(Bitmap bitmap, int maxDimension) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        if (width <= maxDimension && height <= maxDimension) {
+            return bitmap;
+        }
+
+        float scale = Math.min((float) maxDimension / width, (float) maxDimension / height);
+        int newWidth = Math.round(width * scale);
+        int newHeight = Math.round(height * scale);
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+    }
+
+    /**
+     * Converts a bitmap to a base64 encoded string.
+     *
+     * @param bitmap the bitmap to convert
+     * @return the base64 encoded string
+     */
+    private String bitmapToBase64(Bitmap bitmap) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        // Use JPEG format with 85% quality to reduce file size
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream);
+        byte[] imageBytes = outputStream.toByteArray();
+        return Base64.encodeToString(imageBytes, Base64.NO_WRAP);
     }
 
     private void generateAndPersistQrCode(@Nullable String eventId) {
