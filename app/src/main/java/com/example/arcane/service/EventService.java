@@ -600,5 +600,54 @@ public class EventService {
                     return result;
                 });
     }
+
+    /**
+     * Sends notifications to entrants with specified statuses for an event.
+     *
+     * @param eventId the event ID
+     * @param statuses list of statuses to send notifications for
+     * @param title the notification title
+     * @param message the notification message
+     * @return a Task that completes with a map containing notification results
+     */
+    public Task<Map<String, Object>> sendNotificationsToEntrants(String eventId, List<String> statuses, String title, String message) {
+        if (statuses == null || statuses.isEmpty()) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("status", "error");
+            result.put("message", "No statuses selected");
+            return com.google.android.gms.tasks.Tasks.forResult(result);
+        }
+
+        List<Task<Map<String, Object>>> statusTasks = new ArrayList<>();
+        for (String status : statuses) {
+            Task<Map<String, Object>> statusTask = notificationService.sendNotificationsToEntrantsByStatus(eventId, status, title, message);
+            statusTasks.add(statusTask);
+        }
+
+        return com.google.android.gms.tasks.Tasks.whenAll(statusTasks)
+                .continueWith(allTasks -> {
+                    int totalSent = 0;
+                    Map<String, Integer> statusCounts = new HashMap<>();
+                    
+                    for (int i = 0; i < statusTasks.size(); i++) {
+                        Task<Map<String, Object>> task = statusTasks.get(i);
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            Map<String, Object> result = task.getResult();
+                            Integer count = (Integer) result.get("count");
+                            if (count != null) {
+                                totalSent += count;
+                                statusCounts.put(statuses.get(i), count);
+                            }
+                        }
+                    }
+
+                    Map<String, Object> finalResult = new HashMap<>();
+                    finalResult.put("status", "success");
+                    finalResult.put("totalSent", totalSent);
+                    finalResult.put("statusCounts", statusCounts);
+                    finalResult.put("message", "Sent " + totalSent + " notifications");
+                    return finalResult;
+                });
+    }
 }
 
