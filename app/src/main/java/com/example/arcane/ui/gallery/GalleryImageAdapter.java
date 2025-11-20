@@ -44,16 +44,11 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
     /**
      * Sets the list of events to display.
      *
-     * @param items the list of events with poster images
+     * @param items the list of events with poster images (already filtered)
      */
     public void setItems(@NonNull List<Event> items) {
         events.clear();
-        // Only add events that have poster images
-        for (Event event : items) {
-            if (event.getPosterImageUrl() != null && !event.getPosterImageUrl().isEmpty()) {
-                events.add(event);
-            }
-        }
+        events.addAll(items);
         notifyDataSetChanged();
     }
 
@@ -82,9 +77,6 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
     public void onBindViewHolder(@NonNull GalleryImageViewHolder holder, int position) {
         Event event = events.get(position);
         loadEventImage(holder.imageView, event);
-        
-        // Hide options button for now (can be implemented later if needed)
-        holder.optionsButton.setVisibility(View.GONE);
     }
 
     /**
@@ -102,12 +94,10 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
      */
     static class GalleryImageViewHolder extends RecyclerView.ViewHolder {
         final ImageView imageView;
-        final View optionsButton;
 
         GalleryImageViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.gallery_image_thumbnail);
-            optionsButton = itemView.findViewById(R.id.image_options_button);
         }
     }
 

@@ -305,10 +305,10 @@ public class MainActivity extends AppCompatActivity {
         }
         
         if (galleryButton != null) {
-            galleryButton.setOnClickListener(v -> {
-                NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
-                navController.navigate(R.id.navigation_browse_images);
-            });
+            galleryButton.setOnClickListener(v -> 
+                Navigation.findNavController(this, R.id.nav_host_fragment_activity_main)
+                    .navigate(R.id.navigation_browse_images)
+            );
         }
         
         if (usersButton != null) {

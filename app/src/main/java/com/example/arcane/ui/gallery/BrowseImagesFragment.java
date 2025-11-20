@@ -79,10 +79,9 @@ public class BrowseImagesFragment extends Fragment {
         binding.imagesRecyclerView.setAdapter(adapter);
 
         // Setup toolbar back button
-        binding.browseImagesToolbar.setNavigationOnClickListener(v -> {
-            androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireView());
-            navController.navigateUp();
-        });
+        binding.browseImagesToolbar.setNavigationOnClickListener(v -> 
+            androidx.navigation.Navigation.findNavController(requireView()).navigateUp()
+        );
 
         // Load all events with poster images
         loadAllEventImages();
