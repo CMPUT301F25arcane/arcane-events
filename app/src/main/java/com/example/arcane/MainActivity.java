@@ -295,11 +295,19 @@ public class MainActivity extends AppCompatActivity {
         
         // Set up button click listeners
         android.widget.ImageButton notificationsButton = customView.findViewById(R.id.admin_notifications_button);
+        android.widget.ImageButton galleryButton = customView.findViewById(R.id.admin_gallery_button);
         android.widget.ImageButton usersButton = customView.findViewById(R.id.admin_users_button);
         
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
                 // TODO: Handle notifications button click
+            });
+        }
+        
+        if (galleryButton != null) {
+            galleryButton.setOnClickListener(v -> {
+                NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
+                navController.navigate(R.id.navigation_browse_images);
             });
         }
         

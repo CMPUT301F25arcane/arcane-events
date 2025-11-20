@@ -93,4 +93,10 @@
             app:argType="string" />
     </fragment>
 
+    <fragment
+        android:id="@+id/navigation_browse_images"
+        android:name="com.example.arcane.ui.gallery.BrowseImagesFragment"
+        android:label="Gallery"
+        tools:layout="@layout/fragment_browse_images" />
+
 </navigation>
