@@ -17,6 +17,7 @@
  */
 package com.example.arcane.ui.events;
 
+import android.app.AlertDialog;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,6 +37,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.example.arcane.R;
+import com.example.arcane.databinding.DialogSendNotificationBinding;
 import com.example.arcane.databinding.FragmentEventDetailBinding;
 import com.example.arcane.model.Decision;
 import com.example.arcane.model.Event;
@@ -48,7 +51,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -384,16 +389,11 @@ public class EventDetailFragment extends Fragment {
         binding.drawLotteryButton.setOnClickListener(v -> handleDrawLottery());
 
         // Send notification button (in horizontal layout with lottery status)
-        binding.sendNotificationButton.setOnClickListener(v -> {
-            // TODO: Send notification functionality
-            Toast.makeText(requireContext(), "Send Notification - Coming soon", Toast.LENGTH_SHORT).show();
-        });
+        binding.sendNotificationButton.setOnClickListener(v -> showSendNotificationDialog());
 
         // Also handle standalone send notification button if it exists
         if (binding.sendNotificationButtonStandalone != null) {
-            binding.sendNotificationButtonStandalone.setOnClickListener(v -> {
-                Toast.makeText(requireContext(), "Send Notification - Coming soon", Toast.LENGTH_SHORT).show();
-            });
+            binding.sendNotificationButtonStandalone.setOnClickListener(v -> showSendNotificationDialog());
         }
 
         // Edit button is now a MaterialCardView, set click listener
@@ -717,6 +717,74 @@ public class EventDetailFragment extends Fragment {
                     Toast.makeText(requireContext(), "Error drawing lottery: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     binding.drawLotteryButton.setEnabled(true);
                     binding.drawLotteryButton.setText("Draw Lottery!");
+                });
+    }
+
+    private void showSendNotificationDialog() {
+        if (eventId == null || currentEvent == null) {
+            Toast.makeText(requireContext(), "Event not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        DialogSendNotificationBinding dialogBinding = DialogSendNotificationBinding.inflate(getLayoutInflater());
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogBinding.getRoot())
+                .create();
+
+        dialogBinding.buttonReset.setOnClickListener(v -> {
+            dialogBinding.checkboxInvited.setChecked(false);
+            dialogBinding.checkboxCancelled.setChecked(false);
+            dialogBinding.checkboxEnrolled.setChecked(false);
+            dialogBinding.checkboxLost.setChecked(false);
+        });
+
+        dialogBinding.buttonOk.setOnClickListener(v -> {
+            List<String> selectedStatuses = new ArrayList<>();
+            if (dialogBinding.checkboxInvited.isChecked()) {
+                selectedStatuses.add("INVITED");
+            }
+            if (dialogBinding.checkboxEnrolled.isChecked()) {
+                selectedStatuses.add("ACCEPTED");
+            }
+            if (dialogBinding.checkboxLost.isChecked()) {
+                selectedStatuses.add("LOST");
+            }
+            if (dialogBinding.checkboxCancelled.isChecked()) {
+                selectedStatuses.add("CANCELLED");
+            }
+
+            if (selectedStatuses.isEmpty()) {
+                Toast.makeText(requireContext(), "Please select at least one group", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dialog.dismiss();
+            sendNotificationsToSelectedGroups(selectedStatuses);
+        });
+
+        dialog.show();
+    }
+
+    private void sendNotificationsToSelectedGroups(List<String> statuses) {
+        if (eventId == null || currentEvent == null) {
+            return;
+        }
+
+        String eventName = currentEvent.getEventName();
+        String title = "Update for " + eventName;
+        String message = "You have an update regarding " + eventName + ".";
+
+        eventService.sendNotificationsToEntrants(eventId, statuses, title, message)
+                .addOnSuccessListener(result -> {
+                    Integer totalSent = (Integer) result.get("totalSent");
+                    if (totalSent != null && totalSent > 0) {
+                        Toast.makeText(requireContext(), "Sent " + totalSent + " notifications", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(requireContext(), "No notifications sent", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to send notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
