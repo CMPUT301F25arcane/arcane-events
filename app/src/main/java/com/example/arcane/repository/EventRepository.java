@@ -17,6 +17,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -194,8 +195,7 @@ public class EventRepository {
         for (String userId : userIds) {
             // Use arrayRemove to remove the eventId from registeredEventIds
             DocumentReference userRef = db.collection("users").document(userId);
-            batch.update(userRef, "registeredEventIds", 
-                com.google.firebase.firestore.FieldValue.arrayRemove(eventId));
+            batch.update(userRef, "registeredEventIds", FieldValue.arrayRemove(eventId));
             batchCount++;
             
             // Commit batch when reaching limit
