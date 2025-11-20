@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dark overlay -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#CC000000" />
+        </shape>
+    </item>
+    
+    <!-- Circular transparent area -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+    
+    <!-- Grid lines (will be drawn programmatically if needed) -->
+</layer-list>
+

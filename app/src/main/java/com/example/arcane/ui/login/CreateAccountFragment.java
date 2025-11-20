@@ -12,15 +12,22 @@
  */
 package com.example.arcane.ui.login;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 import android.util.Log;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -38,6 +45,7 @@ import com.google.firebase.FirebaseNetworkException;
 import com.example.arcane.service.UserService;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Create account screen fragment.
@@ -50,6 +58,9 @@ public class CreateAccountFragment extends Fragment {
 
     private FragmentCreateAccountBinding binding;
     private String selectedRole = "USER"; // default
+    private ActivityResultLauncher<String> imagePickerLauncher;
+    private ActivityResultLauncher<Intent> cropActivityLauncher;
+    private String selectedProfilePictureBase64;
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -63,6 +74,49 @@ public class CreateAccountFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentCreateAccountBinding.inflate(inflater, container, false);
+        
+        // Register image picker launcher
+        imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            this::handleImageSelection
+        );
+
+        // Register crop activity launcher
+        cropActivityLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (!isAdded() || getActivity() == null) {
+                    return;
+                }
+                
+                if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                    try {
+                        String base64 = result.getData().getStringExtra("croppedImageBase64");
+                        if (base64 != null && !base64.isEmpty()) {
+                            byte[] imageBytes = Base64.decode(base64, Base64.NO_WRAP);
+                            if (imageBytes != null && imageBytes.length > 0) {
+                                Bitmap croppedBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                                if (croppedBitmap != null) {
+                                    handleCroppedImage(croppedBitmap);
+                                } else {
+                                    Toast.makeText(requireContext(), "Failed to decode image", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        }
+                    } catch (OutOfMemoryError e) {
+                        android.util.Log.e("CreateAccountFragment", "Out of memory loading cropped image", e);
+                        Toast.makeText(requireContext(), "Image too large. Please try again.", Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        android.util.Log.e("CreateAccountFragment", "Error loading cropped image", e);
+                        Toast.makeText(requireContext(), "Error loading cropped image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        );
+
+        // Profile picture click to upload
+        binding.profilePictureCard.setOnClickListener(v -> openImagePicker());
+        
         return binding.getRoot();
     }
 
@@ -144,6 +198,11 @@ public class CreateAccountFragment extends Fragment {
                         profile.setRole(selectedRole);
                         List<String> empty = new ArrayList<>();
                         profile.setRegisteredEventIds(empty);
+                        
+                        // Set profile picture if selected
+                        if (selectedProfilePictureBase64 != null && !selectedProfilePictureBase64.isEmpty()) {
+                            profile.setProfilePictureUrl(selectedProfilePictureBase64);
+                        }
 
                         new UserService()
                                 .createUser(profile)
@@ -169,6 +228,82 @@ public class CreateAccountFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    /**
+     * Opens the image picker to select a profile picture.
+     */
+    private void openImagePicker() {
+        imagePickerLauncher.launch("image/*");
+    }
+
+    /**
+     * Handles the selected image from the gallery.
+     *
+     * @param imageUri the URI of the selected image
+     */
+    private void handleImageSelection(Uri imageUri) {
+        if (imageUri == null) {
+            return;
+        }
+
+        // Open circular crop activity
+        Intent cropIntent = new Intent(requireContext(), com.example.arcane.ui.profile.CircularCropActivity.class);
+        cropIntent.putExtra("imageUri", imageUri);
+        cropActivityLauncher.launch(cropIntent);
+    }
+
+    /**
+     * Handles the cropped image from the crop activity.
+     *
+     * @param croppedBitmap the cropped bitmap
+     */
+    private void handleCroppedImage(Bitmap croppedBitmap) {
+        // Resize to reasonable size (512x512 for profile picture)
+        Bitmap resizedBitmap = resizeBitmap(croppedBitmap, 512);
+        
+        // Convert to base64
+        selectedProfilePictureBase64 = bitmapToBase64(resizedBitmap);
+        
+        // Display the image
+        binding.imgProfile.setImageBitmap(resizedBitmap);
+        
+        Toast.makeText(requireContext(), "Profile picture selected", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Resizes a bitmap to a maximum dimension while maintaining aspect ratio.
+     *
+     * @param bitmap the original bitmap
+     * @param maxDimension the maximum width or height
+     * @return the resized bitmap
+     */
+    private Bitmap resizeBitmap(Bitmap bitmap, int maxDimension) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        if (width <= maxDimension && height <= maxDimension) {
+            return bitmap;
+        }
+
+        float scale = Math.min((float) maxDimension / width, (float) maxDimension / height);
+        int newWidth = Math.round(width * scale);
+        int newHeight = Math.round(height * scale);
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+    }
+
+    /**
+     * Converts a bitmap to a base64 encoded string.
+     *
+     * @param bitmap the bitmap to convert
+     * @return the base64 encoded string
+     */
+    private String bitmapToBase64(Bitmap bitmap) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream);
+        byte[] imageBytes = outputStream.toByteArray();
+        return Base64.encodeToString(imageBytes, Base64.NO_WRAP);
     }
 
     private void cacheUserRole(@Nullable String role) {

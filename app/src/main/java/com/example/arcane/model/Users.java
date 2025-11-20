@@ -37,6 +37,7 @@ public class Users {
     private Timestamp createdAt;
     private String role;       // e.g., "USER" or "ORGANISER"
     private List<String> registeredEventIds; // workaround array for My Events
+    private String profilePictureUrl; // Base64 encoded profile picture
 
     /**
      * Required no-arg constructor for Firestore deserialization.
@@ -177,5 +178,19 @@ public class Users {
      * @param registeredEventIds the list of registered event IDs to set
      */
     public void setRegisteredEventIds(List<String> registeredEventIds) { this.registeredEventIds = registeredEventIds; }
+
+    /**
+     * Gets the profile picture URL (Base64 encoded).
+     *
+     * @return the profile picture URL, or null if not set
+     */
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+
+    /**
+     * Sets the profile picture URL (Base64 encoded).
+     *
+     * @param profilePictureUrl the profile picture URL to set (nullable)
+     */
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
 }
 
