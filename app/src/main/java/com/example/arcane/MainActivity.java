@@ -107,14 +107,16 @@ public class MainActivity extends AppCompatActivity {
             if (destination.getId() == R.id.navigation_welcome
                     || destination.getId() == R.id.navigation_create_event
                     || destination.getId() == R.id.navigation_edit_event
-                    || destination.getId() == R.id.navigation_qr_code) {
+                    || destination.getId() == R.id.navigation_qr_code
+                    || destination.getId() == R.id.navigation_browse_images) {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
                 // Remove top padding to eliminate gap
                 if (destination.getId() == R.id.navigation_create_event
                         || destination.getId() == R.id.navigation_edit_event
-                        || destination.getId() == R.id.navigation_qr_code) {
+                        || destination.getId() == R.id.navigation_qr_code
+                        || destination.getId() == R.id.navigation_browse_images) {
                     binding.container.setPadding(
                         binding.container.getPaddingLeft(),
                         0,
@@ -130,7 +132,8 @@ public class MainActivity extends AppCompatActivity {
                 if (destination.getId() != R.id.navigation_welcome
                         && destination.getId() != R.id.navigation_create_event
                         && destination.getId() != R.id.navigation_edit_event
-                        && destination.getId() != R.id.navigation_qr_code) {
+                        && destination.getId() != R.id.navigation_qr_code
+                        && destination.getId() != R.id.navigation_browse_images) {
                     android.util.TypedValue tv = new android.util.TypedValue();
                     if (getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
                         int actionBarSize = android.util.TypedValue.complexToDimensionPixelSize(
