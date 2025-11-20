@@ -99,4 +99,10 @@
         android:label="Gallery"
         tools:layout="@layout/fragment_browse_images" />
 
+    <fragment
+        android:id="@+id/navigation_all_users"
+        android:name="com.example.arcane.ui.users.AllUsersFragment"
+        android:label="All Users"
+        tools:layout="@layout/fragment_all_users" />
+
 </navigation>
