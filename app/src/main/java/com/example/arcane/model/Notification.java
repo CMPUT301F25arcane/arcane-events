@@ -24,5 +24,15 @@ import com.google.firebase.firestore.DocumentId;
  * @version 1.0
  */
 public class Notification {
+    @DocumentId
+    private String notificationId;
+
+    private String userId;
+    private String eventId;
+    private String type;  // "INVITED", "LOST"
+    private String title;
+    private String message;
+    private Timestamp timestamp;
+    private Boolean read;
 }
 
