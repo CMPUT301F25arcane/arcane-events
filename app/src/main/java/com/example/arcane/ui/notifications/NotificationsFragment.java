@@ -31,12 +31,20 @@ import androidx.navigation.Navigation;
 
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentProfileBinding;
+import com.example.arcane.model.Notification;
 import com.example.arcane.model.Users;
 import com.example.arcane.repository.UserRepository;
+import com.example.arcane.service.NotificationService;
 import com.example.arcane.service.UserService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 /**
  * Notifications/Profile screen fragment.
@@ -50,6 +58,7 @@ public class NotificationsFragment extends Fragment {
     private FragmentProfileBinding binding;
     private UserService userService;
     private UserRepository userRepository;
+    private NotificationService notificationService;
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -69,6 +78,7 @@ public class NotificationsFragment extends Fragment {
 
         userService = new UserService();
         userRepository = new UserRepository();
+        notificationService = new NotificationService();
 
         // Logout button functionality
         binding.logoutButton.setOnClickListener(v -> {
@@ -93,6 +103,7 @@ public class NotificationsFragment extends Fragment {
         // Load user profile data after view is created and fragment is attached
         // This ensures the fragment is properly attached before checking for user
         loadUserProfile();
+        loadNotifications();
     }
 
     /**
@@ -225,36 +236,151 @@ public class NotificationsFragment extends Fragment {
             binding.editPhone.setText(user.getPhone());
         }
         
-        // Set notification toggle state
+        // Set notification toggle state without triggering listener
         Boolean notificationOptOut = user.getNotificationOptOut();
         boolean notificationsEnabled = notificationOptOut == null || !notificationOptOut;
+        binding.toggleNotifications.setOnCheckedChangeListener(null);
         binding.toggleNotifications.setChecked(notificationsEnabled);
+        binding.toggleNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateNotificationPreference(!isChecked);
+        });
     }
 
     private void updateNotificationPreference(boolean optOut) {
+        if (binding == null || !isAdded() || getContext() == null) {
+            return;
+        }
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+
+        android.content.Context context = getContext();
+        String userId = currentUser.getUid();
+        userRepository.getUserById(userId)
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!isAdded() || binding == null || context == null) {
+                        return;
+                    }
+                    if (documentSnapshot.exists()) {
+                        Users user = documentSnapshot.toObject(Users.class);
+                        if (user != null) {
+                            user.setId(documentSnapshot.getId());
+                            user.setNotificationOptOut(optOut);
+                            userRepository.updateUser(user)
+                                    .addOnFailureListener(e -> {
+                                        if (isAdded() && binding != null && context != null) {
+                                            Toast.makeText(context, "Failed to update notification preference", Toast.LENGTH_SHORT).show();
+                                            binding.toggleNotifications.setOnCheckedChangeListener(null);
+                                            binding.toggleNotifications.setChecked(!optOut);
+                                            binding.toggleNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                                                updateNotificationPreference(!isChecked);
+                                            });
+                                        }
+                                    });
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (isAdded() && binding != null && context != null) {
+                        Toast.makeText(context, "Failed to load user profile", Toast.LENGTH_SHORT).show();
+                        binding.toggleNotifications.setOnCheckedChangeListener(null);
+                        binding.toggleNotifications.setChecked(!optOut);
+                        binding.toggleNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                            updateNotificationPreference(!isChecked);
+                        });
+                    }
+                });
+    }
+
+    private void loadNotifications() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             return;
         }
 
         String userId = currentUser.getUid();
-        userRepository.getUserById(userId)
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        Users user = documentSnapshot.toObject(Users.class);
-                        if (user != null) {
-                            user.setNotificationOptOut(optOut);
-                            userRepository.updateUser(user)
-                                    .addOnFailureListener(e -> {
-                                        Toast.makeText(requireContext(), "Failed to update notification preference", Toast.LENGTH_SHORT).show();
-                                        binding.toggleNotifications.setChecked(!optOut);
-                                    });
-                        }
-                    }
+        notificationService.getUserNotifications(userId)
+                .addOnSuccessListener(querySnapshot -> {
+                    displayNotifications(querySnapshot);
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Failed to load user profile", Toast.LENGTH_SHORT).show();
-                    binding.toggleNotifications.setChecked(!optOut);
+                    // Silently fail as really, notifications are optional
+                });
+    }
+
+    private void displayNotifications(QuerySnapshot querySnapshot) {
+        if (binding == null || !isAdded()) {
+            return;
+        }
+
+        LinearLayout notificationsContainer = binding.getRoot().findViewById(R.id.notifications_container);
+        if (notificationsContainer == null) {
+            // Container doesn't exist yet, skip displaying notifications for now
+            return;
+        }
+
+        notificationsContainer.removeAllViews();
+
+        final LinearLayout finalContainer = notificationsContainer;
+
+        if (querySnapshot.isEmpty()) {
+            return;
+        }
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
+
+        for (QueryDocumentSnapshot doc : querySnapshot) {
+            Notification notification = doc.toObject(Notification.class);
+            notification.setNotificationId(doc.getId());
+
+            View notificationView = LayoutInflater.from(requireContext())
+                    .inflate(R.layout.layout_notification_banner, finalContainer, false);
+
+            android.widget.TextView titleView = notificationView.findViewById(R.id.notification_title);
+            android.widget.TextView messageView = notificationView.findViewById(R.id.notification_message);
+            android.widget.TextView timestampView = notificationView.findViewById(R.id.notification_timestamp);
+            android.widget.ImageButton closeButton = notificationView.findViewById(R.id.notification_close);
+
+            titleView.setText(notification.getTitle());
+            messageView.setText(notification.getMessage());
+            
+            if (notification.getTimestamp() != null) {
+                timestampView.setText(dateFormat.format(notification.getTimestamp().toDate()));
+            }
+
+            notificationView.setOnClickListener(v -> {
+                if (!Boolean.TRUE.equals(notification.getRead())) {
+                    markNotificationAsRead(notification);
+                }
+            });
+
+            closeButton.setOnClickListener(v -> {
+                markNotificationAsRead(notification);
+                finalContainer.removeView(notificationView);
+            });
+
+            if ("INVITED".equals(notification.getType())) {
+                notificationView.setBackgroundColor(getResources().getColor(R.color.status_won_bg, null));
+            } else if ("LOST".equals(notification.getType())) {
+                notificationView.setBackgroundColor(getResources().getColor(R.color.status_lost_bg, null));
+            }
+
+            finalContainer.addView(notificationView);
+        }
+    }
+
+    private void markNotificationAsRead(Notification notification) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || notification.getNotificationId() == null) {
+            return;
+        }
+
+        String userId = currentUser.getUid();
+        notificationService.markNotificationRead(userId, notification.getNotificationId())
+                .addOnSuccessListener(aVoid -> {
+                    notification.setRead(true);
                 });
     }
 

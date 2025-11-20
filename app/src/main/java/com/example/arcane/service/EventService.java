@@ -56,13 +56,14 @@ public class EventService {
     private final WaitingListRepository waitingListRepository;
     private final DecisionRepository decisionRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
 
     /**
      * Constructs a new EventService instance.
      */
     public EventService() {
-        this(new EventRepository(), new WaitingListRepository(), new DecisionRepository(), new UserRepository());
+        this(new EventRepository(), new WaitingListRepository(), new DecisionRepository(), new UserRepository(), new NotificationService());
     }
 
     /**
@@ -71,11 +72,13 @@ public class EventService {
     public EventService(EventRepository eventRepository, 
                        WaitingListRepository waitingListRepository,
                        DecisionRepository decisionRepository,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       NotificationService notificationService) {
         this.eventRepository = eventRepository;
         this.waitingListRepository = waitingListRepository;
         this.decisionRepository = decisionRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -413,6 +416,7 @@ public class EventService {
                     }
 
                     int numberOfWinners = event.getNumberOfWinners();
+                    String eventName = event.getEventName();
 
                     // Get all PENDING decisions for this event
                     return decisionRepository.getDecisionsByStatus(eventId, "PENDING")
@@ -478,19 +482,55 @@ public class EventService {
 
                                 // Execute batch
                                 return batch.commit()
-                                        .continueWith(batchTask -> {
-                                            Map<String, Object> result = new HashMap<>();
-                                            if (batchTask.isSuccessful()) {
-                                                result.put("status", "success");
-                                                result.put("winnersCount", winners.size());
-                                                result.put("losersCount", losers.size());
-                                                result.put("message", "Lottery drawn successfully");
-                                            } else {
-                                                result.put("status", "error");
-                                                result.put("message", "Failed to update decisions: " + 
+                                        .continueWithTask(batchTask -> {
+                                            if (!batchTask.isSuccessful()) {
+                                                Map<String, Object> errorResult = new HashMap<>();
+                                                errorResult.put("status", "error");
+                                                errorResult.put("message", "Failed to update decisions: " + 
                                                     (batchTask.getException() != null ? batchTask.getException().getMessage() : "Unknown error"));
+                                                return com.google.android.gms.tasks.Tasks.forResult(errorResult);
                                             }
-                                            return result;
+
+                                            // Create notifications for winners
+                                            List<Task<DocumentReference>> winnerNotificationTasks = new ArrayList<>();
+                                            for (Decision winner : winners) {
+                                                Task<DocumentReference> notificationTask = notificationService.sendNotification(
+                                                        winner.getEntrantId(),
+                                                        eventId,
+                                                        "INVITED",
+                                                        "You won the lottery!",
+                                                        "Congratulations! You have been selected for " + eventName + ". Please accept or decline your invitation."
+                                                );
+                                                winnerNotificationTasks.add(notificationTask);
+                                            }
+
+                                            // Create notifications for losers
+                                            List<Task<DocumentReference>> loserNotificationTasks = new ArrayList<>();
+                                            for (Decision loser : losers) {
+                                                Task<DocumentReference> notificationTask = notificationService.sendNotification(
+                                                        loser.getEntrantId(),
+                                                        eventId,
+                                                        "LOST",
+                                                        "Lottery results",
+                                                        "Unfortunately, you were not selected for " + eventName + ". You may still have a chance if someone declines."
+                                                );
+                                                loserNotificationTasks.add(notificationTask);
+                                            }
+
+                                            // Wait for all notifications to be sent
+                                            List<Task<DocumentReference>> allNotificationTasks = new ArrayList<>();
+                                            allNotificationTasks.addAll(winnerNotificationTasks);
+                                            allNotificationTasks.addAll(loserNotificationTasks);
+
+                                            return com.google.android.gms.tasks.Tasks.whenAll(allNotificationTasks)
+                                                    .continueWith(notificationTask -> {
+                                                        Map<String, Object> result = new HashMap<>();
+                                                        result.put("status", "success");
+                                                        result.put("winnersCount", winners.size());
+                                                        result.put("losersCount", losers.size());
+                                                        result.put("message", "Lottery drawn successfully");
+                                                        return result;
+                                                    });
                                         });
                             });
                 });
