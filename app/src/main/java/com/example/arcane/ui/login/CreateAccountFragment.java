@@ -111,6 +111,8 @@ public class CreateAccountFragment extends Fragment {
             FirebaseAuth.getInstance()
                     .createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(task -> {
+                        if (!isAdded() || binding == null) return;
+                        
                         if (!task.isSuccessful()) {
                             binding.btnSubmit.setEnabled(true);
                             Exception e = task.getException();
@@ -128,14 +130,18 @@ public class CreateAccountFragment extends Fragment {
                             } else if (e != null) {
                                 message = e.getMessage();
                             }
-                            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+                            }
                             return;
                         }
 
                         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                         if (user == null) {
                             binding.btnSubmit.setEnabled(true);
-                            Toast.makeText(requireContext(), "Sign up failed: No user", Toast.LENGTH_LONG).show();
+                            if (getContext() != null) {
+                                Toast.makeText(getContext(), "Sign up failed: No user", Toast.LENGTH_LONG).show();
+                            }
                             return;
                         }
 
@@ -148,14 +154,20 @@ public class CreateAccountFragment extends Fragment {
                         new UserService()
                                 .createUser(profile)
                                 .addOnCompleteListener(writeTask -> {
+                                    if (!isAdded() || binding == null) return;
+                                    
                                     binding.btnSubmit.setEnabled(true);
                                     if (writeTask.isSuccessful()) {
                                         cacheUserRole(selectedRole);
-                                        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                                        navController.navigate(R.id.navigation_home);
+                                        if (getActivity() != null) {
+                                            NavController navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                                            navController.navigate(R.id.navigation_home);
+                                        }
                                     } else {
                                         String msg = writeTask.getException() != null ? writeTask.getException().getMessage() : "Failed to save profile";
-                                        Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
+                                        if (getContext() != null) {
+                                            Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
+                                        }
                                     }
                                 });
                     });
