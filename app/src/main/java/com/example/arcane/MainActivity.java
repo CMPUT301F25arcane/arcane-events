@@ -89,7 +89,13 @@ public class MainActivity extends AppCompatActivity {
             // Update action bar title based on role for home destination
             if (destination.getId() == R.id.navigation_home) {
                 // Use post-delay to ensure fragment is loaded and Firebase query can complete
-                binding.getRoot().postDelayed(() -> updateActionBarTitleForHome(), 300);
+                binding.getRoot().postDelayed(() -> {
+                    updateActionBarTitleForHome();
+                    checkAdminAndSetupToolbar(); // Setup custom toolbar for admin
+                }, 300);
+            } else {
+                // Reset action bar when not on events tab
+                resetActionBar();
             }
             
             // Disable back button for top-level destinations (no back button should show)
@@ -234,7 +240,8 @@ public class MainActivity extends AppCompatActivity {
                         String r = role.toUpperCase().trim();
                         android.util.Log.d("MainActivity", "Setting title with role: " + r);
                         if ("ADMIN".equals(r)) {
-                            getSupportActionBar().setTitle("My Events (Admin)");
+                            // Admin uses custom toolbar, title is set in setupAdminToolbar()
+                            // No need to set title here
                         } else if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
                             getSupportActionBar().setTitle("My Events (Organizer)");
                         } else {
@@ -260,6 +267,104 @@ public class MainActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         return navController.navigateUp() || super.onSupportNavigateUp();
+    }
+
+
+    /**
+     * Sets up the custom admin toolbar view.
+     */
+    private void setupAdminToolbar() {
+        if (getSupportActionBar() == null) return;
+        
+        // Inflate custom toolbar layout
+        View customView = getLayoutInflater().inflate(R.layout.toolbar_admin_events, null);
+        
+        // Set title
+        android.widget.TextView titleView = customView.findViewById(R.id.admin_toolbar_title);
+        if (titleView != null) {
+            titleView.setText("Browse Events (Admin)");
+        }
+        
+        // Set as custom view
+        getSupportActionBar().setDisplayShowCustomEnabled(true);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        getSupportActionBar().setCustomView(customView, new androidx.appcompat.app.ActionBar.LayoutParams(
+            androidx.appcompat.app.ActionBar.LayoutParams.MATCH_PARENT,
+            androidx.appcompat.app.ActionBar.LayoutParams.MATCH_PARENT
+        ));
+        
+        // Set up button click listeners
+        android.widget.ImageButton notificationsButton = customView.findViewById(R.id.admin_notifications_button);
+        android.widget.ImageButton usersButton = customView.findViewById(R.id.admin_users_button);
+        
+        if (notificationsButton != null) {
+            notificationsButton.setOnClickListener(v -> {
+                // TODO: Handle notifications button click
+            });
+        }
+        
+        if (usersButton != null) {
+            usersButton.setOnClickListener(v -> {
+                // TODO: Handle users button click
+            });
+        }
+    }
+
+    /**
+     * Resets the action bar to default (removes custom view).
+     */
+    private void resetActionBar() {
+        if (getSupportActionBar() == null) return;
+        getSupportActionBar().setDisplayShowCustomEnabled(false);
+        getSupportActionBar().setDisplayShowTitleEnabled(true);
+        getSupportActionBar().setCustomView(null);
+    }
+
+    /**
+     * Checks if user is admin and sets up custom toolbar accordingly.
+     */
+    private void checkAdminAndSetupToolbar() {
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
+        if (navController.getCurrentDestination() == null || 
+            navController.getCurrentDestination().getId() != R.id.navigation_home) {
+            resetActionBar();
+            return;
+        }
+        
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            resetActionBar();
+            return;
+        }
+
+        UserRepository userRepository = new UserRepository();
+        userRepository.getUserById(currentUser.getUid())
+                .addOnSuccessListener(snapshot -> {
+                    String role = null;
+                    if (snapshot.exists()) {
+                        // Try UserProfile first
+                        UserProfile profile = snapshot.toObject(UserProfile.class);
+                        if (profile != null && profile.getRole() != null) {
+                            role = profile.getRole();
+                        } else {
+                            // Fallback to Users model
+                            Users user = snapshot.toObject(Users.class);
+                            if (user != null && user.getRole() != null) {
+                                role = user.getRole();
+                            }
+                        }
+                    }
+                    
+                    boolean isAdmin = role != null && "ADMIN".equals(role.toUpperCase().trim());
+                    if (isAdmin) {
+                        setupAdminToolbar();
+                    } else {
+                        resetActionBar();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    resetActionBar();
+                });
     }
 
 }
