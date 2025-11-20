@@ -114,13 +114,90 @@ public class EventRepository {
     }
 
     /**
-     * Deletes an event.
+     * Deletes an event and all its subcollections (waitingList, decisions).
+     * 
+     * <p>In Firestore, deleting a document does not automatically delete its subcollections.
+     * This method deletes all subcollection documents before deleting the event document
+     * to ensure complete removal from the database.</p>
      *
      * @param eventId the event ID to delete
-     * @return a Task that completes when the event is deleted
+     * @return a Task that completes when the event and all subcollections are deleted
      */
     public Task<Void> deleteEvent(String eventId) {
-        return db.collection(COLLECTION_NAME).document(eventId).delete();
+        com.google.android.gms.tasks.Task<Void> deleteWaitingList = deleteSubcollection(eventId, "waitingList");
+        com.google.android.gms.tasks.Task<Void> deleteDecisions = deleteSubcollection(eventId, "decisions");
+        
+        // Wait for both subcollections to be deleted, then delete the event document
+        return com.google.android.gms.tasks.Tasks.whenAll(deleteWaitingList, deleteDecisions)
+                .continueWith(task -> {
+                    if (task.isSuccessful()) {
+                        // Now delete the event document itself
+                        return db.collection(COLLECTION_NAME).document(eventId).delete();
+                    } else {
+                        throw task.getException();
+                    }
+                })
+                .continueWith(task -> {
+                    if (task.isSuccessful()) {
+                        return null; // Return Void
+                    } else {
+                        throw task.getException();
+                    }
+                });
+    }
+    
+    /**
+     * Deletes all documents in a subcollection.
+     * 
+     * <p>Uses batch writes to efficiently delete multiple documents.
+     * Firestore batch limit is 500 operations, so this handles large subcollections.</p>
+     *
+     * @param eventId the event ID
+     * @param subcollectionName the name of the subcollection to delete
+     * @return a Task that completes when all documents in the subcollection are deleted
+     */
+    private Task<Void> deleteSubcollection(String eventId, String subcollectionName) {
+        return db.collection(COLLECTION_NAME)
+                .document(eventId)
+                .collection(subcollectionName)
+                .get()
+                .continueWithTask(querySnapshotTask -> {
+                    if (!querySnapshotTask.isSuccessful()) {
+                        // If subcollection doesn't exist or is empty, that's fine
+                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                    }
+                    
+                    QuerySnapshot querySnapshot = querySnapshotTask.getResult();
+                    if (querySnapshot == null || querySnapshot.isEmpty()) {
+                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                    }
+                    
+                    // Delete documents in batches (Firestore batch limit is 500)
+                    List<com.google.android.gms.tasks.Task<Void>> batchTasks = new java.util.ArrayList<>();
+                    com.google.firebase.firestore.WriteBatch batch = db.batch();
+                    int batchCount = 0;
+                    
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : querySnapshot) {
+                        batch.delete(doc.getReference());
+                        batchCount++;
+                        
+                        // Commit batch when reaching limit or at end
+                        if (batchCount >= 500) {
+                            batchTasks.add(batch.commit());
+                            batch = db.batch();
+                            batchCount = 0;
+                        }
+                    }
+                    
+                    // Commit remaining batch if any
+                    if (batchCount > 0) {
+                        batchTasks.add(batch.commit());
+                    }
+                    
+                    // Wait for all batches to complete
+                    return com.google.android.gms.tasks.Tasks.whenAll(batchTasks);
+                })
+                .continueWith(task -> null); // Return Void
     }
 
     /**
