@@ -14,10 +14,13 @@ package com.example.arcane.repository;
 
 import com.example.arcane.model.Event;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 import java.util.Map;
 import java.util.List;
 
@@ -124,11 +127,11 @@ public class EventRepository {
      * @return a Task that completes when the event and all subcollections are deleted
      */
     public Task<Void> deleteEvent(String eventId) {
-        com.google.android.gms.tasks.Task<Void> deleteWaitingList = deleteSubcollection(eventId, "waitingList");
-        com.google.android.gms.tasks.Task<Void> deleteDecisions = deleteSubcollection(eventId, "decisions");
+        Task<Void> deleteWaitingList = deleteSubcollection(eventId, "waitingList");
+        Task<Void> deleteDecisions = deleteSubcollection(eventId, "decisions");
         
         // Wait for both subcollections to be deleted, then delete the event document
-        return com.google.android.gms.tasks.Tasks.whenAll(deleteWaitingList, deleteDecisions)
+        return Tasks.whenAll(deleteWaitingList, deleteDecisions)
                 .continueWith(task -> {
                     if (task.isSuccessful()) {
                         // Now delete the event document itself
@@ -164,24 +167,24 @@ public class EventRepository {
                 .continueWithTask(querySnapshotTask -> {
                     if (!querySnapshotTask.isSuccessful()) {
                         // If subcollection doesn't exist or is empty, that's fine
-                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                        return Tasks.forResult(null);
                     }
                     
                     QuerySnapshot querySnapshot = querySnapshotTask.getResult();
                     if (querySnapshot == null || querySnapshot.isEmpty()) {
-                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                        return Tasks.forResult(null);
                     }
                     
                     // Delete documents in batches (Firestore batch limit is 500)
-                    List<com.google.android.gms.tasks.Task<Void>> batchTasks = new java.util.ArrayList<>();
-                    com.google.firebase.firestore.WriteBatch batch = db.batch();
+                    List<Task<Void>> batchTasks = new java.util.ArrayList<>();
+                    WriteBatch batch = db.batch();
                     int batchCount = 0;
                     
-                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : querySnapshot) {
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
                         batch.delete(doc.getReference());
                         batchCount++;
                         
-                        // Commit batch when reaching limit or at end
+                        // Commit batch when reaching limit
                         if (batchCount >= 500) {
                             batchTasks.add(batch.commit());
                             batch = db.batch();
@@ -195,7 +198,7 @@ public class EventRepository {
                     }
                     
                     // Wait for all batches to complete
-                    return com.google.android.gms.tasks.Tasks.whenAll(batchTasks);
+                    return batchTasks.isEmpty() ? Tasks.forResult(null) : Tasks.whenAll(batchTasks);
                 })
                 .continueWith(task -> null); // Return Void
     }

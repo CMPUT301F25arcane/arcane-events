@@ -941,6 +941,12 @@ public class EventDetailFragment extends Fragment {
     }
 
     private void handleDeleteEvent() {
+        // Security check: Only admin can delete events
+        if (!isAdmin) {
+            Toast.makeText(requireContext(), "Only administrators can delete events", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (eventId == null || currentEvent == null) {
             Toast.makeText(requireContext(), "Event not loaded", Toast.LENGTH_SHORT).show();
             return;
