@@ -32,6 +32,7 @@ import androidx.navigation.Navigation;
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentProfileBinding;
 import com.example.arcane.model.Users;
+import com.example.arcane.repository.UserRepository;
 import com.example.arcane.service.UserService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -48,6 +49,7 @@ public class NotificationsFragment extends Fragment {
 
     private FragmentProfileBinding binding;
     private UserService userService;
+    private UserRepository userRepository;
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -66,6 +68,7 @@ public class NotificationsFragment extends Fragment {
         View root = binding.getRoot();
 
         userService = new UserService();
+        userRepository = new UserRepository();
 
         // Logout button functionality
         binding.logoutButton.setOnClickListener(v -> {
@@ -74,6 +77,11 @@ public class NotificationsFragment extends Fragment {
             clearCachedUserRole();
             NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
             navController.navigate(R.id.navigation_welcome);
+        });
+
+        // Notification toggle functionality
+        binding.toggleNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateNotificationPreference(!isChecked);
         });
 
         return root;
@@ -216,7 +224,38 @@ public class NotificationsFragment extends Fragment {
         if (user.getPhone() != null && !user.getPhone().isEmpty()) {
             binding.editPhone.setText(user.getPhone());
         }
-        // Note: Pronouns field is not in the Users model, so we leave it as is
+        
+        // Set notification toggle state
+        Boolean notificationOptOut = user.getNotificationOptOut();
+        boolean notificationsEnabled = notificationOptOut == null || !notificationOptOut;
+        binding.toggleNotifications.setChecked(notificationsEnabled);
+    }
+
+    private void updateNotificationPreference(boolean optOut) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+
+        String userId = currentUser.getUid();
+        userRepository.getUserById(userId)
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        Users user = documentSnapshot.toObject(Users.class);
+                        if (user != null) {
+                            user.setNotificationOptOut(optOut);
+                            userRepository.updateUser(user)
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(requireContext(), "Failed to update notification preference", Toast.LENGTH_SHORT).show();
+                                        binding.toggleNotifications.setChecked(!optOut);
+                                    });
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to load user profile", Toast.LENGTH_SHORT).show();
+                    binding.toggleNotifications.setChecked(!optOut);
+                });
     }
 
     private void clearCachedUserRole() {
