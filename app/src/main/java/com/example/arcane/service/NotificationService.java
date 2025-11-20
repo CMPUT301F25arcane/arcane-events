@@ -13,13 +13,19 @@
 package com.example.arcane.service;
 
 import com.example.arcane.model.Notification;
+import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.NotificationRepository;
 import com.example.arcane.repository.UserRepository;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Service class for managing notification operations.
@@ -32,12 +38,13 @@ import com.google.firebase.firestore.QuerySnapshot;
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final DecisionRepository decisionRepository;
 
     /**
      * Constructs a new NotificationService instance.
      */
     public NotificationService() {
-        this(new NotificationRepository(), new UserRepository());
+        this(new NotificationRepository(), new UserRepository(), new DecisionRepository());
     }
 
     /**
@@ -45,10 +52,12 @@ public class NotificationService {
      *
      * @param notificationRepository the notification repository
      * @param userRepository the user repository
+     * @param decisionRepository the decision repository
      */
-    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository) {
+    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository, DecisionRepository decisionRepository) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.decisionRepository = decisionRepository;
     }
 
     /**
@@ -92,6 +101,62 @@ public class NotificationService {
                     );
 
                     return notificationRepository.createNotification(userId, notification);
+                });
+    }
+
+    /**
+     * Sends notifications to all entrants with a specific status for an event.
+     *
+     * @param eventId the event ID
+     * @param status the decision status to filter by
+     * @param title the notification title
+     * @param message the notification message
+     * @return a Task that completes with a map containing the count of notifications sent
+     */
+    public Task<Map<String, Object>> sendNotificationsToEntrantsByStatus(String eventId, String status, String title, String message) {
+        return decisionRepository.getDecisionsByStatus(eventId, status)
+                .continueWithTask(decisionsTask -> {
+                    if (!decisionsTask.isSuccessful()) {
+                        Map<String, Object> errorResult = new HashMap<>();
+                        errorResult.put("status", "error");
+                        errorResult.put("count", 0);
+                        errorResult.put("message", "Failed to get decisions");
+                        return com.google.android.gms.tasks.Tasks.forResult(errorResult);
+                    }
+
+                    QuerySnapshot decisionsSnapshot = decisionsTask.getResult();
+                    if (decisionsSnapshot == null || decisionsSnapshot.isEmpty()) {
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("status", "success");
+                        result.put("count", 0);
+                        result.put("message", "No entrants found with status " + status);
+                        return com.google.android.gms.tasks.Tasks.forResult(result);
+                    }
+
+                    List<Task<DocumentReference>> notificationTasks = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : decisionsSnapshot) {
+                        String entrantId = doc.getString("entrantId");
+                        if (entrantId != null) {
+                            Task<DocumentReference> notificationTask = sendNotification(entrantId, eventId, status, title, message);
+                            notificationTasks.add(notificationTask);
+                        }
+                    }
+
+                    return com.google.android.gms.tasks.Tasks.whenAll(notificationTasks)
+                            .continueWith(allTasks -> {
+                                int sentCount = 0;
+                                for (Task<DocumentReference> task : notificationTasks) {
+                                    if (task.isSuccessful() && task.getResult() != null) {
+                                        sentCount++;
+                                    }
+                                }
+
+                                Map<String, Object> result = new HashMap<>();
+                                result.put("status", "success");
+                                result.put("count", sentCount);
+                                result.put("message", "Sent " + sentCount + " notifications");
+                                return result;
+                            });
                 });
     }
 
