@@ -80,9 +80,8 @@ public class BrowseImagesFragment extends Fragment {
 
         // Setup toolbar back button
         binding.browseImagesToolbar.setNavigationOnClickListener(v -> {
-            if (getActivity() != null) {
-                getActivity().onBackPressed();
-            }
+            androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireView());
+            navController.navigateUp();
         });
 
         // Load all events with poster images
