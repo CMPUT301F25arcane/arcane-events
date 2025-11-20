@@ -32,6 +32,8 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.example.arcane.databinding.ActivityMainBinding;
 import com.example.arcane.R;
 import com.example.arcane.model.Users;
+import com.example.arcane.model.UserProfile;
+import com.example.arcane.repository.UserRepository;
 import com.example.arcane.service.UserService;
 
 /**
@@ -68,6 +70,9 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(navView, navController);
+        
+        // Update bottom nav title based on user role
+        updateBottomNavTitle();
 
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             if (destination.getId() == R.id.navigation_welcome
@@ -83,7 +88,8 @@ public class MainActivity extends AppCompatActivity {
             
             // Update action bar title based on role for home destination
             if (destination.getId() == R.id.navigation_home) {
-                updateActionBarTitleForHome();
+                // Use post-delay to ensure fragment is loaded and Firebase query can complete
+                binding.getRoot().postDelayed(() -> updateActionBarTitleForHome(), 300);
             }
             
             // Disable back button for top-level destinations (no back button should show)
@@ -148,7 +154,54 @@ public class MainActivity extends AppCompatActivity {
         getWindow().setStatusBarColor(Color.WHITE);
     }
 
-    private void updateActionBarTitleForHome() {
+    /**
+     * Updates the bottom navigation menu title based on user role.
+     * Can be called from fragments to refresh the title after role is loaded.
+     */
+    public void updateBottomNavTitle() {
+        if (binding == null) return;
+        BottomNavigationView navView = binding.navView;
+        if (navView == null) return;
+        
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+
+        UserRepository userRepository = new UserRepository();
+        userRepository.getUserById(currentUser.getUid())
+                .addOnSuccessListener(snapshot -> {
+                    String role = null;
+                    if (snapshot.exists()) {
+                        // Try UserProfile first
+                        UserProfile profile = snapshot.toObject(UserProfile.class);
+                        if (profile != null && profile.getRole() != null) {
+                            role = profile.getRole();
+                        } else {
+                            // Fallback to Users model
+                            Users user = snapshot.toObject(Users.class);
+                            if (user != null && user.getRole() != null) {
+                                role = user.getRole();
+                            }
+                        }
+                    }
+                    
+                    if (role != null) {
+                        String r = role.toUpperCase().trim();
+                        if ("ADMIN".equals(r)) {
+                            navView.getMenu().findItem(R.id.navigation_home).setTitle("All Events");
+                        } else {
+                            navView.getMenu().findItem(R.id.navigation_home).setTitle(getString(R.string.title_events));
+                        }
+                    }
+                });
+    }
+
+    /**
+     * Updates the action bar title based on the current user's role.
+     * Can be called from fragments to refresh the title after role is loaded.
+     */
+    public void updateActionBarTitleForHome() {
         if (getSupportActionBar() == null) return;
         
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -157,29 +210,43 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        UserService userService = new UserService();
-        userService.getUserById(currentUser.getUid())
+        UserRepository userRepository = new UserRepository();
+        userRepository.getUserById(currentUser.getUid())
                 .addOnSuccessListener(snapshot -> {
                     String role = null;
                     if (snapshot.exists()) {
-                        Users user = snapshot.toObject(Users.class);
-                        if (user != null) {
-                            role = user.getRole();
+                        // Try UserProfile first
+                        UserProfile profile = snapshot.toObject(UserProfile.class);
+                        if (profile != null && profile.getRole() != null) {
+                            role = profile.getRole();
+                            android.util.Log.d("MainActivity", "Found role from UserProfile: " + role);
+                        } else {
+                            // Fallback to Users model
+                            Users user = snapshot.toObject(Users.class);
+                            if (user != null && user.getRole() != null) {
+                                role = user.getRole();
+                                android.util.Log.d("MainActivity", "Found role from Users: " + role);
+                            }
                         }
                     }
                     
                     if (role != null) {
-                        String r = role.toUpperCase();
-                        if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                        String r = role.toUpperCase().trim();
+                        android.util.Log.d("MainActivity", "Setting title with role: " + r);
+                        if ("ADMIN".equals(r)) {
+                            getSupportActionBar().setTitle("My Events (Admin)");
+                        } else if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
                             getSupportActionBar().setTitle("My Events (Organizer)");
                         } else {
                             getSupportActionBar().setTitle("My Events");
                         }
                     } else {
+                        android.util.Log.d("MainActivity", "No role found, setting default title");
                         getSupportActionBar().setTitle("My Events");
                     }
                 })
                 .addOnFailureListener(e -> {
+                    android.util.Log.e("MainActivity", "Failed to get user role: " + e.getMessage());
                     getSupportActionBar().setTitle("My Events");
                 });
     }
