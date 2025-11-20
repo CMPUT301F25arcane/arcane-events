@@ -13,6 +13,7 @@
 package com.example.arcane.repository;
 
 import com.example.arcane.model.UserProfile;
+import com.example.arcane.model.Users;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -75,6 +76,16 @@ public class UserRepository {
      */
     public Task<Void> updateUser(UserProfile user) {
         return db.collection(COLLECTION_NAME).document(user.getUserId()).set(user);
+    }
+
+    /**
+     * Updates a Users model.
+     *
+     * @param user the Users model to update
+     * @return a Task that completes when the user is updated
+     */
+    public Task<Void> updateUser(Users user) {
+        return db.collection(COLLECTION_NAME).document(user.getId()).set(user);
     }
 
     /**

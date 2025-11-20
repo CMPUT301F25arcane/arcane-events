@@ -37,6 +37,7 @@ public class Users {
     private Timestamp createdAt;
     private String role;       // e.g., "USER" or "ORGANISER"
     private List<String> registeredEventIds; // workaround array for My Events
+    private Boolean notificationOptOut;  // whether user has opted out of notifications
 
     /**
      * Required no-arg constructor for Firestore deserialization.
@@ -63,6 +64,7 @@ public class Users {
         this.createdAt = createdAt;
         this.role = null;
         this.registeredEventIds = new ArrayList<>();
+        this.notificationOptOut = false;  // default to false (not opted out)
     }
 
     // Getters & setters
@@ -177,5 +179,23 @@ public class Users {
      * @param registeredEventIds the list of registered event IDs to set
      */
     public void setRegisteredEventIds(List<String> registeredEventIds) { this.registeredEventIds = registeredEventIds; }
+
+    /**
+     * Gets whether the user has opted out of notifications.
+     *
+     * @return true if opted out, false otherwise
+     */
+    public Boolean getNotificationOptOut() {
+        return notificationOptOut;
+    }
+
+    /**
+     * Sets whether the user has opted out of notifications.
+     *
+     * @param notificationOptOut true if opted out, false otherwise
+     */
+    public void setNotificationOptOut(Boolean notificationOptOut) {
+        this.notificationOptOut = notificationOptOut;
+    }
 }
 
