@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="@color/surface"
     tools:context=".ui.home.HomeFragment">
 
     <LinearLayout
@@ -13,43 +13,25 @@
         android:orientation="vertical"
         android:paddingBottom="80dp">
 
-        <!-- Top bar with back arrow -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingTop="12dp"
-            android:paddingEnd="12dp"
-            android:paddingBottom="4dp">
-
-            <ImageButton
-                android:id="@+id/backButton"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="Back"
-                app:tint="@color/brand_primary"
-                android:src="@drawable/ic_back" />
-        </LinearLayout>
-
-        <!-- Header image in a card -->
+        <!-- Header image - rounded rectangle with margins -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="16dp"
             app:cardCornerRadius="12dp"
-            app:cardUseCompatPadding="true">
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/surface_alt">
 
             <ImageView
                 android:id="@+id/headerImage"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
+                android:layout_height="240dp"
+                android:scaleType="fitCenter"
                 android:contentDescription="Event image"
+                android:background="@color/surface_alt"
+                android:adjustViewBounds="true"
                 tools:src="@mipmap/ic_launcher" />
         </com.google.android.material.card.MaterialCardView>
 
@@ -61,7 +43,7 @@
             android:gravity="center_vertical"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginTop="16dp">
+            android:layout_marginTop="20dp">
 
             <TextView
                 android:id="@+id/eventTitle"
@@ -71,32 +53,73 @@
                 android:text="Air Show"
                 android:textColor="@color/brand_primary"
                 android:textStyle="bold"
-                android:textSize="26sp" />
+                android:textSize="28sp"
+                android:letterSpacing="0.02" />
 
-            <!-- Edit Icon (shown for organizer) -->
-            <ImageButton
+            <!-- Edit Icon (shown for organizer) - circular white button with pencil -->
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/editEventButton"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="Edit Event"
-                android:src="@android:drawable/ic_menu_edit"
-                app:tint="@color/brand_primary"
-                android:visibility="gone" />
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="@color/surface"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/text_primary"
+                app:strokeWidth="2dp"
+                android:visibility="gone"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_menu_edit"
+                    android:contentDescription="Edit Event"
+                    app:tint="@color/text_primary" />
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- Lottery Status Text (for organizer) -->
-        <TextView
-            android:id="@+id/lotteryStatusText"
-            android:layout_width="wrap_content"
+        <!-- Lottery Status and Send Notification Button Row (for organizer) -->
+        <LinearLayout
+            android:id="@+id/lotteryStatusAndNotificationContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Lottery Open"
-            android:textColor="@color/text_primary"
-            android:textStyle="bold"
-            android:textSize="16sp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
-            android:visibility="gone" />
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/lotteryStatusText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Lottery Open"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:textSize="16sp" />
+
+            <!-- Send Notification Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sendNotificationButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send Notification"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                app:strokeColor="@color/text_primary"
+                app:strokeWidth="2dp"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
 
         <!-- Status and Decision Row (for users) -->
         <LinearLayout
@@ -254,7 +277,7 @@
                 android:backgroundTint="?attr/colorPrimary" />
         </LinearLayout>
 
-        <!-- Send Notification button (Organizer View) -->
+        <!-- Send Notification Container (for organizer, shown separately if needed) -->
         <LinearLayout
             android:id="@+id/sendNotificationContainer"
             android:layout_width="match_parent"
@@ -268,184 +291,149 @@
             android:visibility="gone">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/sendNotificationButton"
+                android:id="@+id/sendNotificationButtonStandalone"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Send Notification"
                 android:textColor="@color/text_primary"
-                app:strokeColor="@color/border" />
+                android:textSize="14sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                app:strokeColor="@color/text_primary"
+                app:strokeWidth="2dp"
+                app:cornerRadius="8dp" />
         </LinearLayout>
 
-        <!-- Attendees avatar stack (static demo) -->
-        <LinearLayout
-            android:id="@+id/attendeesRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="end|center_vertical"
-            android:paddingEnd="16dp"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    app:cardCornerRadius="18dp"
-                    app:cardBackgroundColor="@color/brand_primary_light"
-                    app:strokeColor="@color/surface"
-                    app:strokeWidth="1dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="K"
-                        android:textColor="@color/on_brand"
-                        android:textStyle="bold"
-                        android:textSize="14sp"
-                        android:gravity="center" />
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="-12dp"
-                    app:cardCornerRadius="18dp"
-                    app:cardBackgroundColor="@color/brand_accent"
-                    app:strokeColor="@color/surface"
-                    app:strokeWidth="1dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="G"
-                        android:textColor="@color/on_brand"
-                        android:textStyle="bold"
-                        android:textSize="14sp"
-                        android:gravity="center" />
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="-12dp"
-                    app:cardCornerRadius="18dp"
-                    app:cardBackgroundColor="@color/brand_primary_dark"
-                    app:strokeColor="@color/surface"
-                    app:strokeWidth="1dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="+2"
-                        android:textColor="@color/on_brand"
-                        android:textStyle="bold"
-                        android:textSize="12sp"
-                        android:gravity="center" />
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Description header -->
-        <TextView
-            android:id="@+id/descriptionHeader"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Description:"
-            android:textStyle="bold"
-            android:textColor="@color/text_primary"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginTop="8dp" />
-
-        <!-- Description body -->
-        <TextView
-            android:id="@+id/descriptionBody"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp"
-            android:lineSpacingExtra="2dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginTop="4dp"
-            android:text="This is an airshow that will be attended by many companies and countries. Jets like Russian made Sukhoi's will be on display.." />
-
-        <!-- Info rows -->
+        <!-- Description Section -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="20dp">
+
+            <!-- Description header -->
+            <TextView
+                android:id="@+id/descriptionHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Description:"
+                android:textStyle="bold"
+                android:textColor="@color/brand_primary"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Description body -->
+            <TextView
+                android:id="@+id/descriptionBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:text="This is an airshow that will be attended by many companies and countries. Jets like Russian made Sukhoi's will be on display.." />
+        </LinearLayout>
+
+        <!-- Event Details Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="24dp"
             android:layout_marginBottom="24dp">
 
             <!-- Date row -->
-            <TextView
-                android:id="@+id/eventDateText"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="October 30, 2025"
-                android:textColor="@color/text_primary"
-                android:textStyle="bold"
-                android:drawableStart="@android:drawable/ic_menu_my_calendar"
-                android:drawablePadding="12dp"
+                android:orientation="horizontal"
                 android:gravity="center_vertical"
-                app:drawableTint="@color/brand_primary" />
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp">
 
-            <!-- Organization row -->
-            <TextView
-                android:id="@+id/organizerNameText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="National Airlines Council"
-                android:textColor="@color/brand_primary"
-                android:drawableStart="@android:drawable/ic_menu_info_details"
-                android:drawablePadding="12dp"
-                android:gravity="center_vertical"
-                app:drawableTint="@color/brand_primary" />
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_calendar"
+                    android:contentDescription="Date"
+                    app:tint="@color/text_primary"
+                    android:layout_marginEnd="16dp" />
+
+                <TextView
+                    android:id="@+id/eventDateText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="October 30, 2025"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:gravity="center_vertical" />
+            </LinearLayout>
 
             <!-- Location row -->
-            <TextView
-                android:id="@+id/eventLocationText"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="Swan Airfield"
-                android:textColor="@color/brand_primary"
-                android:drawableStart="@android:drawable/ic_menu_mylocation"
-                android:drawablePadding="12dp"
+                android:orientation="horizontal"
                 android:gravity="center_vertical"
-                app:drawableTint="@color/brand_primary" />
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_location"
+                    android:contentDescription="Location"
+                    app:tint="@color/text_primary"
+                    android:layout_marginEnd="16dp" />
+
+                <TextView
+                    android:id="@+id/eventLocationText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Swan Airfield"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:gravity="center_vertical" />
+            </LinearLayout>
 
             <!-- Price row -->
-            <TextView
-                android:id="@+id/eventPriceText"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="$150.00 CAD"
-                android:textColor="@color/brand_primary"
-                android:drawableStart="@drawable/ic_attach_money"
-                android:drawablePadding="12dp"
+                android:orientation="horizontal"
                 android:gravity="center_vertical"
-                app:drawableTint="@color/brand_primary" />
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_attach_money"
+                    android:contentDescription="Price"
+                    app:tint="@color/text_primary"
+                    android:layout_marginEnd="16dp" />
+
+                <TextView
+                    android:id="@+id/eventPriceText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="$150.00 CAD"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:gravity="center_vertical" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Organizer Action Buttons (Bottom) -->
@@ -477,7 +465,8 @@
                     android:layout_marginEnd="8dp"
                     android:text="QR Code"
                     android:textColor="@color/text_primary"
-                    app:strokeColor="@color/border"
+                    app:strokeColor="@color/text_primary"
+                    app:strokeWidth="2dp"
                     app:cornerRadius="8dp" />
 
                 <!-- Entrants Button -->
@@ -489,7 +478,8 @@
                     android:layout_weight="1"
                     android:text="Entrants"
                     android:textColor="@color/text_primary"
-                    app:strokeColor="@color/border"
+                    app:strokeColor="@color/text_primary"
+                    app:strokeWidth="2dp"
                     app:cornerRadius="8dp" />
             </LinearLayout>
 
@@ -501,7 +491,8 @@
                 android:layout_height="wrap_content"
                 android:text="Draw Lottery!"
                 android:textColor="@color/text_primary"
-                app:strokeColor="@color/border"
+                app:strokeColor="@color/text_primary"
+                app:strokeWidth="2dp"
                 app:cornerRadius="8dp" />
         </LinearLayout>
     </LinearLayout>

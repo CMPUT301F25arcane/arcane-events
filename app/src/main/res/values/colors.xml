@@ -7,7 +7,7 @@
     <color name="brand_accent">#2563EB</color>
 
     <!-- Core UI surfaces/backgrounds -->
-    <color name="background">#FFF7F9FC</color>
+    <color name="background">#FFE0EDFF</color>
     <color name="surface">#FFFFFFFF</color>
     <color name="surface_alt">#FFF3F4F6</color>
     <color name="card_bg">#FFF1F5F9</color>
@@ -46,4 +46,8 @@
 
     <!-- Overlays (e.g., camera mask) -->
     <color name="overlay_black_60">#99000000</color>
+
+    <!-- Lottery status colors -->
+    <color name="lottery_status_open">#15803D</color>  <!-- Dark green -->
+    <color name="lottery_status_closed">#DC2626</color>  <!-- Dark red -->
 </resources>

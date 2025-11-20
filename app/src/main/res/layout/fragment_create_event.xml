@@ -11,6 +11,15 @@
         android:layout_height="wrap_content"
         android:paddingBottom="100dp">
 
+        <View
+            android:id="@+id/statusSpacerCreate"
+            android:layout_width="0dp"
+            android:layout_height="24dp"
+            android:background="@android:color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
         <!-- Top App Bar -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/create_event_toolbar"
@@ -21,7 +30,7 @@
             app:titleTextColor="?attr/colorOnPrimary"
             app:navigationIcon="?attr/homeAsUpIndicator"
             app:navigationIconTint="?attr/colorOnPrimary"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/statusSpacerCreate"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
@@ -150,6 +159,41 @@
                         android:textColorHint="@color/text_muted" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Description -->
+                <TextView
+                    android:id="@+id/description_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Description"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    app:layout_constraintTop_toBottomOf="@id/event_name_input_layout"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/description_input_layout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:layout_constraintTop_toBottomOf="@id/description_label"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/description_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Enter event description"
+                        android:inputType="textMultiLine"
+                        android:minLines="3"
+                        android:maxLines="5"
+                        android:gravity="top|start"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="@color/text_muted" />
+                </com.google.android.material.textfield.TextInputLayout>
+
                 <!-- Cost -->
                 <TextView
                     android:id="@+id/cost_label"
@@ -159,7 +203,7 @@
                     android:text="Cost"
                     android:textSize="14sp"
                     android:textColor="@color/text_primary"
-                    app:layout_constraintTop_toBottomOf="@id/event_name_input_layout"
+                    app:layout_constraintTop_toBottomOf="@id/description_input_layout"
                     app:layout_constraintStart_toStartOf="parent" />
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -241,7 +285,7 @@
                     android:layout_marginTop="8dp"
                     app:boxStrokeColor="?attr/colorPrimary"
                     app:endIconMode="custom"
-                    app:endIconDrawable="@android:drawable/ic_menu_my_calendar"
+                    app:endIconDrawable="@drawable/ic_calendar"
                     app:endIconTint="?attr/colorPrimary"
                     app:layout_constraintTop_toBottomOf="@id/duration_label"
                     app:layout_constraintStart_toEndOf="@id/plus_sign"
@@ -375,7 +419,7 @@
                     android:layout_marginTop="8dp"
                     app:boxStrokeColor="?attr/colorPrimary"
                     app:endIconMode="custom"
-                    app:endIconDrawable="@android:drawable/ic_menu_my_calendar"
+                    app:endIconDrawable="@drawable/ic_calendar"
                     app:endIconTint="?attr/colorPrimary"
                     app:layout_constraintTop_toBottomOf="@id/registration_deadline_label"
                     app:layout_constraintStart_toStartOf="parent"

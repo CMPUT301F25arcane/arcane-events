@@ -14,6 +14,8 @@
 package com.example.arcane;
 
 import android.os.Bundle;
+import android.graphics.Color;
+import android.view.View;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -24,6 +26,8 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.example.arcane.databinding.ActivityMainBinding;
 import com.example.arcane.R;
@@ -53,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        configureStatusBar();
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
         // Passing each menu ID as a set of Ids because each
@@ -68,7 +73,9 @@ public class MainActivity extends AppCompatActivity {
             if (destination.getId() == R.id.navigation_welcome
                     || destination.getId() == R.id.navigation_login
                     || destination.getId() == R.id.navigation_create_account
-                    || destination.getId() == R.id.navigation_create_event) {
+                    || destination.getId() == R.id.navigation_create_event
+                    || destination.getId() == R.id.navigation_edit_event
+                    || destination.getId() == R.id.navigation_qr_code) {
                 binding.navView.setVisibility(android.view.View.GONE);
             } else {
                 binding.navView.setVisibility(android.view.View.VISIBLE);
@@ -88,12 +95,17 @@ public class MainActivity extends AppCompatActivity {
             }
 
             // Hide action bar for welcome and create event pages (they have their own toolbars)
-            if (destination.getId() == R.id.navigation_welcome || destination.getId() == R.id.navigation_create_event) {
+            if (destination.getId() == R.id.navigation_welcome
+                    || destination.getId() == R.id.navigation_create_event
+                    || destination.getId() == R.id.navigation_edit_event
+                    || destination.getId() == R.id.navigation_qr_code) {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
                 // Remove top padding to eliminate gap
-                if (destination.getId() == R.id.navigation_create_event) {
+                if (destination.getId() == R.id.navigation_create_event
+                        || destination.getId() == R.id.navigation_edit_event
+                        || destination.getId() == R.id.navigation_qr_code) {
                     binding.container.setPadding(
                         binding.container.getPaddingLeft(),
                         0,
@@ -106,7 +118,10 @@ public class MainActivity extends AppCompatActivity {
                     getSupportActionBar().show();
                 }
                 // Restore top padding for other pages
-                if (destination.getId() != R.id.navigation_welcome && destination.getId() != R.id.navigation_create_event) {
+                if (destination.getId() != R.id.navigation_welcome
+                        && destination.getId() != R.id.navigation_create_event
+                        && destination.getId() != R.id.navigation_edit_event
+                        && destination.getId() != R.id.navigation_qr_code) {
                     android.util.TypedValue tv = new android.util.TypedValue();
                     if (getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
                         int actionBarSize = android.util.TypedValue.complexToDimensionPixelSize(
@@ -122,6 +137,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void configureStatusBar() {
+        View decorView = getWindow().getDecorView();
+        WindowInsetsControllerCompat controller = ViewCompat.getWindowInsetsController(decorView);
+        if (controller != null) {
+            controller.setAppearanceLightStatusBars(true);
+        }
+        getWindow().setStatusBarColor(Color.WHITE);
     }
 
     private void updateActionBarTitleForHome() {
