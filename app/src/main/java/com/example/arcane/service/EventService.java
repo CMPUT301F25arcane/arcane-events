@@ -194,12 +194,41 @@ public class EventService {
                         return com.google.android.gms.tasks.Tasks.forResult(result);
                     }
                     
-                    // Create waiting list entry
-                    WaitingListEntry entry = new WaitingListEntry();
-                    entry.setEntrantId(entrantId);
-                    entry.setJoinTimestamp(Timestamp.now());
-                    
-                    return waitingListRepository.addToWaitingList(eventId, entry)
+                    // Check maxEntrants limit if set
+                    return eventRepository.getEventById(eventId)
+                            .continueWithTask(eventTask -> {
+                                if (eventTask.isSuccessful() && eventTask.getResult() != null && eventTask.getResult().exists()) {
+                                    Event event = eventTask.getResult().toObject(Event.class);
+                                    if (event != null && event.getMaxEntrants() != null && event.getMaxEntrants() > 0) {
+                                        // Check current waiting list size
+                                        return waitingListRepository.getWaitingListForEvent(eventId)
+                                                .continueWithTask(listTask -> {
+                                                    if (listTask.isSuccessful()) {
+                                                        int currentSize = listTask.getResult().size();
+                                                        if (currentSize >= event.getMaxEntrants()) {
+                                                            Map<String, String> result = new HashMap<>();
+                                                            result.put("status", "limit_reached");
+                                                            return com.google.android.gms.tasks.Tasks.forResult(result);
+                                                        }
+                                                    }
+                                                    // Continue with adding to waiting list
+                                                    return addUserToWaitingList(eventId, entrantId);
+                                                });
+                                    }
+                                }
+                                // No limit set, continue with adding to waiting list
+                                return addUserToWaitingList(eventId, entrantId);
+                            });
+                });
+    }
+
+    private Task<Map<String, String>> addUserToWaitingList(String eventId, String entrantId) {
+        // Create waiting list entry
+        WaitingListEntry entry = new WaitingListEntry();
+        entry.setEntrantId(entrantId);
+        entry.setJoinTimestamp(Timestamp.now());
+        
+        return waitingListRepository.addToWaitingList(eventId, entry)
                             .continueWithTask(addTask -> {
                                 if (!addTask.isSuccessful()) {
                                     Map<String, String> result = new HashMap<>();
@@ -247,7 +276,6 @@ public class EventService {
                                             }
                                         });
                             });
-                });
     }
 
     /**
