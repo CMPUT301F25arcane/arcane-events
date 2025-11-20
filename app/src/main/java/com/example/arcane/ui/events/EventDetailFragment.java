@@ -513,7 +513,7 @@ public class EventDetailFragment extends Fragment {
         binding.joinButtonContainer.setVisibility(View.VISIBLE);
         binding.joinButton.setText("Delete Event");
         binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-            getResources().getColor(R.color.status_lost, null)));
+            getResources().getColor(R.color.lottery_status_closed, null)));
         binding.joinButton.setOnClickListener(v -> handleDeleteEvent());
     }
 
