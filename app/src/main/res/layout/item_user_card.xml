@@ -96,10 +96,13 @@
             android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="@color/status_pending"
+            android:clickable="false"
+            android:focusable="false"
             app:chipBackgroundColor="@color/status_pending_bg"
             app:chipStrokeWidth="0dp"
             app:chipMinHeight="28dp"
             app:closeIconEnabled="false"
+            app:checkedIconEnabled="false"
             app:layout_constraintTop_toBottomOf="@id/user_role"
             app:layout_constraintStart_toEndOf="@id/image_container"
             tools:text="ADMIN" />

@@ -46,10 +46,12 @@ public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserVi
         holder.emailView.setText(user.getEmail() != null ? user.getEmail() : "");
         holder.roleView.setText(user.getRole() != null ? user.getRole() : "");
 
-        // Show role chip
+        // Show role chip (display only, not interactive)
         if (user.getRole() != null && !user.getRole().isEmpty()) {
             holder.roleChip.setVisibility(View.VISIBLE);
             holder.roleChip.setText(user.getRole());
+            holder.roleChip.setCheckable(false);
+            holder.roleChip.setClickable(false);
         } else {
             holder.roleChip.setVisibility(View.GONE);
         }
