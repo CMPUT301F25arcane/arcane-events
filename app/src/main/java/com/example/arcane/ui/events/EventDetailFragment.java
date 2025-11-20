@@ -82,6 +82,7 @@ public class EventDetailFragment extends Fragment {
     private String userDecision = null; // none, accepted, declined
     private String waitingListEntryId = null;
     private String decisionId = null;
+    private boolean organizerViewSetup = false; // Prevent multiple listener setups
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -374,19 +375,26 @@ public class EventDetailFragment extends Fragment {
         // Set lottery status with colored text
         updateLotteryStatusDisplay();
 
-        // Setup organizer buttons
-        binding.qrCodeButton.setOnClickListener(v -> navigateToQrPage());
+        // Setup organizer buttons only once to prevent multiple listeners
+        if (!organizerViewSetup) {
+            binding.qrCodeButton.setOnClickListener(v -> navigateToQrPage());
 
-        binding.entrantsButton.setOnClickListener(v -> {
-            if (eventId != null) {
-                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                Bundle args = new Bundle();
-                args.putString("eventId", eventId);
-                navController.navigate(R.id.navigation_entrants, args);
-            }
-        });
+            binding.entrantsButton.setOnClickListener(v -> {
+                if (eventId != null) {
+                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                    Bundle args = new Bundle();
+                    args.putString("eventId", eventId);
+                    navController.navigate(R.id.navigation_entrants, args);
+                }
+            });
 
-        binding.drawLotteryButton.setOnClickListener(v -> handleDrawLottery());
+            binding.drawLotteryButton.setOnClickListener(v -> {
+                android.util.Log.d("EventDetailFragment", "Draw Lottery button clicked");
+                handleDrawLottery();
+            });
+            
+            organizerViewSetup = true;
+        }
 
         // Send notification button (in horizontal layout with lottery status)
         binding.sendNotificationButton.setOnClickListener(v -> showSendNotificationDialog());
@@ -688,6 +696,7 @@ public class EventDetailFragment extends Fragment {
     }
 
     private void handleDrawLottery() {
+        android.util.Log.d("EventDetailFragment", "handleDrawLottery called for eventId: " + eventId);
         if (eventId == null) {
             Toast.makeText(requireContext(), "Event ID is required", Toast.LENGTH_SHORT).show();
             return;
@@ -832,6 +841,7 @@ public class EventDetailFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        organizerViewSetup = false; // Reset flag when view is destroyed
         binding = null;
     }
 }
