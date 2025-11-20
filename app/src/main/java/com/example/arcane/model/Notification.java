@@ -34,5 +34,10 @@ public class Notification {
     private String message;
     private Timestamp timestamp;
     private Boolean read;
+
+    /**
+     * Required no-arg constructor for Firestore deserialization.
+     */
+    public Notification() {}
 }
 
