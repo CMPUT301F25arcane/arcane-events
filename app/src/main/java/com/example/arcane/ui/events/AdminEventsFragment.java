@@ -146,6 +146,8 @@ public class AdminEventsFragment extends Fragment {
     private void loadAllEvents() {
         eventRepository.getAllEvents()
                 .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     List<Event> items = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         Event event = doc.toObject(Event.class);

@@ -55,6 +55,8 @@ public class AllUsersFragment extends Fragment {
     private void loadAllUsers() {
         userRepository.getAllUsers()
                 .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     List<UserProfile> items = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         // Try UserProfile first

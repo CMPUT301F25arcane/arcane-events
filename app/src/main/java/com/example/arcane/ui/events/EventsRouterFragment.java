@@ -99,6 +99,8 @@ public class EventsRouterFragment extends Fragment {
             UserRepository userRepository = new UserRepository();
             userRepository.getUserById(currentUser.getUid())
                     .addOnSuccessListener(snapshot -> {
+                        if (!isAdded()) return;
+                        
                         String role = null;
                         if (snapshot.exists()) {
                             // Try UserProfile first
@@ -129,6 +131,7 @@ public class EventsRouterFragment extends Fragment {
                         updateMainActivityTitle();
                     })
                     .addOnFailureListener(e -> {
+                        if (!isAdded()) return;
                         // On failure, use SharedPreferences
                         String role = sharedPreferences.getString("user_role", null);
                         routeToFragment(role);
@@ -208,23 +211,27 @@ public class EventsRouterFragment extends Fragment {
      * This is called after the role is loaded from Firebase.
      */
     private void updateMainActivityTitle() {
+        if (!isAdded() || getActivity() == null) return;
         if (getActivity() instanceof com.example.arcane.MainActivity) {
             // Use post to ensure it runs on the main thread after current operations
-            getView().post(() -> {
-                if (getActivity() != null) {
-                    com.example.arcane.MainActivity mainActivity = (com.example.arcane.MainActivity) getActivity();
-                    mainActivity.updateActionBarTitleForHome();
-                    mainActivity.updateBottomNavTitle();
-                    // Refresh bottom nav menu based on role
-                    com.google.android.material.bottomnavigation.BottomNavigationView navView = 
-                        getActivity().findViewById(com.example.arcane.R.id.nav_view);
-                    androidx.navigation.NavController navController = 
-                        androidx.navigation.Navigation.findNavController(getActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
-                    if (navView != null && navController != null) {
-                        mainActivity.setupBottomNavigationMenu(navView, navController);
+            View view = getView();
+            if (view != null) {
+                view.post(() -> {
+                    if (isAdded() && getActivity() != null) {
+                        com.example.arcane.MainActivity mainActivity = (com.example.arcane.MainActivity) getActivity();
+                        mainActivity.updateActionBarTitleForHome();
+                        mainActivity.updateBottomNavTitle();
+                        // Refresh bottom nav menu based on role
+                        com.google.android.material.bottomnavigation.BottomNavigationView navView = 
+                            getActivity().findViewById(com.example.arcane.R.id.nav_view);
+                        androidx.navigation.NavController navController = 
+                            androidx.navigation.Navigation.findNavController(getActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
+                        if (navView != null && navController != null) {
+                            mainActivity.setupBottomNavigationMenu(navView, navController);
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     }
 }

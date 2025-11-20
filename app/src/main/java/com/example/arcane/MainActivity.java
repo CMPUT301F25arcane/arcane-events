@@ -186,16 +186,19 @@ public class MainActivity extends AppCompatActivity {
                 // Update home title for admin
                 homeItem.setTitle("All Events");
             } else {
-                // Non-admin: Show scan, hide gallery (default state)
-                android.view.MenuItem scanItem = navView.getMenu().findItem(R.id.navigation_dashboard);
-                if (scanItem != null) {
-                    scanItem.setVisible(true);
-                }
+                // Non-admin: Rebuild menu with scan in the middle position
+                android.view.Menu menu = navView.getMenu();
+                menu.clear();
                 
-                android.view.MenuItem galleryItem = navView.getMenu().findItem(R.id.navigation_browse_images);
-                if (galleryItem != null) {
-                    galleryItem.setVisible(false);
-                }
+                // Rebuild menu in correct order: Events (0), Scan (1), Profile (2)
+                android.view.MenuItem homeItem = menu.add(android.view.Menu.NONE, R.id.navigation_home, 0, getString(R.string.title_events));
+                homeItem.setIcon(R.drawable.ic_nav_events);
+                
+                android.view.MenuItem scanItem = menu.add(android.view.Menu.NONE, R.id.navigation_dashboard, 1, getString(R.string.title_scan));
+                scanItem.setIcon(R.drawable.ic_nav_scan);
+                
+                android.view.MenuItem profileItem = menu.add(android.view.Menu.NONE, R.id.navigation_notifications, 2, getString(R.string.title_profile));
+                profileItem.setIcon(R.drawable.ic_nav_profile);
             }
             
             // Setup AppBarConfiguration with appropriate top-level destinations

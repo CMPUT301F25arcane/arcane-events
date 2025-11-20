@@ -93,6 +93,8 @@ public class BrowseImagesFragment extends Fragment {
     private void loadAllEventImages() {
         eventRepository.getAllEvents()
                 .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     List<Event> events = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         Event event = doc.toObject(Event.class);

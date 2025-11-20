@@ -311,13 +311,21 @@ public class CreateEventFragment extends Fragment {
 
         eventService.createEvent(event)
                 .addOnSuccessListener(documentReference -> {
+                    if (!isAdded() || binding == null) return;
                     generateAndPersistQrCode(documentReference.getId());
-                    Toast.makeText(requireContext(), "Event created successfully!", Toast.LENGTH_SHORT).show();
-                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                    navController.navigateUp();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Event created successfully!", Toast.LENGTH_SHORT).show();
+                    }
+                    if (getActivity() != null) {
+                        NavController navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                        navController.navigateUp();
+                    }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Error creating event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     binding.createEventButton.setEnabled(true);
                     binding.createEventButton.setText("Create Event");
                 });
@@ -431,14 +439,14 @@ public class CreateEventFragment extends Fragment {
             base64 = QrCodeGenerator.generateBase64(qrData, QR_CODE_SIZE_PX);
         } catch (WriterException e) {
             Log.e(TAG, "QR generation failed", e);
-            if (isAdded()) {
-                Toast.makeText(requireContext(), "Failed to generate QR code", Toast.LENGTH_SHORT).show();
+            if (isAdded() && getContext() != null) {
+                Toast.makeText(getContext(), "Failed to generate QR code", Toast.LENGTH_SHORT).show();
             }
             return;
         }
         if (base64 == null) {
-            if (isAdded()) {
-                Toast.makeText(requireContext(), "Failed to generate QR code", Toast.LENGTH_SHORT).show();
+            if (isAdded() && getContext() != null) {
+                Toast.makeText(getContext(), "Failed to generate QR code", Toast.LENGTH_SHORT).show();
             }
             return;
         }
