@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="navigation_edit_event" type="id" />
+    <item name="notifications_container" type="id" />
 </resources>
 

@@ -26,6 +26,11 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.arcane.R;
+import com.example.arcane.model.UserProfile;
+import com.example.arcane.model.Users;
+import com.example.arcane.repository.UserRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 /**
  * Router fragment for managing events display based on user role.
@@ -76,27 +81,102 @@ public class EventsRouterFragment extends Fragment {
         attachChildFragment();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh role check when fragment becomes visible (in case role changed)
+        attachChildFragment();
+    }
+
     private void attachChildFragment() {
         if (sharedPreferences == null || getView() == null) {
             return;
         }
 
-        String role = sharedPreferences.getString("user_role", null);
+        // Check Firebase for actual user role (more reliable than SharedPreferences)
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            UserRepository userRepository = new UserRepository();
+            userRepository.getUserById(currentUser.getUid())
+                    .addOnSuccessListener(snapshot -> {
+                        if (!isAdded()) return;
+                        
+                        String role = null;
+                        if (snapshot.exists()) {
+                            // Try UserProfile first
+                            UserProfile profile = snapshot.toObject(UserProfile.class);
+                            if (profile != null && profile.getRole() != null) {
+                                role = profile.getRole();
+                            } else {
+                                // Fallback to Users model
+                                Users user = snapshot.toObject(Users.class);
+                                if (user != null && user.getRole() != null) {
+                                    role = user.getRole();
+                                }
+                            }
+                        }
+                        // Update SharedPreferences with role from Firebase (keeps cache in sync)
+                        if (role != null && sharedPreferences != null) {
+                            String cachedRole = sharedPreferences.getString("user_role", null);
+                            if (!role.equals(cachedRole)) {
+                                sharedPreferences.edit().putString("user_role", role).apply();
+                            }
+                        }
+                        // Fallback to SharedPreferences if Firebase doesn't have role
+                        if (role == null) {
+                            role = sharedPreferences.getString("user_role", null);
+                        }
+                        routeToFragment(role);
+                        // Notify MainActivity to update title after role is loaded
+                        updateMainActivityTitle();
+                    })
+                    .addOnFailureListener(e -> {
+                        if (!isAdded()) return;
+                        // On failure, use SharedPreferences
+                        String role = sharedPreferences.getString("user_role", null);
+                        routeToFragment(role);
+                        // Notify MainActivity to update title
+                        updateMainActivityTitle();
+                    });
+        } else {
+            // No user logged in, use SharedPreferences
+            String role = sharedPreferences.getString("user_role", null);
+            routeToFragment(role);
+            // Notify MainActivity to update title
+            updateMainActivityTitle();
+        }
+    }
+
+    private void routeToFragment(@Nullable String role) {
+        if (getView() == null) {
+            return;
+        }
+
+        boolean isAdmin = isAdmin(role);
         boolean showOrganizer = isOrganizer(role);
 
         Fragment current = getChildFragmentManager().findFragmentByTag(CHILD_TAG);
         if (current != null) {
+            // Only skip replacement if the current fragment matches the desired fragment
+            if (isAdmin && current instanceof AdminEventsFragment) {
+                return;
+            }
             if (showOrganizer && current instanceof OrganizerEventsFragment) {
                 return;
             }
-            if (!showOrganizer && current instanceof UserEventsFragment) {
+            if (!isAdmin && !showOrganizer && current instanceof UserEventsFragment) {
                 return;
             }
         }
 
-        Fragment nextFragment = showOrganizer
-                ? new OrganizerEventsFragment()
-                : new UserEventsFragment();
+        Fragment nextFragment;
+        if (isAdmin) {
+            nextFragment = new AdminEventsFragment();
+        } else if (showOrganizer) {
+            nextFragment = new OrganizerEventsFragment();
+        } else {
+            nextFragment = new UserEventsFragment();
+        }
 
         FragmentTransaction transaction = getChildFragmentManager()
                 .beginTransaction()
@@ -110,12 +190,49 @@ public class EventsRouterFragment extends Fragment {
         }
     }
 
+    private boolean isAdmin(@Nullable String role) {
+        if (role == null) {
+            return false;
+        }
+        String roleUpper = role.toUpperCase();
+        return "ADMIN".equals(roleUpper);
+    }
+
     private boolean isOrganizer(@Nullable String role) {
         if (role == null) {
             return false;
         }
         String roleUpper = role.toUpperCase();
         return "ORGANIZER".equals(roleUpper) || "ORGANISER".equals(roleUpper);
+    }
+
+    /**
+     * Notifies MainActivity to update the action bar title and bottom nav.
+     * This is called after the role is loaded from Firebase.
+     */
+    private void updateMainActivityTitle() {
+        if (!isAdded() || getActivity() == null) return;
+        if (getActivity() instanceof com.example.arcane.MainActivity) {
+            // Use post to ensure it runs on the main thread after current operations
+            View view = getView();
+            if (view != null) {
+                view.post(() -> {
+                    if (isAdded() && getActivity() != null) {
+                        com.example.arcane.MainActivity mainActivity = (com.example.arcane.MainActivity) getActivity();
+                        mainActivity.updateActionBarTitleForHome();
+                        mainActivity.updateBottomNavTitle();
+                        // Refresh bottom nav menu based on role
+                        com.google.android.material.bottomnavigation.BottomNavigationView navView = 
+                            getActivity().findViewById(com.example.arcane.R.id.nav_view);
+                        androidx.navigation.NavController navController = 
+                            androidx.navigation.Navigation.findNavController(getActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
+                        if (navView != null && navController != null) {
+                            mainActivity.setupBottomNavigationMenu(navView, navController);
+                        }
+                    }
+                });
+            }
+        }
     }
 }
 

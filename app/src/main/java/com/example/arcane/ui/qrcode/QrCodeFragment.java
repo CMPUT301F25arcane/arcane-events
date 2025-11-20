@@ -78,19 +78,26 @@ public class QrCodeFragment extends Fragment {
     }
 
     private void loadQrCode() {
+        if (binding == null || !isAdded()) return;
         binding.qrProgress.setVisibility(View.VISIBLE);
         eventRepository.getEventById(eventId)
                 .addOnSuccessListener(this::handleEventLoaded)
                 .addOnFailureListener(e -> {
+                    if (!isAdded() || binding == null) return;
                     binding.qrProgress.setVisibility(View.GONE);
-                    Toast.makeText(requireContext(), "Unable to load event", Toast.LENGTH_SHORT).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Unable to load event", Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 
     private void handleEventLoaded(DocumentSnapshot snapshot) {
+        if (!isAdded() || binding == null) return;
         binding.qrProgress.setVisibility(View.GONE);
         if (snapshot == null || !snapshot.exists()) {
-            Toast.makeText(requireContext(), "Event not found", Toast.LENGTH_SHORT).show();
+            if (getContext() != null) {
+                Toast.makeText(getContext(), "Event not found", Toast.LENGTH_SHORT).show();
+            }
             navigateBack();
             return;
         }
@@ -119,7 +126,7 @@ public class QrCodeFragment extends Fragment {
     }
 
     private void regenerateQr(@NonNull Event event) {
-        if (eventId == null) {
+        if (eventId == null || binding == null || !isAdded()) {
             displayError("QR code not available.");
             return;
         }
@@ -127,7 +134,9 @@ public class QrCodeFragment extends Fragment {
         binding.qrProgress.setVisibility(View.VISIBLE);
         try {
             String base64 = QrCodeGenerator.generateBase64("EVENT:" + eventId, QR_CODE_SIZE_PX);
-            binding.qrProgress.setVisibility(View.GONE);
+            if (isAdded() && binding != null) {
+                binding.qrProgress.setVisibility(View.GONE);
+            }
 
             if (base64 == null) {
                 displayError("Failed to generate QR code.");
@@ -140,13 +149,16 @@ public class QrCodeFragment extends Fragment {
             updates.put("qrStyleVersion", QR_STYLE_VERSION);
             eventService.updateEventFields(eventId, updates);
         } catch (WriterException e) {
-            binding.qrProgress.setVisibility(View.GONE);
+            if (isAdded() && binding != null) {
+                binding.qrProgress.setVisibility(View.GONE);
+            }
             Log.e(TAG, "Unable to regenerate QR", e);
             displayError("Failed to generate QR code.");
         }
     }
 
     private void displayQr(@Nullable String base64) {
+        if (!isAdded() || binding == null) return;
         Bitmap bitmap = decodeBase64(base64);
         if (bitmap != null) {
             binding.qrImage.setImageBitmap(bitmap);
@@ -157,6 +169,7 @@ public class QrCodeFragment extends Fragment {
     }
 
     private void displayError(String message) {
+        if (!isAdded() || binding == null) return;
         binding.qrImage.setImageResource(R.drawable.ic_qr_code);
         binding.qrInstructions.setText(message);
     }
@@ -175,8 +188,13 @@ public class QrCodeFragment extends Fragment {
     }
 
     private void navigateBack() {
-        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-        navController.navigateUp();
+        if (!isAdded() || getActivity() == null) return;
+        try {
+            NavController navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+            navController.navigateUp();
+        } catch (Exception e) {
+            // Fragment may be detached, ignore
+        }
     }
 
     @Override

@@ -170,6 +170,8 @@ public class UserEventsFragment extends Fragment {
         String userId = currentUser.getUid();
         userRepository.getUserById(userId)
                 .addOnSuccessListener(snapshot -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     UserProfile profile = snapshot.toObject(UserProfile.class);
                     if (profile == null || profile.getRegisteredEventIds() == null || profile.getRegisteredEventIds().isEmpty()) {
                         allEvents = new ArrayList<>();
@@ -184,6 +186,7 @@ public class UserEventsFragment extends Fragment {
                     for (String eventId : eventIds) {
                         eventRepository.getEventById(eventId)
                                 .addOnSuccessListener(doc -> {
+                                    if (!isAdded() || adapter == null) return;
                                     Event event = doc.toObject(Event.class);
                                     if (event != null) {
                                         event.setEventId(doc.getId());
@@ -191,6 +194,7 @@ public class UserEventsFragment extends Fragment {
                                     }
                                 })
                                 .addOnCompleteListener(task -> {
+                                    if (!isAdded() || adapter == null) return;
                                     remaining[0] -= 1;
                                     if (remaining[0] == 0) {
                                         // Store all events and apply current search filter
@@ -214,6 +218,8 @@ public class UserEventsFragment extends Fragment {
         // Get all decisions for this user (collection group query)
         decisionRepository.getDecisionsByUser(userId)
                 .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     Map<String, String> statusMap = new HashMap<>();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         Decision decision = doc.toObject(Decision.class);
@@ -231,6 +237,7 @@ public class UserEventsFragment extends Fragment {
                     performSearch();
                 })
                 .addOnFailureListener(e -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
                     // On failure, just show events without status
                     performSearch();
                 });

@@ -102,9 +102,13 @@ public class EntrantsFragment extends Fragment {
     private void loadEntrants() {
         eventService.getEventRegistrations(eventId)
                 .addOnSuccessListener(result -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     String status = (String) result.get("status");
                     if (!"success".equals(status)) {
-                        Toast.makeText(requireContext(), "Failed to load entrants", Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Failed to load entrants", Toast.LENGTH_SHORT).show();
+                        }
                         return;
                     }
 
@@ -125,6 +129,8 @@ public class EntrantsFragment extends Fragment {
 
                         userService.getUserById(entrantId)
                                 .addOnSuccessListener(userDoc -> {
+                                    if (!isAdded() || adapter == null) return;
+                                    
                                     Users user = userDoc.toObject(Users.class);
                                     EntrantItem item = new EntrantItem();
                                     if (user != null) {
@@ -145,6 +151,7 @@ public class EntrantsFragment extends Fragment {
                                     }
                                 })
                                 .addOnFailureListener(e -> {
+                                    if (!isAdded() || adapter == null) return;
                                     // On failure, still add entry with limited info
                                     EntrantItem item = new EntrantItem();
                                     item.name = "Unknown";
@@ -161,7 +168,10 @@ public class EntrantsFragment extends Fragment {
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error loading entrants: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Error loading entrants: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 
