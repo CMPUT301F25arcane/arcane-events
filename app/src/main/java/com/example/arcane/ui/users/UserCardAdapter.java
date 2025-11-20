@@ -1,9 +1,12 @@
 package com.example.arcane.ui.users;
 
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -44,7 +47,6 @@ public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserVi
         UserProfile user = users.get(position);
         holder.nameView.setText(user.getName() != null ? user.getName() : "Unknown");
         holder.emailView.setText(user.getEmail() != null ? user.getEmail() : "");
-        holder.roleView.setText(user.getRole() != null ? user.getRole() : "");
 
         // Show role chip (display only, not interactive)
         if (user.getRole() != null && !user.getRole().isEmpty()) {
@@ -58,6 +60,22 @@ public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserVi
 
         // Set placeholder image
         holder.imageView.setImageResource(android.R.drawable.ic_menu_myplaces);
+
+        // Setup options menu button
+        holder.optionsMenuButton.setOnClickListener(v -> {
+            PopupMenu popupMenu = new PopupMenu(v.getContext(), v);
+            popupMenu.getMenuInflater().inflate(R.menu.user_card_options_menu, popupMenu.getMenu());
+            
+            popupMenu.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == R.id.action_delete_user) {
+                    // TODO: Implement delete functionality
+                    return true;
+                }
+                return false;
+            });
+            
+            popupMenu.show();
+        });
     }
 
     @Override
@@ -69,16 +87,16 @@ public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserVi
         ImageView imageView;
         TextView nameView;
         TextView emailView;
-        TextView roleView;
         Chip roleChip;
+        ImageButton optionsMenuButton;
 
         UserViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.user_image);
             nameView = itemView.findViewById(R.id.user_name);
             emailView = itemView.findViewById(R.id.user_email);
-            roleView = itemView.findViewById(R.id.user_role);
             roleChip = itemView.findViewById(R.id.role_status);
+            optionsMenuButton = itemView.findViewById(R.id.options_menu_button);
         }
     }
 }

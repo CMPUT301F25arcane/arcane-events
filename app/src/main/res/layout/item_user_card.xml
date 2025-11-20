@@ -46,6 +46,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
+            android:layout_marginEnd="8dp"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@color/brand_primary"
@@ -53,8 +54,22 @@
             android:ellipsize="end"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toEndOf="@id/image_container"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/options_menu_button"
             tools:text="John Doe" />
+
+        <!-- Options Menu Button (3 dots) -->
+        <ImageButton
+            android:id="@+id/options_menu_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_three_dots"
+            android:contentDescription="User options"
+            android:padding="8dp"
+            app:tint="?attr/colorOnSurface"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/user_name" />
 
         <!-- User Email -->
         <TextView
@@ -69,20 +84,6 @@
             app:layout_constraintStart_toEndOf="@id/image_container"
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="john.doe@example.com" />
-
-        <!-- User Role -->
-        <TextView
-            android:id="@+id/user_role"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="2dp"
-            android:textSize="14sp"
-            android:textColor="@color/text_primary"
-            app:layout_constraintTop_toBottomOf="@id/user_email"
-            app:layout_constraintStart_toEndOf="@id/image_container"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="ENTRANT" />
 
         <!-- Role Status Chip -->
         <com.google.android.material.chip.Chip
@@ -103,17 +104,9 @@
             app:chipMinHeight="28dp"
             app:closeIconEnabled="false"
             app:checkedIconEnabled="false"
-            app:layout_constraintTop_toBottomOf="@id/user_role"
+            app:layout_constraintTop_toBottomOf="@id/user_email"
             app:layout_constraintStart_toEndOf="@id/image_container"
             tools:text="ADMIN" />
-
-        <!-- Barrier to handle both role and status chip -->
-        <androidx.constraintlayout.widget.Barrier
-            android:id="@+id/content_barrier"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:barrierDirection="bottom"
-            app:constraint_referenced_ids="user_role,role_status" />
 
         <!-- Separator line between users -->
         <View
@@ -122,7 +115,7 @@
             android:layout_height="1dp"
             android:background="@color/divider"
             android:layout_marginTop="12dp"
-            app:layout_constraintTop_toBottomOf="@id/content_barrier"
+            app:layout_constraintTop_toBottomOf="@id/role_status"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
