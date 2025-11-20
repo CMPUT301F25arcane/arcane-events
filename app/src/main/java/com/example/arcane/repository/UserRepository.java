@@ -98,5 +98,14 @@ public class UserRepository {
                 .whereEqualTo("deviceId", deviceId)
                 .get();
     }
+
+    /**
+     * Gets all users from the database.
+     *
+     * @return a Task that completes with the query snapshot of all users
+     */
+    public Task<QuerySnapshot> getAllUsers() {
+        return db.collection(COLLECTION_NAME).get();
+    }
 }
 

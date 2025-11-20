@@ -34,7 +34,6 @@ import com.example.arcane.R;
 import com.example.arcane.model.Users;
 import com.example.arcane.model.UserProfile;
 import com.example.arcane.repository.UserRepository;
-import com.example.arcane.service.UserService;
 
 /**
  * Main activity for the Arcane application.
@@ -169,38 +168,13 @@ public class MainActivity extends AppCompatActivity {
         BottomNavigationView navView = binding.navView;
         if (navView == null) return;
         
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser == null) {
-            return;
-        }
-
-        UserRepository userRepository = new UserRepository();
-        userRepository.getUserById(currentUser.getUid())
-                .addOnSuccessListener(snapshot -> {
-                    String role = null;
-                    if (snapshot.exists()) {
-                        // Try UserProfile first
-                        UserProfile profile = snapshot.toObject(UserProfile.class);
-                        if (profile != null && profile.getRole() != null) {
-                            role = profile.getRole();
-                        } else {
-                            // Fallback to Users model
-                            Users user = snapshot.toObject(Users.class);
-                            if (user != null && user.getRole() != null) {
-                                role = user.getRole();
-                            }
-                        }
-                    }
-                    
-                    if (role != null) {
-                        String r = role.toUpperCase().trim();
-                        if ("ADMIN".equals(r)) {
-                            navView.getMenu().findItem(R.id.navigation_home).setTitle("All Events");
-                        } else {
-                            navView.getMenu().findItem(R.id.navigation_home).setTitle(getString(R.string.title_events));
-                        }
-                    }
-                });
+        getUserRole(role -> {
+            if (role != null && "ADMIN".equals(role.toUpperCase().trim())) {
+                navView.getMenu().findItem(R.id.navigation_home).setTitle("All Events");
+            } else {
+                navView.getMenu().findItem(R.id.navigation_home).setTitle(getString(R.string.title_events));
+            }
+        });
     }
 
     /**
@@ -210,9 +184,32 @@ public class MainActivity extends AppCompatActivity {
     public void updateActionBarTitleForHome() {
         if (getSupportActionBar() == null) return;
         
+        getUserRole(role -> {
+            if (role != null) {
+                String r = role.toUpperCase().trim();
+                if ("ADMIN".equals(r)) {
+                    // Admin uses custom toolbar, title is set in setupAdminToolbar()
+                } else if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                    getSupportActionBar().setTitle("My Events (Organizer)");
+                } else {
+                    getSupportActionBar().setTitle("My Events");
+                }
+            } else {
+                getSupportActionBar().setTitle("My Events");
+            }
+        });
+    }
+
+    /**
+     * Helper method to get user role from Firebase.
+     * Extracts the common role-checking logic used across multiple methods.
+     *
+     * @param callback callback that receives the role (or null if not found)
+     */
+    private void getUserRole(java.util.function.Consumer<String> callback) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
-            getSupportActionBar().setTitle("My Events");
+            callback.accept(null);
             return;
         }
 
@@ -225,37 +222,17 @@ public class MainActivity extends AppCompatActivity {
                         UserProfile profile = snapshot.toObject(UserProfile.class);
                         if (profile != null && profile.getRole() != null) {
                             role = profile.getRole();
-                            android.util.Log.d("MainActivity", "Found role from UserProfile: " + role);
                         } else {
                             // Fallback to Users model
                             Users user = snapshot.toObject(Users.class);
                             if (user != null && user.getRole() != null) {
                                 role = user.getRole();
-                                android.util.Log.d("MainActivity", "Found role from Users: " + role);
                             }
                         }
                     }
-                    
-                    if (role != null) {
-                        String r = role.toUpperCase().trim();
-                        android.util.Log.d("MainActivity", "Setting title with role: " + r);
-                        if ("ADMIN".equals(r)) {
-                            // Admin uses custom toolbar, title is set in setupAdminToolbar()
-                            // No need to set title here
-                        } else if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
-                            getSupportActionBar().setTitle("My Events (Organizer)");
-                        } else {
-                            getSupportActionBar().setTitle("My Events");
-                        }
-                    } else {
-                        android.util.Log.d("MainActivity", "No role found, setting default title");
-                        getSupportActionBar().setTitle("My Events");
-                    }
+                    callback.accept(role);
                 })
-                .addOnFailureListener(e -> {
-                    android.util.Log.e("MainActivity", "Failed to get user role: " + e.getMessage());
-                    getSupportActionBar().setTitle("My Events");
-                });
+                .addOnFailureListener(e -> callback.accept(null));
     }
 
     /**
@@ -305,7 +282,8 @@ public class MainActivity extends AppCompatActivity {
         
         if (usersButton != null) {
             usersButton.setOnClickListener(v -> {
-                // TODO: Handle users button click
+                NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
+                navController.navigate(R.id.navigation_all_users);
             });
         }
     }
@@ -331,40 +309,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser == null) {
-            resetActionBar();
-            return;
-        }
-
-        UserRepository userRepository = new UserRepository();
-        userRepository.getUserById(currentUser.getUid())
-                .addOnSuccessListener(snapshot -> {
-                    String role = null;
-                    if (snapshot.exists()) {
-                        // Try UserProfile first
-                        UserProfile profile = snapshot.toObject(UserProfile.class);
-                        if (profile != null && profile.getRole() != null) {
-                            role = profile.getRole();
-                        } else {
-                            // Fallback to Users model
-                            Users user = snapshot.toObject(Users.class);
-                            if (user != null && user.getRole() != null) {
-                                role = user.getRole();
-                            }
-                        }
-                    }
-                    
-                    boolean isAdmin = role != null && "ADMIN".equals(role.toUpperCase().trim());
-                    if (isAdmin) {
-                        setupAdminToolbar();
-                    } else {
-                        resetActionBar();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    resetActionBar();
-                });
+        getUserRole(role -> {
+            boolean isAdmin = role != null && "ADMIN".equals(role.toUpperCase().trim());
+            if (isAdmin) {
+                setupAdminToolbar();
+            } else {
+                resetActionBar();
+            }
+        });
     }
 
 }

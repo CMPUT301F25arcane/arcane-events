@@ -149,45 +149,30 @@ public class EventsRouterFragment extends Fragment {
             return;
         }
 
-        // Debug: Log the role being checked
-        android.util.Log.d("EventsRouter", "Routing with role: " + role);
-
         boolean isAdmin = isAdmin(role);
         boolean showOrganizer = isOrganizer(role);
-        
-        // Debug: Log the routing decision
-        android.util.Log.d("EventsRouter", "isAdmin: " + isAdmin + ", showOrganizer: " + showOrganizer);
 
         Fragment current = getChildFragmentManager().findFragmentByTag(CHILD_TAG);
         if (current != null) {
-            android.util.Log.d("EventsRouter", "Current fragment: " + current.getClass().getSimpleName());
             // Only skip replacement if the current fragment matches the desired fragment
             if (isAdmin && current instanceof AdminEventsFragment) {
-                android.util.Log.d("EventsRouter", "Already showing AdminEventsFragment, skipping");
                 return;
             }
             if (showOrganizer && current instanceof OrganizerEventsFragment) {
-                android.util.Log.d("EventsRouter", "Already showing OrganizerEventsFragment, skipping");
                 return;
             }
             if (!isAdmin && !showOrganizer && current instanceof UserEventsFragment) {
-                android.util.Log.d("EventsRouter", "Already showing UserEventsFragment, skipping");
                 return;
             }
-            // If we get here, we need to replace the fragment
-            android.util.Log.d("EventsRouter", "Fragment mismatch detected, replacing fragment");
         }
 
         Fragment nextFragment;
         if (isAdmin) {
             nextFragment = new AdminEventsFragment();
-            android.util.Log.d("EventsRouter", "Creating AdminEventsFragment");
         } else if (showOrganizer) {
             nextFragment = new OrganizerEventsFragment();
-            android.util.Log.d("EventsRouter", "Creating OrganizerEventsFragment");
         } else {
             nextFragment = new UserEventsFragment();
-            android.util.Log.d("EventsRouter", "Creating UserEventsFragment");
         }
 
         FragmentTransaction transaction = getChildFragmentManager()
