@@ -53,6 +53,15 @@ public class UserEventsFragment extends Fragment {
     private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
 
     /**
+     * Gets the event adapter (for testing purposes).
+     *
+     * @return the event card adapter
+     */
+    public EventCardAdapter getAdapter() {
+        return adapter;
+    }
+
+    /**
      * Creates and returns the view hierarchy for this fragment.
      *
      * @param inflater the layout inflater
