@@ -93,7 +93,14 @@ public class EventsRouterFragment extends Fragment {
             return;
         }
 
-        // Check Firebase for actual user role (more reliable than SharedPreferences)
+        // Use cached role from SharedPreferences first for immediate routing
+        String cachedRole = sharedPreferences.getString("user_role", null);
+        routeToFragment(cachedRole);
+        
+        // Update MainActivity title immediately with cached role
+        updateMainActivityTitle();
+
+        // Then check Firebase in background to update cache if needed
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             UserRepository userRepository = new UserRepository();
@@ -117,33 +124,18 @@ public class EventsRouterFragment extends Fragment {
                         }
                         // Update SharedPreferences with role from Firebase (keeps cache in sync)
                         if (role != null && sharedPreferences != null) {
-                            String cachedRole = sharedPreferences.getString("user_role", null);
-                            if (!role.equals(cachedRole)) {
+                            String currentCachedRole = sharedPreferences.getString("user_role", null);
+                            if (!role.equals(currentCachedRole)) {
                                 sharedPreferences.edit().putString("user_role", role).apply();
+                                // Only re-route if role actually changed
+                                routeToFragment(role);
+                                updateMainActivityTitle();
                             }
                         }
-                        // Fallback to SharedPreferences if Firebase doesn't have role
-                        if (role == null) {
-                            role = sharedPreferences.getString("user_role", null);
-                        }
-                        routeToFragment(role);
-                        // Notify MainActivity to update title after role is loaded
-                        updateMainActivityTitle();
                     })
                     .addOnFailureListener(e -> {
-                        if (!isAdded()) return;
-                        // On failure, use SharedPreferences
-                        String role = sharedPreferences.getString("user_role", null);
-                        routeToFragment(role);
-                        // Notify MainActivity to update title
-                        updateMainActivityTitle();
+                        // Silently fail - we already routed with cached role
                     });
-        } else {
-            // No user logged in, use SharedPreferences
-            String role = sharedPreferences.getString("user_role", null);
-            routeToFragment(role);
-            // Notify MainActivity to update title
-            updateMainActivityTitle();
         }
     }
 
@@ -235,4 +227,5 @@ public class EventsRouterFragment extends Fragment {
         }
     }
 }
+
 

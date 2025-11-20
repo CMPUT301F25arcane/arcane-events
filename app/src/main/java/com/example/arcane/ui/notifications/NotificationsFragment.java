@@ -16,8 +16,6 @@ package com.example.arcane.ui.notifications;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -115,87 +113,14 @@ public class NotificationsFragment extends Fragment {
             return;
         }
         
-        // Use Handler with delay to give Firebase time to complete sign-in
-        // This is especially important for tests where sign-in happens asynchronously
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.postDelayed(() -> {
-            if (!isAdded() || getActivity() == null) {
-                return;
-            }
-            
-            // Check if we're still on the Profile destination before navigating away
-            // This prevents navigation race conditions
-            try {
-                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                androidx.navigation.NavDestination currentDest = navController.getCurrentDestination();
-                if (currentDest == null || currentDest.getId() != R.id.navigation_notifications) {
-                    // We're no longer on Profile, don't navigate away
-                    return;
-                }
-            } catch (Exception e) {
-                // Can't check destination, continue anyway
-            }
-            
-            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-            if (currentUser == null) {
-                // Not logged in, check again after a delay (for tests)
-                handler.postDelayed(() -> {
-                    if (!isAdded() || getActivity() == null) {
-                        return;
-                    }
-                    
-                    // Check destination again before navigating
-                    try {
-                        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                        androidx.navigation.NavDestination currentDest = navController.getCurrentDestination();
-                        if (currentDest == null || currentDest.getId() != R.id.navigation_notifications) {
-                            return;
-                        }
-                    } catch (Exception e) {
-                        // Can't check, continue
-                    }
-                    
-                    FirebaseUser retryUser = FirebaseAuth.getInstance().getCurrentUser();
-                    if (retryUser == null) {
-                        // Second retry with even longer delay for tests
-                        handler.postDelayed(() -> {
-                            if (!isAdded() || getActivity() == null) {
-                                return;
-                            }
-                            
-                            // Final destination check
-                            try {
-                                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                                androidx.navigation.NavDestination currentDest = navController.getCurrentDestination();
-                                if (currentDest == null || currentDest.getId() != R.id.navigation_notifications) {
-                                    return;
-                                }
-                            } catch (Exception e) {
-                                // Can't check, continue
-                            }
-                            
-                            FirebaseUser finalRetryUser = FirebaseAuth.getInstance().getCurrentUser();
-                            if (finalRetryUser == null) {
-                                // Still no user after multiple retries
-                                // Don't navigate away - just show empty state
-                                // This allows tests to verify we're on Profile even if user check fails
-                                // In production, user should be signed in before reaching Profile
-                            } else {
-                                // User found on final retry, load profile
-                                loadUserData(finalRetryUser);
-                            }
-                        }, 3000); // Wait 3 seconds before final retry
-                    } else {
-                        // User found on first retry, load profile
-                        loadUserData(retryUser);
-                    }
-                }, 2000); // Wait 2 seconds before first retry
-                return;
-            }
-            
-            // User is signed in, load profile data
-            loadUserData(currentUser);
-        }, 2000); // Initial delay of 2000ms to allow Firebase to initialize (increased for tests)
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            // Not logged in - in production this shouldn't happen, but handle gracefully
+            return;
+        }
+        
+        // User is signed in, load profile data immediately
+        loadUserData(currentUser);
     }
     
     private void loadUserData(FirebaseUser currentUser) {
