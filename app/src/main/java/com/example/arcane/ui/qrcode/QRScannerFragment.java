@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -36,6 +37,10 @@ public class QRScannerFragment extends Fragment {
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 100;
     private FragmentQrScannerBinding binding;
     private DecoratedBarcodeView barcodeView;
+    private boolean isScanning = false;
+    private String lastScannedCode = null;
+    private long lastScanTime = 0;
+    private static final long SCAN_COOLDOWN_MS = 3000; // 3 seconds cooldown between scans
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -90,11 +95,32 @@ public class QRScannerFragment extends Fragment {
 
     private void startScanning() {
         try {
+            isScanning = true;
+            lastScannedCode = null;
+            lastScanTime = 0;
+            
             barcodeView.decodeContinuous(new BarcodeCallback() {
                 @Override
                 public void barcodeResult(BarcodeResult result) {
+                    if (!isScanning) {
+                        return; // Don't process if scanning is stopped
+                    }
+                    
                     if (result.getText() != null) {
-                        handleScannedCode(result.getText());
+                        String scannedText = result.getText();
+                        long currentTime = System.currentTimeMillis();
+                        
+                        // Check if this is the same code we just scanned
+                        if (scannedText.equals(lastScannedCode) && 
+                            (currentTime - lastScanTime) < SCAN_COOLDOWN_MS) {
+                            // Same code scanned recently, ignore it
+                            return;
+                        }
+                        
+                        // New code or enough time has passed, process it
+                        lastScannedCode = scannedText;
+                        lastScanTime = currentTime;
+                        handleScannedCode(scannedText);
                     }
                 }
 
@@ -112,6 +138,7 @@ public class QRScannerFragment extends Fragment {
 
     private void handleScannedCode(String scannedText) {
         // Stop scanning to prevent multiple scans
+        isScanning = false;
         barcodeView.pause();
 
         // Parse the scanned code - QR codes are generated as "EVENT:" + eventId
@@ -126,15 +153,59 @@ public class QRScannerFragment extends Fragment {
         } else {
             Toast.makeText(requireContext(), "Invalid QR code format", Toast.LENGTH_SHORT).show();
             // Resume scanning after a delay
-            barcodeView.postDelayed(() -> barcodeView.resume(), 2000);
+            isScanning = true;
+            barcodeView.postDelayed(() -> {
+                if (isScanning) {
+                    barcodeView.resume();
+                }
+            }, 2000);
         }
     }
 
     private void navigateToEventDetail(String eventId) {
-        NavController navController = Navigation.findNavController(requireView());
-        Bundle args = new Bundle();
-        args.putString("eventId", eventId);
-        navController.navigate(R.id.navigation_event_detail, args);
+        try {
+            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+            Bundle args = new Bundle();
+            args.putString("eventId", eventId);
+            
+            // Store eventId for navigation listener
+            final String eventIdToNavigate = eventId;
+            
+            // Add a one-time listener to navigate to event detail immediately after home navigation
+            androidx.navigation.NavController.OnDestinationChangedListener oneTimeListener = 
+                new androidx.navigation.NavController.OnDestinationChangedListener() {
+                    @Override
+                    public void onDestinationChanged(@NonNull NavController controller,
+                                                    @NonNull androidx.navigation.NavDestination destination,
+                                                    @Nullable Bundle arguments) {
+                        // When we reach home, immediately navigate to event detail
+                        if (destination.getId() == R.id.navigation_home) {
+                            // Remove this listener to prevent it from firing again
+                            controller.removeOnDestinationChangedListener(this);
+                            
+                            // Navigate to event detail immediately
+                            Bundle detailArgs = new Bundle();
+                            detailArgs.putString("eventId", eventIdToNavigate);
+                            controller.navigate(R.id.navigation_event_detail, detailArgs);
+                        }
+                    }
+                };
+            
+            navController.addOnDestinationChangedListener(oneTimeListener);
+            
+            // Navigate to Events tab first to update bottom navigation to Events
+            // Use popUpTo to remove scanner from back stack
+            androidx.navigation.NavOptions navOptions = new androidx.navigation.NavOptions.Builder()
+                    .setPopUpTo(R.id.navigation_dashboard, true)
+                    .build();
+            
+            // Navigate to home first (this sets bottom nav to Events tab)
+            // The listener will immediately navigate to event detail
+            navController.navigate(R.id.navigation_home, null, navOptions);
+        } catch (Exception e) {
+            android.util.Log.e("QRScanner", "Error in navigateToEventDetail", e);
+            Toast.makeText(requireContext(), "Error navigating to event", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void navigateBack() {
@@ -145,7 +216,11 @@ public class QRScannerFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (barcodeView != null && checkCameraPermission()) {
+        if (barcodeView != null && checkCameraPermission() && isScanning) {
+            // Reset scanning state when resuming
+            isScanning = true;
+            lastScannedCode = null;
+            lastScanTime = 0;
             try {
                 barcodeView.resume();
             } catch (Exception e) {
@@ -158,6 +233,7 @@ public class QRScannerFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
+        isScanning = false;
         if (barcodeView != null) {
             barcodeView.pause();
         }
@@ -166,6 +242,7 @@ public class QRScannerFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        isScanning = false;
         if (barcodeView != null) {
             barcodeView.pause();
         }
