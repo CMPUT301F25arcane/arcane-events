@@ -29,9 +29,12 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
+import androidx.appcompat.app.AlertDialog;
+
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentProfileBinding;
 import com.example.arcane.model.Users;
+import com.example.arcane.repository.UserRepository;
 import com.example.arcane.service.UserService;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -48,6 +51,7 @@ public class NotificationsFragment extends Fragment {
 
     private FragmentProfileBinding binding;
     private UserService userService;
+    private UserRepository userRepository;
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -66,15 +70,16 @@ public class NotificationsFragment extends Fragment {
         View root = binding.getRoot();
 
         userService = new UserService();
+        userRepository = new UserRepository();
 
-        // Logout button functionality
         binding.logoutButton.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
-            // Clear cached user role on logout
             clearCachedUserRole();
             NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
             navController.navigate(R.id.navigation_welcome);
         });
+
+        binding.deleteProfileButton.setOnClickListener(v -> showDeleteConfirmDialog());
 
         return root;
     }
@@ -216,7 +221,43 @@ public class NotificationsFragment extends Fragment {
         if (user.getPhone() != null && !user.getPhone().isEmpty()) {
             binding.editPhone.setText(user.getPhone());
         }
-        // Note: Pronouns field is not in the Users model, so we leave it as is
+        
+        // Show delete button only for non-organizer users
+        String role = user.getRole();
+        boolean isOrganizer = role != null && ("ORGANIZER".equalsIgnoreCase(role) || "ORGANISER".equalsIgnoreCase(role));
+        binding.deleteProfileButton.setVisibility(isOrganizer ? View.GONE : View.VISIBLE);
+    }
+
+    private void showDeleteConfirmDialog() {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Delete Profile")
+            .setMessage("Are you sure you want to delete your profile? This action cannot be undone.")
+            .setPositiveButton("Delete", (d, w) -> deleteProfile())
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void deleteProfile() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) return;
+
+        String userId = currentUser.getUid();
+        
+        // Delete from Firestore first
+        userRepository.deleteUser(userId)
+            .continueWithTask(task -> {
+                // Then delete from Firebase Auth
+                return currentUser.delete();
+            })
+            .addOnSuccessListener(v -> {
+                clearCachedUserRole();
+                Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
+                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                navController.navigate(R.id.navigation_welcome);
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(requireContext(), "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
     }
 
     private void clearCachedUserRole() {
