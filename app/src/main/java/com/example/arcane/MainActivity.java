@@ -61,14 +61,11 @@ public class MainActivity extends AppCompatActivity {
         configureStatusBar();
 
         BottomNavigationView navView = findViewById(R.id.nav_view);
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications)
-                .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_activity_main);
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
-        NavigationUI.setupWithNavController(navView, navController);
+        
+        // Setup bottom nav menu based on user role (default to scan, admin gets gallery)
+        // This will configure NavigationUI appropriately for each role
+        setupBottomNavigationMenu(navView, navController);
         
         // Update bottom nav title based on user role
         updateBottomNavTitle();
@@ -89,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
             if (destination.getId() == R.id.navigation_home) {
                 // Use post-delay to ensure fragment is loaded and Firebase query can complete
                 binding.getRoot().postDelayed(() -> {
-                    updateActionBarTitleForHome();
+                updateActionBarTitleForHome();
                     checkAdminAndSetupToolbar(); // Setup custom toolbar for admin
                 }, 300);
             } else {
@@ -101,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 boolean isTopLevel = destination.getId() == R.id.navigation_home || 
                                      destination.getId() == R.id.navigation_dashboard || 
+                                     destination.getId() == R.id.navigation_browse_images || 
                                      destination.getId() == R.id.navigation_notifications;
                 getSupportActionBar().setDisplayHomeAsUpEnabled(!isTopLevel);
             }
@@ -157,6 +155,69 @@ public class MainActivity extends AppCompatActivity {
             controller.setAppearanceLightStatusBars(true);
         }
         getWindow().setStatusBarColor(Color.WHITE);
+    }
+
+    /**
+     * Sets up the bottom navigation menu based on user role.
+     * Admin users get gallery button, others get scan button.
+     * Can be called to refresh the menu when role changes.
+     */
+    public void setupBottomNavigationMenu(BottomNavigationView navView, NavController navController) {
+        if (navView == null || navController == null) return;
+        
+        getUserRole(role -> {
+            boolean isAdmin = role != null && "ADMIN".equals(role.toUpperCase().trim());
+            
+            if (isAdmin) {
+                // Admin: Rebuild menu with gallery in the middle position
+                android.view.Menu menu = navView.getMenu();
+                menu.clear();
+                
+                // Rebuild menu in correct order: Events (0), Gallery (1), Profile (2)
+                android.view.MenuItem homeItem = menu.add(android.view.Menu.NONE, R.id.navigation_home, 0, getString(R.string.title_events));
+                homeItem.setIcon(R.drawable.ic_nav_events);
+                
+                android.view.MenuItem galleryItem = menu.add(android.view.Menu.NONE, R.id.navigation_browse_images, 1, "Gallery");
+                galleryItem.setIcon(R.drawable.ic_gallery);
+                
+                android.view.MenuItem profileItem = menu.add(android.view.Menu.NONE, R.id.navigation_notifications, 2, getString(R.string.title_profile));
+                profileItem.setIcon(R.drawable.ic_nav_profile);
+                
+                // Update home title for admin
+                homeItem.setTitle("All Events");
+            } else {
+                // Non-admin: Show scan, hide gallery (default state)
+                android.view.MenuItem scanItem = navView.getMenu().findItem(R.id.navigation_dashboard);
+                if (scanItem != null) {
+                    scanItem.setVisible(true);
+                }
+                
+                android.view.MenuItem galleryItem = navView.getMenu().findItem(R.id.navigation_browse_images);
+                if (galleryItem != null) {
+                    galleryItem.setVisible(false);
+                }
+            }
+            
+            // Setup AppBarConfiguration with appropriate top-level destinations
+            int[] topLevelDestinations;
+            if (isAdmin) {
+                topLevelDestinations = new int[]{
+                    R.id.navigation_home, 
+                    R.id.navigation_browse_images, 
+                    R.id.navigation_notifications
+                };
+            } else {
+                topLevelDestinations = new int[]{
+                    R.id.navigation_home, 
+                    R.id.navigation_dashboard, 
+                    R.id.navigation_notifications
+                };
+            }
+            
+            AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(topLevelDestinations).build();
+            NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+            NavigationUI.setupWithNavController(navView, navController);
+        });
     }
 
     /**
@@ -272,20 +333,12 @@ public class MainActivity extends AppCompatActivity {
         
         // Set up button click listeners
         android.widget.ImageButton notificationsButton = customView.findViewById(R.id.admin_notifications_button);
-        android.widget.ImageButton galleryButton = customView.findViewById(R.id.admin_gallery_button);
         android.widget.ImageButton usersButton = customView.findViewById(R.id.admin_users_button);
         
         if (notificationsButton != null) {
             notificationsButton.setOnClickListener(v -> {
                 // TODO: Handle notifications button click
             });
-        }
-        
-        if (galleryButton != null) {
-            galleryButton.setOnClickListener(v -> 
-                Navigation.findNavController(this, R.id.nav_host_fragment_activity_main)
-                    .navigate(R.id.navigation_browse_images)
-            );
         }
         
         if (usersButton != null) {

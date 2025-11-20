@@ -215,6 +215,14 @@ public class EventsRouterFragment extends Fragment {
                     com.example.arcane.MainActivity mainActivity = (com.example.arcane.MainActivity) getActivity();
                     mainActivity.updateActionBarTitleForHome();
                     mainActivity.updateBottomNavTitle();
+                    // Refresh bottom nav menu based on role
+                    com.google.android.material.bottomnavigation.BottomNavigationView navView = 
+                        getActivity().findViewById(com.example.arcane.R.id.nav_view);
+                    androidx.navigation.NavController navController = 
+                        androidx.navigation.Navigation.findNavController(getActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
+                    if (navView != null && navController != null) {
+                        mainActivity.setupBottomNavigationMenu(navView, navController);
+                    }
                 }
             });
         }

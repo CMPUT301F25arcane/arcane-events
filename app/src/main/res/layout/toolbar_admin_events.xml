@@ -32,19 +32,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Gallery Icon (Right - before Users) -->
-    <ImageButton
-        android:id="@+id/admin_gallery_button"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_gallery"
-        android:contentDescription="Browse Images"
-        app:tint="?attr/colorOnPrimary"
-        app:layout_constraintEnd_toStartOf="@id/admin_users_button"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
     <!-- People Icon (Right) -->
     <ImageButton
         android:id="@+id/admin_users_button"
