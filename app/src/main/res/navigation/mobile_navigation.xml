@@ -31,9 +31,9 @@
 
     <fragment
         android:id="@+id/navigation_dashboard"
-        android:name="com.example.arcane.ui.dashboard.DashboardFragment"
+        android:name="com.example.arcane.ui.qrcode.QRScannerFragment"
         android:label="@string/title_scan"
-        tools:layout="@layout/fragment_dashboard" />
+        tools:layout="@layout/fragment_qr_scanner" />
 
     <fragment
         android:id="@+id/navigation_notifications"
@@ -92,5 +92,17 @@
             android:name="eventId"
             app:argType="string" />
     </fragment>
+
+    <fragment
+        android:id="@+id/navigation_browse_images"
+        android:name="com.example.arcane.ui.gallery.BrowseImagesFragment"
+        android:label="Gallery"
+        tools:layout="@layout/fragment_browse_images" />
+
+    <fragment
+        android:id="@+id/navigation_all_users"
+        android:name="com.example.arcane.ui.users.AllUsersFragment"
+        android:label="All Users"
+        tools:layout="@layout/fragment_all_users" />
 
 </navigation>

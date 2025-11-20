@@ -107,6 +107,8 @@ public class OrganizerEventsFragment extends Fragment {
         UserService userService = new UserService();
         userService.getUserById(currentUser.getUid())
                 .addOnSuccessListener(snapshot -> {
+                    if (!isAdded() || binding == null) return;
+                    
                     String role = null;
                     if (snapshot.exists()) {
                         Users user = snapshot.toObject(Users.class);
@@ -128,8 +130,10 @@ public class OrganizerEventsFragment extends Fragment {
                         binding.fabAddEvent.setVisibility(View.VISIBLE);
                         binding.navButtonsContainer.setVisibility(View.GONE);
                         binding.fabAddEvent.setOnClickListener(v -> {
-                            androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                            navController.navigate(R.id.navigation_create_event);
+                            if (isAdded() && getActivity() != null) {
+                                androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                                navController.navigate(R.id.navigation_create_event);
+                            }
                         });
                         loadOrganizerEvents();
                     } else {
@@ -138,21 +142,26 @@ public class OrganizerEventsFragment extends Fragment {
                         binding.navButtonsContainer.setVisibility(View.VISIBLE);
                         binding.primaryNavButton.setText("Go to Global Events");
                         binding.primaryNavButton.setOnClickListener(v -> {
-                            androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                            navController.navigate(R.id.navigation_global_events);
+                            if (isAdded() && getActivity() != null) {
+                                androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                                navController.navigate(R.id.navigation_global_events);
+                            }
                         });
                         loadUserEvents();
                     }
                 })
                 .addOnFailureListener(e -> {
+                    if (!isAdded() || binding == null) return;
                     // Default to user view on failure
                     isOrganizer = false;
                     binding.fabAddEvent.setVisibility(View.GONE);
                     binding.navButtonsContainer.setVisibility(View.VISIBLE);
                     binding.primaryNavButton.setText("Go to Global Events");
                     binding.primaryNavButton.setOnClickListener(v -> {
-                        androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                        navController.navigate(R.id.navigation_global_events);
+                        if (isAdded() && getActivity() != null) {
+                            androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main);
+                            navController.navigate(R.id.navigation_global_events);
+                        }
                     });
                     loadUserEvents();
                 });
@@ -215,6 +224,8 @@ public class OrganizerEventsFragment extends Fragment {
         String organizerId = currentUser.getUid();
         eventRepository.getEventsByOrganizer(organizerId)
                 .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     List<Event> items = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         Event event = doc.toObject(Event.class);
@@ -235,6 +246,8 @@ public class OrganizerEventsFragment extends Fragment {
         String userId = currentUser.getUid();
         userRepository.getUserById(userId)
                 .addOnSuccessListener(snapshot -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     com.example.arcane.model.UserProfile profile = snapshot.toObject(com.example.arcane.model.UserProfile.class);
                     if (profile == null || profile.getRegisteredEventIds() == null || profile.getRegisteredEventIds().isEmpty()) {
                         allEvents = new ArrayList<>();
@@ -249,6 +262,7 @@ public class OrganizerEventsFragment extends Fragment {
                     for (String eventId : eventIds) {
                         eventRepository.getEventById(eventId)
                                 .addOnSuccessListener(doc -> {
+                                    if (!isAdded() || adapter == null) return;
                                     Event event = doc.toObject(Event.class);
                                     if (event != null) {
                                         event.setEventId(doc.getId());
@@ -256,6 +270,7 @@ public class OrganizerEventsFragment extends Fragment {
                                     }
                                 })
                                 .addOnCompleteListener(task -> {
+                                    if (!isAdded() || adapter == null) return;
                                     remaining[0] -= 1;
                                     if (remaining[0] == 0) {
                                         // Store all events and apply current search filter

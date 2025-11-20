@@ -6,11 +6,15 @@
     android:layout_height="match_parent"
     android:background="@color/overlay_black_60">
 
-    <!-- Camera Preview Surface -->
-    <SurfaceView
+    <!-- Camera Preview with Barcode Scanner -->
+    <com.journeyapps.barcodescanner.DecoratedBarcodeView
         android:id="@+id/camera_preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:zxing_framing_rect_width="250dp"
+        app:zxing_framing_rect_height="250dp"
+        app:zxing_preview_scaling_strategy="fitCenter"
+        app:zxing_use_texture_view="false"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -155,26 +159,6 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Scan Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/scan_button"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:layout_marginBottom="48dp"
-        android:backgroundTint="@color/surface"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:insetLeft="0dp"
-        android:insetRight="0dp"
-        app:cornerRadius="36dp"
-        app:icon="@android:drawable/ic_menu_camera"
-        app:iconGravity="textStart"
-        app:iconPadding="0dp"
-        app:iconSize="36dp"
-        app:iconTint="@color/text_primary"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 
