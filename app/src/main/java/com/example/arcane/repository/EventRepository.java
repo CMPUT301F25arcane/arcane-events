@@ -118,6 +118,7 @@ public class EventRepository {
 
     /**
      * Deletes an event and all its subcollections (waitingList, decisions).
+     * Also removes the event ID from all users' registeredEventIds lists.
      * 
      * <p>In Firestore, deleting a document does not automatically delete its subcollections.
      * This method deletes all subcollection documents before deleting the event document
@@ -127,26 +128,91 @@ public class EventRepository {
      * @return a Task that completes when the event and all subcollections are deleted
      */
     public Task<Void> deleteEvent(String eventId) {
-        Task<Void> deleteWaitingList = deleteSubcollection(eventId, "waitingList");
-        Task<Void> deleteDecisions = deleteSubcollection(eventId, "decisions");
-        
-        // Wait for both subcollections to be deleted, then delete the event document
-        return Tasks.whenAll(deleteWaitingList, deleteDecisions)
-                .continueWith(task -> {
-                    if (task.isSuccessful()) {
-                        // Now delete the event document itself
-                        return db.collection(COLLECTION_NAME).document(eventId).delete();
-                    } else {
-                        throw task.getException();
+        // First, get waiting list entries to find all users who registered
+        // We need to do this before deleting the subcollections
+        return db.collection(COLLECTION_NAME)
+                .document(eventId)
+                .collection("waitingList")
+                .get()
+                .continueWithTask(waitingListTask -> {
+                    // Get user IDs from waiting list before deletion
+                    java.util.Set<String> userIds = new java.util.HashSet<>();
+                    if (waitingListTask.isSuccessful() && waitingListTask.getResult() != null) {
+                        for (QueryDocumentSnapshot doc : waitingListTask.getResult()) {
+                            com.example.arcane.model.WaitingListEntry entry = 
+                                doc.toObject(com.example.arcane.model.WaitingListEntry.class);
+                            if (entry != null && entry.getEntrantId() != null) {
+                                userIds.add(entry.getEntrantId());
+                            }
+                        }
                     }
+                    
+                    // Remove eventId from all users' registeredEventIds
+                    Task<Void> cleanupUsers = cleanupUserRegisteredEventIds(eventId, userIds);
+                    
+                    // Delete subcollections
+                    Task<Void> deleteWaitingList = deleteSubcollection(eventId, "waitingList");
+                    Task<Void> deleteDecisions = deleteSubcollection(eventId, "decisions");
+                    
+                    // Wait for all cleanup operations, then delete the event document
+                    return Tasks.whenAll(cleanupUsers, deleteWaitingList, deleteDecisions)
+                            .continueWith(task -> {
+                                if (task.isSuccessful()) {
+                                    // Now delete the event document itself
+                                    return db.collection(COLLECTION_NAME).document(eventId).delete();
+                                } else {
+                                    throw task.getException();
+                                }
+                            })
+                            .continueWith(task -> {
+                                if (task.isSuccessful()) {
+                                    return null; // Return Void
+                                } else {
+                                    throw task.getException();
+                                }
+                            });
                 })
-                .continueWith(task -> {
-                    if (task.isSuccessful()) {
-                        return null; // Return Void
-                    } else {
-                        throw task.getException();
-                    }
-                });
+                .continueWith(task -> null); // Return Void
+    }
+    
+    /**
+     * Removes an event ID from all specified users' registeredEventIds lists.
+     *
+     * @param eventId the event ID to remove
+     * @param userIds the set of user IDs to update
+     * @return a Task that completes when all users are updated
+     */
+    private Task<Void> cleanupUserRegisteredEventIds(String eventId, java.util.Set<String> userIds) {
+        if (userIds.isEmpty()) {
+            return Tasks.forResult(null);
+        }
+        
+        List<Task<Void>> updateTasks = new java.util.ArrayList<>();
+        WriteBatch batch = db.batch();
+        int batchCount = 0;
+        
+        for (String userId : userIds) {
+            // Use arrayRemove to remove the eventId from registeredEventIds
+            DocumentReference userRef = db.collection("users").document(userId);
+            batch.update(userRef, "registeredEventIds", 
+                com.google.firebase.firestore.FieldValue.arrayRemove(eventId));
+            batchCount++;
+            
+            // Commit batch when reaching limit
+            if (batchCount >= 500) {
+                updateTasks.add(batch.commit());
+                batch = db.batch();
+                batchCount = 0;
+            }
+        }
+        
+        // Commit remaining batch if any
+        if (batchCount > 0) {
+            updateTasks.add(batch.commit());
+        }
+        
+        // Wait for all updates to complete
+        return updateTasks.isEmpty() ? Tasks.forResult(null) : Tasks.whenAll(updateTasks);
     }
     
     /**
