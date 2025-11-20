@@ -1,17 +1,21 @@
 package com.example.arcane.ui.events;
 
+import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentEventsBinding;
 import com.example.arcane.model.Decision;
 import com.example.arcane.model.Event;
@@ -19,13 +23,18 @@ import com.example.arcane.model.UserProfile;
 import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.EventRepository;
 import com.example.arcane.repository.UserRepository;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -50,7 +59,12 @@ public class UserEventsFragment extends Fragment {
     private UserRepository userRepository;
     private EventRepository eventRepository;
     private DecisionRepository decisionRepository;
-    private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
+    private List<Event> allEvents = new ArrayList<>();
+    
+    // Filter state
+    private String filterLocation = null;
+    private Date filterDateFrom = null;
+    private Date filterDateTo = null;
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -107,9 +121,8 @@ public class UserEventsFragment extends Fragment {
             navController.navigate(com.example.arcane.R.id.navigation_global_events);
         });
 
-        // Setup search functionality
         setupSearch();
-
+        binding.filterButton.setOnClickListener(v -> showFilterDialog());
         loadUserEvents();
     }
 
@@ -136,27 +149,106 @@ public class UserEventsFragment extends Fragment {
     }
 
     /**
-     * Performs a case-insensitive search on event names.
+     * Performs search and applies filters.
      */
     private void performSearch() {
         String query = binding.searchEditText.getText() != null ? 
                 binding.searchEditText.getText().toString().trim() : "";
+        String queryLower = query.isEmpty() ? null : query.toLowerCase();
         
-        if (query.isEmpty()) {
-            // Show all events if search is empty
-            adapter.setItems(allEvents);
-        } else {
-            // Filter events case-insensitively
-            List<Event> filtered = new ArrayList<>();
-            String queryLower = query.toLowerCase();
-            for (Event event : allEvents) {
-                if (event.getEventName() != null && 
-                    event.getEventName().toLowerCase().contains(queryLower)) {
-                    filtered.add(event);
+        List<Event> filtered = new ArrayList<>();
+        for (Event event : allEvents) {
+            // Text search
+            if (queryLower != null && 
+                (event.getEventName() == null || !event.getEventName().toLowerCase().contains(queryLower))) {
+                continue;
+            }
+            
+            // Location filter
+            if (filterLocation != null && !filterLocation.isEmpty()) {
+                String loc = event.getLocation();
+                if (loc == null || !loc.toLowerCase().contains(filterLocation.toLowerCase())) {
+                    continue;
                 }
             }
-            adapter.setItems(filtered);
+            
+            // Date filter
+            if (filterDateFrom != null || filterDateTo != null) {
+                Timestamp ts = event.getEventDate();
+                if (ts == null) continue;
+                Date eventDate = ts.toDate();
+                if (filterDateFrom != null && eventDate.before(filterDateFrom)) continue;
+                if (filterDateTo != null && eventDate.after(filterDateTo)) continue;
+            }
+            
+            filtered.add(event);
         }
+        
+        adapter.setItems(filtered);
+    }
+
+    /**
+     * Shows a simple filter dialog for location and date filtering.
+     */
+    private void showFilterDialog() {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_filter_events, null);
+        
+        com.google.android.material.textfield.TextInputEditText locationInput = 
+            dialogView.findViewById(R.id.filter_location_edit_text);
+        com.google.android.material.button.MaterialButton fromDateBtn = 
+            dialogView.findViewById(R.id.filter_date_from_button);
+        com.google.android.material.button.MaterialButton toDateBtn = 
+            dialogView.findViewById(R.id.filter_date_to_button);
+        
+        // Set current values
+        if (filterLocation != null) {
+            locationInput.setText(filterLocation);
+        }
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+        if (filterDateFrom != null) fromDateBtn.setText(dateFormat.format(filterDateFrom));
+        if (filterDateTo != null) toDateBtn.setText(dateFormat.format(filterDateTo));
+        
+        // Date pickers
+        Calendar cal = Calendar.getInstance();
+        fromDateBtn.setOnClickListener(v -> {
+            if (filterDateFrom != null) cal.setTime(filterDateFrom);
+            new DatePickerDialog(requireContext(), (view, y, m, d) -> {
+                cal.set(y, m, d);
+                filterDateFrom = cal.getTime();
+                fromDateBtn.setText(dateFormat.format(filterDateFrom));
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
+        });
+        
+        toDateBtn.setOnClickListener(v -> {
+            if (filterDateTo != null) cal.setTime(filterDateTo);
+            new DatePickerDialog(requireContext(), (view, y, m, d) -> {
+                cal.set(y, m, d);
+                filterDateTo = cal.getTime();
+                toDateBtn.setText(dateFormat.format(filterDateTo));
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
+        });
+        
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setPositiveButton("Apply", (d, w) -> {
+                String loc = locationInput.getText() != null ? locationInput.getText().toString().trim() : "";
+                filterLocation = loc.isEmpty() ? null : loc;
+                if (filterDateFrom != null && filterDateTo != null && filterDateFrom.after(filterDateTo)) {
+                    Toast.makeText(requireContext(), "From date must be before To date", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                performSearch();
+            })
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Clear", (d, w) -> {
+                filterLocation = null;
+                filterDateFrom = null;
+                filterDateTo = null;
+                performSearch();
+            })
+            .create();
+        
+        dialog.show();
     }
 
     /**
