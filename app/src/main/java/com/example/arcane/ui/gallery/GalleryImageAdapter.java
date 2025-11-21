@@ -118,11 +118,7 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
         if (holder.optionsButton != null) {
             if (isAdmin && deleteListener != null) {
                 holder.optionsButton.setVisibility(View.VISIBLE);
-                holder.optionsButton.setOnClickListener(v -> {
-                    if (deleteListener != null) {
-                        deleteListener.onDeleteRequested(event);
-                    }
-                });
+                holder.optionsButton.setOnClickListener(v -> deleteListener.onDeleteRequested(event));
             } else {
                 holder.optionsButton.setVisibility(View.GONE);
             }

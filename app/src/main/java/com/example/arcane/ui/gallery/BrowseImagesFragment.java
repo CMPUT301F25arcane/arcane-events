@@ -180,15 +180,11 @@ public class BrowseImagesFragment extends Fragment {
 
     /**
      * Handles delete request from the adapter.
+     * Only called for admin users (listener is only set for admins).
      *
      * @param event the event containing the image to delete
      */
     private void handleDeleteRequest(Event event) {
-        if (!isAdmin) {
-            Toast.makeText(requireContext(), "Only administrators can delete images", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         // Show confirmation dialog
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Image")
@@ -213,8 +209,6 @@ public class BrowseImagesFragment extends Fragment {
                 .addOnSuccessListener(aVoid -> {
                     if (!isAdded()) return;
                     Toast.makeText(requireContext(), "Image deleted successfully", Toast.LENGTH_SHORT).show();
-                    // Remove from adapter
-                    adapter.removeEvent(event.getEventId());
                     // Reload images to refresh the list
                     loadAllEventImages();
                 })
