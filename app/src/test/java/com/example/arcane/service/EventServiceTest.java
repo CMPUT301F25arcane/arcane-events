@@ -70,11 +70,14 @@ public class EventServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     private EventService subject;
 
     @Before
     public void setUp() {
-        subject = new EventService(eventRepository, waitingListRepository, decisionRepository, userRepository);
+        subject = new EventService(eventRepository, waitingListRepository, decisionRepository, userRepository, notificationService);
     }
 
     @Test
