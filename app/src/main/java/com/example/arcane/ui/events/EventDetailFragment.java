@@ -79,6 +79,7 @@ public class EventDetailFragment extends Fragment {
     private String eventId;
     private Event currentEvent;
     private boolean isOrganizer = false;
+    private boolean isAdmin = false;
     private boolean isUserJoined = false;
     private String userStatus = null; // WAITING, WON, LOST, ACCEPTED, DECLINED
     private String userDecision = null; // none, accepted, declined
@@ -162,6 +163,7 @@ public class EventDetailFragment extends Fragment {
         SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
         String role = prefs.getString("user_role", null);
         isOrganizer = isOrganizerRole(role);
+        isAdmin = isAdminRole(role);
 
         // Load event - we'll check if user is organizer of this specific event after loading
         loadEvent();
@@ -175,6 +177,14 @@ public class EventDetailFragment extends Fragment {
         return "ORGANIZER".equals(roleUpper) || "ORGANISER".equals(roleUpper);
     }
 
+    private boolean isAdminRole(@Nullable String role) {
+        if (role == null) {
+            return false;
+        }
+        String roleUpper = role.toUpperCase();
+        return "ADMIN".equals(roleUpper);
+    }
+
     private void loadEvent() {
         eventRepository.getEventById(eventId)
                 .addOnSuccessListener(documentSnapshot -> {
@@ -186,18 +196,24 @@ public class EventDetailFragment extends Fragment {
                             currentEvent.setEventId(documentSnapshot.getId());
                             populateEventDetails();
                             
-                            // Check if current user is the organizer of this event
-                            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                            if (currentUser != null && currentUser.getUid().equals(currentEvent.getOrganizerId())) {
-                                // User is the organizer - show organizer view
-                                isOrganizer = true;
-                                setupOrganizerView();
-                            } else if (isOrganizer) {
-                                // User is organizer but not of this event - still show organizer view
-                                setupOrganizerView();
+                            // Check if current user is admin first
+                            if (isAdmin) {
+                                // Admin - show admin view with delete button
+                                setupAdminView();
                             } else {
-                                // Regular user - load user status
-                                loadUserStatus();
+                                // Check if current user is the organizer of this event
+                                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                                if (currentUser != null && currentUser.getUid().equals(currentEvent.getOrganizerId())) {
+                                    // User is the organizer - show organizer view
+                                    isOrganizer = true;
+                                    setupOrganizerView();
+                                } else if (isOrganizer) {
+                                    // User is organizer but not of this event - still show organizer view
+                                    setupOrganizerView();
+                                } else {
+                                    // Regular user - load user status
+                                    loadUserStatus();
+                                }
                             }
                         } else {
                             if (isAdded() && getContext() != null) {
@@ -482,6 +498,28 @@ public class EventDetailFragment extends Fragment {
     //                 binding.organizerNameText.setText("Organizer");
     //             });
     // }
+
+    private void setupAdminView() {
+        if (binding == null || !isAdded()) return;
+        
+        // Hide organizer-specific UI
+        binding.lotteryStatusAndNotificationContainer.setVisibility(View.GONE);
+        binding.editEventButton.setVisibility(View.GONE);
+        binding.sendNotificationContainer.setVisibility(View.GONE);
+        binding.organizerActionButtons.setVisibility(View.GONE);
+        
+        // Hide user-specific UI
+        binding.statusDecisionContainer.setVisibility(View.GONE);
+        binding.abandonButtonContainer.setVisibility(View.GONE);
+        binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
+        
+        // Show delete button for admin
+        binding.joinButtonContainer.setVisibility(View.VISIBLE);
+        binding.joinButton.setText("Delete Event");
+        binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+            getResources().getColor(R.color.lottery_status_closed, null)));
+        binding.joinButton.setOnClickListener(v -> handleDeleteEvent());
+    }
 
     private void setupUserView() {
         if (binding == null || !isAdded()) return;
@@ -990,6 +1028,51 @@ public class EventDetailFragment extends Fragment {
         );
         
         binding.lotteryStatusText.setText(spannableString);
+    }
+
+    private void handleDeleteEvent() {
+        // Security check: Only admin can delete events
+        if (!isAdmin) {
+            Toast.makeText(requireContext(), "Only administrators can delete events", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (eventId == null || currentEvent == null) {
+            Toast.makeText(requireContext(), "Event not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show confirmation dialog
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Event")
+                .setMessage("Are you sure you want to delete \"" + currentEvent.getEventName() + "\"? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    // Disable button during deletion
+                    binding.joinButton.setEnabled(false);
+                    binding.joinButton.setText("Deleting...");
+
+                    eventRepository.deleteEvent(eventId)
+                            .addOnSuccessListener(aVoid -> {
+                                if (!isAdded() || binding == null) return;
+                                
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), "Event deleted successfully", Toast.LENGTH_SHORT).show();
+                                }
+                                // Navigate back after deletion
+                                navigateBack();
+                            })
+                            .addOnFailureListener(e -> {
+                                if (!isAdded() || binding == null) return;
+                                
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), "Error deleting event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                                binding.joinButton.setEnabled(true);
+                                binding.joinButton.setText("Delete Event");
+                            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void navigateBack() {
