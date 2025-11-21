@@ -53,8 +53,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Fragment for displaying event details with role-based views.
@@ -77,12 +79,14 @@ public class EventDetailFragment extends Fragment {
     private String eventId;
     private Event currentEvent;
     private boolean isOrganizer = false;
+    private boolean isAdmin = false;
     private boolean isUserJoined = false;
     private String userStatus = null; // WAITING, WON, LOST, ACCEPTED, DECLINED
     private String userDecision = null; // none, accepted, declined
     private String waitingListEntryId = null;
     private String decisionId = null;
     private boolean organizerViewSetup = false; // Prevent multiple listener setups
+    private boolean isWaitlistFull = false; // Track if waitlist is full
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -159,6 +163,7 @@ public class EventDetailFragment extends Fragment {
         SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
         String role = prefs.getString("user_role", null);
         isOrganizer = isOrganizerRole(role);
+        isAdmin = isAdminRole(role);
 
         // Load event - we'll check if user is organizer of this specific event after loading
         loadEvent();
@@ -172,6 +177,14 @@ public class EventDetailFragment extends Fragment {
         return "ORGANIZER".equals(roleUpper) || "ORGANISER".equals(roleUpper);
     }
 
+    private boolean isAdminRole(@Nullable String role) {
+        if (role == null) {
+            return false;
+        }
+        String roleUpper = role.toUpperCase();
+        return "ADMIN".equals(roleUpper);
+    }
+
     private void loadEvent() {
         eventRepository.getEventById(eventId)
                 .addOnSuccessListener(documentSnapshot -> {
@@ -183,18 +196,24 @@ public class EventDetailFragment extends Fragment {
                             currentEvent.setEventId(documentSnapshot.getId());
                             populateEventDetails();
                             
-                            // Check if current user is the organizer of this event
-                            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                            if (currentUser != null && currentUser.getUid().equals(currentEvent.getOrganizerId())) {
-                                // User is the organizer - show organizer view
-                                isOrganizer = true;
-                                setupOrganizerView();
-                            } else if (isOrganizer) {
-                                // User is organizer but not of this event - still show organizer view
-                                setupOrganizerView();
+                            // Check if current user is admin first
+                            if (isAdmin) {
+                                // Admin - show admin view with delete button
+                                setupAdminView();
                             } else {
-                                // Regular user - load user status
-                                loadUserStatus();
+                                // Check if current user is the organizer of this event
+                                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                                if (currentUser != null && currentUser.getUid().equals(currentEvent.getOrganizerId())) {
+                                    // User is the organizer - show organizer view
+                                    isOrganizer = true;
+                                    setupOrganizerView();
+                                } else if (isOrganizer) {
+                                    // User is organizer but not of this event - still show organizer view
+                                    setupOrganizerView();
+                                } else {
+                                    // Regular user - load user status
+                                    loadUserStatus();
+                                }
                             }
                         } else {
                             if (isAdded() && getContext() != null) {
@@ -362,7 +381,8 @@ public class EventDetailFragment extends Fragment {
                         waitingListEntryId = null;
                         decisionId = null;
                         isUserJoined = false;
-                        setupUserView();
+                        // Check if waitlist is full before showing join button
+                        checkWaitlistFull();
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -479,6 +499,28 @@ public class EventDetailFragment extends Fragment {
     //             });
     // }
 
+    private void setupAdminView() {
+        if (binding == null || !isAdded()) return;
+        
+        // Hide organizer-specific UI
+        binding.lotteryStatusAndNotificationContainer.setVisibility(View.GONE);
+        binding.editEventButton.setVisibility(View.GONE);
+        binding.sendNotificationContainer.setVisibility(View.GONE);
+        binding.organizerActionButtons.setVisibility(View.GONE);
+        
+        // Hide user-specific UI
+        binding.statusDecisionContainer.setVisibility(View.GONE);
+        binding.abandonButtonContainer.setVisibility(View.GONE);
+        binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
+        
+        // Show delete button for admin
+        binding.joinButtonContainer.setVisibility(View.VISIBLE);
+        binding.joinButton.setText("Delete Event");
+        binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+            getResources().getColor(R.color.lottery_status_closed, null)));
+        binding.joinButton.setOnClickListener(v -> handleDeleteEvent());
+    }
+
     private void setupUserView() {
         if (binding == null || !isAdded()) return;
         
@@ -496,13 +538,55 @@ public class EventDetailFragment extends Fragment {
             showUserStatus();
             setupUserActionButtons();
         } else {
-            // User not joined - show Join button
+            // User not joined - show Join button or Waitlist Full button
             binding.abandonButtonContainer.setVisibility(View.GONE);
             binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
             binding.joinButtonContainer.setVisibility(View.VISIBLE);
 
-            binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+            if (isWaitlistFull) {
+                // Waitlist is full - show orange disabled button
+                binding.joinButton.setText("Waitlist Full");
+                binding.joinButton.setEnabled(false);
+                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.status_declined, null)));
+                binding.joinButton.setOnClickListener(null);
+            } else {
+                // Waitlist has space - show blue Join button
+                binding.joinButton.setText("Join Waitlist");
+                binding.joinButton.setEnabled(true);
+                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.brand_primary, null)));
+                binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+            }
         }
+    }
+
+    private void checkWaitlistFull() {
+        if (currentEvent == null) {
+            isWaitlistFull = false;
+            return;
+        }
+
+        // Check if maxEntrants is set
+        if (currentEvent.getMaxEntrants() == null || currentEvent.getMaxEntrants() <= 0) {
+            isWaitlistFull = false;
+            return;
+        }
+
+        // Get current waiting list size
+        waitingListRepository.getWaitingListForEvent(eventId)
+                .addOnSuccessListener(querySnapshot -> {
+                    int currentSize = querySnapshot.size();
+                    isWaitlistFull = currentSize >= currentEvent.getMaxEntrants();
+                    // Update UI if already set up
+                    if (!isUserJoined) {
+                        setupUserView();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // On failure, assume not full
+                    isWaitlistFull = false;
+                });
     }
 
     private void showUserStatus() {
@@ -622,6 +706,12 @@ public class EventDetailFragment extends Fragment {
                             Toast.makeText(getContext(), "You are already on the waitlist", Toast.LENGTH_SHORT).show();
                         }
                         // Reload status in case UI is out of sync
+                        loadUserStatus();
+                    } else if ("limit_reached".equals(status)) {
+                        // Waiting list limit reached
+                        Toast.makeText(requireContext(), "Waiting list is full", Toast.LENGTH_SHORT).show();
+                        binding.joinButton.setEnabled(true);
+                        binding.joinButton.setText("Join Waitlist");
                         loadUserStatus();
                     } else {
                         if (getContext() != null) {
@@ -846,20 +936,61 @@ public class EventDetailFragment extends Fragment {
         }
 
         String eventName = currentEvent.getEventName();
-        String title = "Update for " + eventName;
-        String message = "You have an update regarding " + eventName + ".";
-
-        eventService.sendNotificationsToEntrants(eventId, statuses, title, message)
-                .addOnSuccessListener(result -> {
-                    Integer totalSent = (Integer) result.get("totalSent");
-                    if (totalSent != null && totalSent > 0) {
-                        Toast.makeText(requireContext(), "Sent " + totalSent + " notifications", Toast.LENGTH_SHORT).show();
+        
+        // Send notifications with status-specific messages
+        List<com.google.android.gms.tasks.Task<Map<String, Object>>> statusTasks = new ArrayList<>();
+        for (String status : statuses) {
+            String title;
+            String message;
+            
+            // Set appropriate title and message based on status
+            if ("INVITED".equals(status)) {
+                title = "You won the lottery!";
+                message = "Congratulations! You have been selected for " + eventName + ". Please accept or decline your invitation.";
+            } else if ("LOST".equals(status)) {
+                title = "Lottery results";
+                message = "Unfortunately, you were not selected for " + eventName + ". You may still have a chance if someone declines.";
+            } else if ("ACCEPTED".equals(status)) {
+                title = "Registration confirmed";
+                message = "Your registration for " + eventName + " has been confirmed. We look forward to seeing you!";
+            } else if ("CANCELLED".equals(status)) {
+                title = "Event update";
+                message = "Your participation in " + eventName + " has been cancelled.";
+            } else {
+                // Default for any other status
+                title = "Update for " + eventName;
+                message = "You have an update regarding " + eventName + ".";
+            }
+            
+            com.google.android.gms.tasks.Task<Map<String, Object>> statusTask = eventService.sendNotificationsToEntrantsByStatus(eventId, status, title, message);
+            statusTasks.add(statusTask);
+        }
+        
+        // Wait for all notifications to be sent
+        com.google.android.gms.tasks.Tasks.whenAll(statusTasks)
+                .addOnSuccessListener(allTasks -> {
+                    if (!isAdded() || getContext() == null) return;
+                    
+                    int totalSent = 0;
+                    for (com.google.android.gms.tasks.Task<Map<String, Object>> task : statusTasks) {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            Map<String, Object> result = task.getResult();
+                            Integer count = (Integer) result.get("count");
+                            if (count != null) {
+                                totalSent += count;
+                            }
+                        }
+                    }
+                    
+                    if (totalSent > 0) {
+                        Toast.makeText(getContext(), "Sent " + totalSent + " notifications", Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(requireContext(), "No notifications sent", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "No notifications sent", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Failed to send notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || getContext() == null) return;
+                    Toast.makeText(getContext(), "Failed to send notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -897,6 +1028,51 @@ public class EventDetailFragment extends Fragment {
         );
         
         binding.lotteryStatusText.setText(spannableString);
+    }
+
+    private void handleDeleteEvent() {
+        // Security check: Only admin can delete events
+        if (!isAdmin) {
+            Toast.makeText(requireContext(), "Only administrators can delete events", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (eventId == null || currentEvent == null) {
+            Toast.makeText(requireContext(), "Event not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show confirmation dialog
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Event")
+                .setMessage("Are you sure you want to delete \"" + currentEvent.getEventName() + "\"? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    // Disable button during deletion
+                    binding.joinButton.setEnabled(false);
+                    binding.joinButton.setText("Deleting...");
+
+                    eventRepository.deleteEvent(eventId)
+                            .addOnSuccessListener(aVoid -> {
+                                if (!isAdded() || binding == null) return;
+                                
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), "Event deleted successfully", Toast.LENGTH_SHORT).show();
+                                }
+                                // Navigate back after deletion
+                                navigateBack();
+                            })
+                            .addOnFailureListener(e -> {
+                                if (!isAdded() || binding == null) return;
+                                
+                                if (getContext() != null) {
+                                    Toast.makeText(getContext(), "Error deleting event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                                binding.joinButton.setEnabled(true);
+                                binding.joinButton.setText("Delete Event");
+                            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void navigateBack() {

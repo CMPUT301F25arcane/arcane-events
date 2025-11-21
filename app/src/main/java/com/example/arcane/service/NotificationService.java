@@ -172,11 +172,14 @@ public class NotificationService {
 
     /**
      * Gets unread notifications for a user.
+     * Returns all notifications (caller should filter for unread) to avoid requiring a composite index.
      *
      * @param userId the user ID
-     * @return a Task that completes with the query snapshot of unread notifications
+     * @return a Task that completes with the query snapshot of all notifications (filter for unread in calling code)
      */
     public Task<QuerySnapshot> getUnreadNotifications(String userId) {
+        // Get all notifications ordered by timestamp - caller will filter for unread
+        // This avoids requiring a composite index for whereEqualTo + orderBy
         return notificationRepository.getUnreadNotificationsForUser(userId);
     }
 

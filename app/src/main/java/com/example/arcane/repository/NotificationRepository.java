@@ -79,15 +79,17 @@ public class NotificationRepository {
 
     /**
      * Gets unread notifications for a user.
+     * Gets all notifications and filters for unread ones to avoid requiring a composite index.
      *
      * @param userId the user ID
      * @return a Task that completes with the query snapshot of unread notifications
      */
     public Task<QuerySnapshot> getUnreadNotificationsForUser(String userId) {
+        // Get all notifications and filter in code to avoid requiring composite index
+        // This is acceptable since users typically don't have hundreds of notifications
         return db.collection(COLLECTION_NAME)
                 .document(userId)
                 .collection(SUBCOLLECTION_NAME)
-                .whereEqualTo("read", false)
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get();
     }
