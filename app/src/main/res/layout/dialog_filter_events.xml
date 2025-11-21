@@ -18,26 +18,48 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="20dp" />
 
-    <!-- Location Filter -->
+    <!-- Category Filter -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Category"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/filter_category_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="12dp"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxStrokeColor="?attr/colorPrimary"
         app:boxStrokeWidth="1dp"
         app:boxStrokeWidthFocused="2dp"
         app:hintEnabled="false">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/filter_location_edit_text"
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/filter_category_dropdown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="text"
-            android:minHeight="56dp"
-            android:hint="Filter by location..."
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp" />
+            android:inputType="none"
+            android:focusableInTouchMode="true"
+            android:clickable="true"
+            android:hint="Select categories..."
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="@color/text_muted" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Selected Categories Chips Container -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/filter_category_chips"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        app:chipSpacing="8dp"
+        app:chipSpacingHorizontal="8dp"
+        app:chipSpacingVertical="8dp" />
 
     <!-- Date Filter Label -->
     <TextView
