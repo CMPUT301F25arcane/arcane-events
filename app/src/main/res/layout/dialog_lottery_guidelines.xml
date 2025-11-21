@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/surface"
+    android:minWidth="300dp">
+
+    <!-- Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Lottery Selection Guidelines"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/brand_primary"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Guidelines List -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• Entries are collected during the registration window.\n\n• At closing time, all eligible entrants are placed into a single pool.\n\n• The system randomly selects up to the event capacity using a fair, unbiased draw.\n\n• Selected users are notified and must accept before the deadline.\n\n• If someone declines or the deadline expires, replacements are drawn from the remaining pool.\n\n• Your chance is determined by the number of entrants vs. the available spots (not by sign-up time).\n\n• Organizers may optionally require geolocation at join time."
+        android:textSize="14sp"
+        android:textColor="@color/text_primary"
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Got it Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/got_it_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Got it"
+        android:textColor="?attr/colorOnPrimary"
+        android:backgroundTint="?attr/colorPrimary"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp" />
+
+</LinearLayout>
+
