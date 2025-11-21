@@ -31,6 +31,7 @@ import com.example.arcane.repository.EventRepository;
 import com.example.arcane.service.EventService;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
+import android.widget.ArrayAdapter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -101,6 +102,9 @@ public class EditEventFragment extends Fragment {
         setupDatePicker(binding.endDateInput, endDateCalendar, "End Date & Time");
         setupDatePicker(binding.registrationDeadlineInput, registrationDeadlineCalendar, "Registration Deadline");
 
+        // Setup category dropdown
+        setupCategoryDropdown();
+
         // Setup image upload
         binding.imageUploadCard.setOnClickListener(v -> openImagePicker());
 
@@ -154,6 +158,12 @@ public class EditEventFragment extends Fragment {
         binding.limitEntrantsInput.setText(currentEvent.getMaxEntrants() != null ? String.valueOf(currentEvent.getMaxEntrants()) : "");
         binding.winnersInput.setText(currentEvent.getNumberOfWinners() != null ? String.valueOf(currentEvent.getNumberOfWinners()) : "");
         binding.enableGeolocationCheckbox.setChecked(Boolean.TRUE.equals(currentEvent.getGeolocationRequired()));
+        
+        // Set category
+        if (currentEvent.getCategory() != null) {
+            String displayCategory = convertCategoryToDisplay(currentEvent.getCategory());
+            binding.categoryInput.setText(displayCategory, false);
+        }
         
         // Load existing image if available
         if (currentEvent.getPosterImageUrl() != null && !currentEvent.getPosterImageUrl().isEmpty()) {
@@ -227,6 +237,18 @@ public class EditEventFragment extends Fragment {
         }
         binding.locationInputLayout.setError(null);
 
+        // Validate category
+        String categoryDisplay = binding.categoryInput.getText() != null ? 
+                binding.categoryInput.getText().toString().trim() : "";
+        if (categoryDisplay.isEmpty()) {
+            binding.categoryInputLayout.setError("Category is required");
+            return;
+        }
+        binding.categoryInputLayout.setError(null);
+        
+        // Convert display category to internal format
+        String category = convertCategoryToInternal(categoryDisplay);
+
         Double cost = parseDouble(binding.costInput.getText());
         if (cost != null && cost < 0) {
             binding.costInputLayout.setError("Cost cannot be negative");
@@ -263,6 +285,7 @@ public class EditEventFragment extends Fragment {
         currentEvent.setEventName(eventName);
         currentEvent.setDescription(description);
         currentEvent.setLocation(locationName);
+        currentEvent.setCategory(category);
         currentEvent.setCost(cost);
         currentEvent.setMaxEntrants(maxEntrants);
         currentEvent.setNumberOfWinners(numberOfWinners);
@@ -429,6 +452,74 @@ public class EditEventFragment extends Fragment {
         bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream);
         byte[] imageBytes = outputStream.toByteArray();
         return Base64.encodeToString(imageBytes, Base64.NO_WRAP);
+    }
+
+    /**
+     * Sets up the category dropdown with predefined categories.
+     */
+    private void setupCategoryDropdown() {
+        String[] categories = {"Sports", "Entertainment", "Education", "Food & Dining", "Technology"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), 
+            android.R.layout.simple_dropdown_item_1line, categories);
+        binding.categoryInput.setAdapter(adapter);
+        
+        // Show dropdown when clicked
+        binding.categoryInput.setOnClickListener(v -> {
+            binding.categoryInput.showDropDown();
+        });
+        
+        // Also show dropdown when focused
+        binding.categoryInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                binding.categoryInput.showDropDown();
+            }
+        });
+    }
+
+    /**
+     * Converts display category name to internal category format.
+     *
+     * @param displayCategory the display category name
+     * @return the internal category format
+     */
+    private String convertCategoryToInternal(String displayCategory) {
+        switch (displayCategory) {
+            case "Sports":
+                return "SPORTS";
+            case "Entertainment":
+                return "ENTERTAINMENT";
+            case "Education":
+                return "EDUCATION";
+            case "Food & Dining":
+                return "FOOD_DINING";
+            case "Technology":
+                return "TECHNOLOGY";
+            default:
+                return displayCategory.toUpperCase().replace(" ", "_");
+        }
+    }
+
+    /**
+     * Converts internal category format to display category name.
+     *
+     * @param internalCategory the internal category format
+     * @return the display category name
+     */
+    private String convertCategoryToDisplay(String internalCategory) {
+        switch (internalCategory.toUpperCase()) {
+            case "SPORTS":
+                return "Sports";
+            case "ENTERTAINMENT":
+                return "Entertainment";
+            case "EDUCATION":
+                return "Education";
+            case "FOOD_DINING":
+                return "Food & Dining";
+            case "TECHNOLOGY":
+                return "Technology";
+            default:
+                return internalCategory.replace("_", " ");
+        }
     }
 
     @Override
