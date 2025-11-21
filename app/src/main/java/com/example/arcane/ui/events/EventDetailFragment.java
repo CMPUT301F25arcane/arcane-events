@@ -87,7 +87,7 @@ public class EventDetailFragment extends Fragment {
     private String waitingListEntryId = null;
     private String decisionId = null;
     private boolean organizerViewSetup = false; // Prevent multiple listener setups
-
+   
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
