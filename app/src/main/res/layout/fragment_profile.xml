@@ -24,8 +24,21 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
+            <ImageView
                 android:id="@+id/profile_picture"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/brand_primary"
+                android:scaleType="centerCrop"
+                android:contentDescription="Profile picture"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Fallback emoji when no image is set -->
+            <TextView
+                android:id="@+id/profile_picture_placeholder"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@color/brand_primary"
@@ -38,21 +51,32 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <Button
-                android:id="@+id/edit_profile_button"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="@color/surface_alt"
-                android:contentDescription="Edit profile"
-                android:text="✏"
-                android:textColor="@color/text_secondary"
-                android:textSize="16sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.8"
-                app:layout_constraintVertical_bias="0.8" />
-
         </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Edit Profile Button - positioned outside profile picture container at bottom right -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/edit_profile_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardElevation="2dp"
+            app:strokeColor="@color/text_primary"
+            app:strokeWidth="2dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:layout_constraintBottom_toBottomOf="@id/profile_picture_container"
+            app:layout_constraintStart_toEndOf="@id/profile_picture_container">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@android:drawable/ic_menu_edit"
+                android:contentDescription="Edit Profile"
+                app:tint="@color/text_primary" />
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/label_name"
