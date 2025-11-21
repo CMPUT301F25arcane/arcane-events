@@ -99,6 +99,28 @@ public class EditProfileFragment extends Fragment {
                         if (currentUser != null) {
                             currentUser.setId(snapshot.getId());
                             
+                            // Manually extract pronouns and phone from snapshot to ensure they're loaded correctly
+                            // This handles cases where toObject() might not deserialize these fields properly
+                            if (snapshot.contains("pronouns")) {
+                                Object pronounsValue = snapshot.get("pronouns");
+                                if (pronounsValue != null) {
+                                    currentUser.setPronouns(pronounsValue.toString());
+                                    Log.d(TAG, "  Manually set pronouns from snapshot: " + pronounsValue);
+                                }
+                            } else {
+                                Log.d(TAG, "  Pronouns field does not exist in Firestore document");
+                            }
+                            
+                            if (snapshot.contains("phone")) {
+                                Object phoneValue = snapshot.get("phone");
+                                if (phoneValue != null) {
+                                    currentUser.setPhone(phoneValue.toString());
+                                    Log.d(TAG, "  Manually set phone from snapshot: " + phoneValue);
+                                }
+                            } else {
+                                Log.d(TAG, "  Phone field does not exist in Firestore document");
+                            }
+                            
                             // Debug: Log the data from Firestore
                             Log.d(TAG, "Loaded user data from Firestore:");
                             Log.d(TAG, "  Name: " + currentUser.getName());
@@ -106,14 +128,6 @@ public class EditProfileFragment extends Fragment {
                             Log.d(TAG, "  Pronouns: " + currentUser.getPronouns());
                             Log.d(TAG, "  Phone: " + currentUser.getPhone());
                             Log.d(TAG, "  Has profile picture: " + (currentUser.getProfilePictureUrl() != null && !currentUser.getProfilePictureUrl().isEmpty()));
-                            
-                            // Also check the raw snapshot data
-                            if (snapshot.contains("pronouns")) {
-                                Object pronounsValue = snapshot.get("pronouns");
-                                Log.d(TAG, "  Raw pronouns from snapshot: " + pronounsValue);
-                            } else {
-                                Log.d(TAG, "  Pronouns field does not exist in Firestore document");
-                            }
                             
                             populateForm();
                         }
@@ -216,7 +230,8 @@ public class EditProfileFragment extends Fragment {
         currentUser.setEmail(email);
         // Save pronouns - keep empty string if provided, set to null only if truly empty
         currentUser.setPronouns(pronouns.isEmpty() ? null : pronouns.trim());
-        currentUser.setPhone(phone.isEmpty() ? null : phone);
+        // Save phone - trim and set to null only if truly empty
+        currentUser.setPhone(phone.isEmpty() ? null : phone.trim());
         
         // Update profile picture if a new one was selected
         if (selectedImageBase64 != null) {
