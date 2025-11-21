@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="8dp"
         android:background="@color/surface"
         android:elevation="2dp"
         app:layout_constraintTop_toTopOf="parent"
@@ -34,6 +34,18 @@
             android:textColorHint="@color/text_muted"
             android:inputType="text"
             android:imeOptions="actionSearch" />
+
+        <ImageButton
+            android:id="@+id/filter_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_filter"
+            android:contentDescription="Filter events"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="?attr/colorOnSurface"
+            android:padding="12dp"
+            android:scaleType="fitCenter" />
 
         <Button
             android:id="@+id/search_button"

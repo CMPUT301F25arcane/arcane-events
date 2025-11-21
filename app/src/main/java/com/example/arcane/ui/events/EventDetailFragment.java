@@ -17,6 +17,7 @@
  */
 package com.example.arcane.ui.events;
 
+import android.app.AlertDialog;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,6 +37,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.example.arcane.R;
+import com.example.arcane.databinding.DialogSendNotificationBinding;
 import com.example.arcane.databinding.FragmentEventDetailBinding;
 import com.example.arcane.model.Decision;
 import com.example.arcane.model.Event;
@@ -48,7 +51,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -77,6 +82,7 @@ public class EventDetailFragment extends Fragment {
     private String userDecision = null; // none, accepted, declined
     private String waitingListEntryId = null;
     private String decisionId = null;
+    private boolean organizerViewSetup = false; // Prevent multiple listener setups
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -169,6 +175,8 @@ public class EventDetailFragment extends Fragment {
     private void loadEvent() {
         eventRepository.getEventById(eventId)
                 .addOnSuccessListener(documentSnapshot -> {
+                    if (!isAdded() || binding == null) return;
+                    
                     if (documentSnapshot.exists()) {
                         currentEvent = documentSnapshot.toObject(Event.class);
                         if (currentEvent != null) {
@@ -189,22 +197,28 @@ public class EventDetailFragment extends Fragment {
                                 loadUserStatus();
                             }
                         } else {
-                            Toast.makeText(requireContext(), "Failed to load event", Toast.LENGTH_SHORT).show();
+                            if (isAdded() && getContext() != null) {
+                                Toast.makeText(getContext(), "Failed to load event", Toast.LENGTH_SHORT).show();
+                            }
                             navigateBack();
                         }
                     } else {
-                        Toast.makeText(requireContext(), "Event not found", Toast.LENGTH_SHORT).show();
+                        if (isAdded() && getContext() != null) {
+                            Toast.makeText(getContext(), "Event not found", Toast.LENGTH_SHORT).show();
+                        }
                         navigateBack();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error loading event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (isAdded() && getContext() != null) {
+                        Toast.makeText(getContext(), "Error loading event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     navigateBack();
                 });
     }
 
     private void populateEventDetails() {
-        if (currentEvent == null) return;
+        if (currentEvent == null || binding == null || !isAdded()) return;
 
         // Title
         binding.eventTitle.setText(currentEvent.getEventName() != null ? currentEvent.getEventName() : "Untitled Event");
@@ -243,6 +257,7 @@ public class EventDetailFragment extends Fragment {
         if (currentEvent == null || currentEvent.getPosterImageUrl() == null || currentEvent.getPosterImageUrl().isEmpty()) {
             return;
         }
+        if (binding == null || !isAdded()) return;
 
         try {
             // Check if it's a base64 string (starts with data:image or is a long base64 string)
@@ -252,7 +267,7 @@ public class EventDetailFragment extends Fragment {
             if (!imageData.startsWith("http://") && !imageData.startsWith("https://")) {
                 byte[] imageBytes = android.util.Base64.decode(imageData, android.util.Base64.NO_WRAP);
                 android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
-                if (bitmap != null) {
+                if (bitmap != null && binding != null && isAdded()) {
                     binding.headerImage.setImageBitmap(bitmap);
                 }
             } else {
@@ -274,6 +289,8 @@ public class EventDetailFragment extends Fragment {
         // Check if user is in waiting list
         waitingListRepository.checkUserInWaitingList(eventId, userId)
                 .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded() || binding == null) return;
+                    
                     if (!querySnapshot.isEmpty()) {
                         isUserJoined = true;
                         // Get the entry ID
@@ -288,6 +305,8 @@ public class EventDetailFragment extends Fragment {
                         // but current model uses Decision. We'll check Decision for now.
                         decisionRepository.getDecisionForUser(eventId, userId)
                                 .addOnSuccessListener(decisionSnapshot -> {
+                                    if (!isAdded() || binding == null) return;
+                                    
                                     if (!decisionSnapshot.isEmpty()) {
                                         for (QueryDocumentSnapshot doc : decisionSnapshot) {
                                             Decision decision = doc.toObject(Decision.class);
@@ -332,6 +351,7 @@ public class EventDetailFragment extends Fragment {
                                     setupUserView();
                                 })
                                 .addOnFailureListener(e -> {
+                                    if (!isAdded() || binding == null) return;
                                     // If decision check fails, default to WAITING
                                     userStatus = "WAITING";
                                     userDecision = "none";
@@ -342,16 +362,22 @@ public class EventDetailFragment extends Fragment {
                         waitingListEntryId = null;
                         decisionId = null;
                         isUserJoined = false;
-                        setupUserView();
+                        // Check if waitlist is full before showing join button
+                        checkWaitlistFull();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error checking status: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Error checking status: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     setupUserView();
                 });
     }
 
     private void setupOrganizerView() {
+        if (binding == null || !isAdded()) return;
+        
         // Hide user-specific UI
         binding.statusDecisionContainer.setVisibility(View.GONE);
         binding.abandonButtonContainer.setVisibility(View.GONE);
@@ -369,31 +395,33 @@ public class EventDetailFragment extends Fragment {
         // Set lottery status with colored text
         updateLotteryStatusDisplay();
 
-        // Setup organizer buttons
-        binding.qrCodeButton.setOnClickListener(v -> navigateToQrPage());
+        // Setup organizer buttons only once to prevent multiple listeners
+        if (!organizerViewSetup) {
+            binding.qrCodeButton.setOnClickListener(v -> navigateToQrPage());
 
-        binding.entrantsButton.setOnClickListener(v -> {
-            if (eventId != null) {
-                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                Bundle args = new Bundle();
-                args.putString("eventId", eventId);
-                navController.navigate(R.id.navigation_entrants, args);
-            }
-        });
+            binding.entrantsButton.setOnClickListener(v -> {
+                if (eventId != null) {
+                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                    Bundle args = new Bundle();
+                    args.putString("eventId", eventId);
+                    navController.navigate(R.id.navigation_entrants, args);
+                }
+            });
 
-        binding.drawLotteryButton.setOnClickListener(v -> handleDrawLottery());
+            binding.drawLotteryButton.setOnClickListener(v -> {
+                android.util.Log.d("EventDetailFragment", "Draw Lottery button clicked");
+                handleDrawLottery();
+            });
+            
+            organizerViewSetup = true;
+        }
 
         // Send notification button (in horizontal layout with lottery status)
-        binding.sendNotificationButton.setOnClickListener(v -> {
-            // TODO: Send notification functionality
-            Toast.makeText(requireContext(), "Send Notification - Coming soon", Toast.LENGTH_SHORT).show();
-        });
+        binding.sendNotificationButton.setOnClickListener(v -> showSendNotificationDialog());
 
         // Also handle standalone send notification button if it exists
         if (binding.sendNotificationButtonStandalone != null) {
-            binding.sendNotificationButtonStandalone.setOnClickListener(v -> {
-                Toast.makeText(requireContext(), "Send Notification - Coming soon", Toast.LENGTH_SHORT).show();
-            });
+            binding.sendNotificationButtonStandalone.setOnClickListener(v -> showSendNotificationDialog());
         }
 
         // Edit button is now a MaterialCardView, set click listener
@@ -453,6 +481,8 @@ public class EventDetailFragment extends Fragment {
     // }
 
     private void setupUserView() {
+        if (binding == null || !isAdded()) return;
+        
         // Hide organizer-specific UI
         binding.lotteryStatusAndNotificationContainer.setVisibility(View.GONE);
         binding.editEventButton.setVisibility(View.GONE);
@@ -467,16 +497,60 @@ public class EventDetailFragment extends Fragment {
             showUserStatus();
             setupUserActionButtons();
         } else {
-            // User not joined - show Join button
+            // User not joined - show Join button or Waitlist Full button
             binding.abandonButtonContainer.setVisibility(View.GONE);
             binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
             binding.joinButtonContainer.setVisibility(View.VISIBLE);
 
-            binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+            if (isWaitlistFull) {
+                // Waitlist is full - show orange disabled button
+                binding.joinButton.setText("Waitlist Full");
+                binding.joinButton.setEnabled(false);
+                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.status_declined, null)));
+                binding.joinButton.setOnClickListener(null);
+            } else {
+                // Waitlist has space - show blue Join button
+                binding.joinButton.setText("Join Waitlist");
+                binding.joinButton.setEnabled(true);
+                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.brand_primary, null)));
+                binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+            }
         }
     }
 
+    private void checkWaitlistFull() {
+        if (currentEvent == null) {
+            isWaitlistFull = false;
+            return;
+        }
+
+        // Check if maxEntrants is set
+        if (currentEvent.getMaxEntrants() == null || currentEvent.getMaxEntrants() <= 0) {
+            isWaitlistFull = false;
+            return;
+        }
+
+        // Get current waiting list size
+        waitingListRepository.getWaitingListForEvent(eventId)
+                .addOnSuccessListener(querySnapshot -> {
+                    int currentSize = querySnapshot.size();
+                    isWaitlistFull = currentSize >= currentEvent.getMaxEntrants();
+                    // Update UI if already set up
+                    if (!isUserJoined) {
+                        setupUserView();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // On failure, assume not full
+                    isWaitlistFull = false;
+                });
+    }
+
     private void showUserStatus() {
+        if (binding == null || !isAdded()) return;
+        
         if (userStatus == null) {
             binding.statusChip.setVisibility(View.GONE);
             binding.statusLabel.setVisibility(View.GONE);
@@ -530,6 +604,8 @@ public class EventDetailFragment extends Fragment {
     }
 
     private void setupUserActionButtons() {
+        if (binding == null || !isAdded()) return;
+        
         // Hide all button containers first
         binding.joinButtonContainer.setVisibility(View.GONE);
         binding.abandonButtonContainer.setVisibility(View.GONE);
@@ -569,10 +645,14 @@ public class EventDetailFragment extends Fragment {
 
         eventService.joinWaitingList(eventId, userId)
                 .addOnSuccessListener(result -> {
+                    if (!isAdded() || binding == null) return;
+                    
                     String status = result.get("status");
                     if ("success".equals(status)) {
                         // Success - reload user status to update UI
-                        Toast.makeText(requireContext(), "Successfully joined waitlist!", Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Successfully joined waitlist!", Toast.LENGTH_SHORT).show();
+                        }
                         isUserJoined = true;
                         waitingListEntryId = result.get("entryId");
                         decisionId = result.get("decisionId");
@@ -581,17 +661,32 @@ public class EventDetailFragment extends Fragment {
                         loadUserStatus();
                     } else if ("already_exists".equals(status)) {
                         // User already in waiting list
-                        Toast.makeText(requireContext(), "You are already on the waitlist", Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "You are already on the waitlist", Toast.LENGTH_SHORT).show();
+                        }
                         // Reload status in case UI is out of sync
                         loadUserStatus();
-                    } else {
-                        Toast.makeText(requireContext(), "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                    } else if ("limit_reached".equals(status)) {
+                        // Waiting list limit reached
+                        Toast.makeText(requireContext(), "Waiting list is full", Toast.LENGTH_SHORT).show();
                         binding.joinButton.setEnabled(true);
                         binding.joinButton.setText("Join Waitlist");
+                        loadUserStatus();
+                    } else {
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                        }
+                        if (binding != null && isAdded()) {
+                            binding.joinButton.setEnabled(true);
+                            binding.joinButton.setText("Join Waitlist");
+                        }
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error joining waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Error joining waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     binding.joinButton.setEnabled(true);
                     binding.joinButton.setText("Join Waitlist");
                 });
@@ -617,8 +712,12 @@ public class EventDetailFragment extends Fragment {
 
         eventService.leaveWaitingList(eventId, userId, waitingListEntryId, decisionId)
                 .addOnSuccessListener(aVoid -> {
+                    if (!isAdded() || binding == null) return;
+                    
                     // Success - update UI to show not joined
-                    Toast.makeText(requireContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
+                    }
                     isUserJoined = false;
                     userStatus = null;
                     userDecision = null;
@@ -629,7 +728,10 @@ public class EventDetailFragment extends Fragment {
                     setupUserView();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error leaving waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Error leaving waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     binding.abandonButton.setEnabled(true);
                     binding.abandonButton.setText("Abandon Waitlist");
                 });
@@ -649,12 +751,18 @@ public class EventDetailFragment extends Fragment {
 
         eventService.acceptWin(eventId, userId, decisionId)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(requireContext(), "Successfully accepted!", Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Successfully accepted!", Toast.LENGTH_SHORT).show();
+                    }
                     // Reload user status to update UI
                     loadUserStatus();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error accepting: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Error accepting: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     binding.acceptButton.setEnabled(true);
                     binding.declineButton.setEnabled(true);
                     binding.acceptButton.setText("Accept");
@@ -675,12 +783,18 @@ public class EventDetailFragment extends Fragment {
 
         eventService.declineWin(eventId, userId, decisionId)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(requireContext(), "Successfully declined", Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Successfully declined", Toast.LENGTH_SHORT).show();
+                    }
                     // Reload user status to update UI
                     loadUserStatus();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error declining: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Error declining: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     binding.acceptButton.setEnabled(true);
                     binding.declineButton.setEnabled(true);
                     binding.declineButton.setText("Decline");
@@ -688,6 +802,7 @@ public class EventDetailFragment extends Fragment {
     }
 
     private void handleDrawLottery() {
+        android.util.Log.d("EventDetailFragment", "handleDrawLottery called for eventId: " + eventId);
         if (eventId == null) {
             Toast.makeText(requireContext(), "Event ID is required", Toast.LENGTH_SHORT).show();
             return;
@@ -698,25 +813,102 @@ public class EventDetailFragment extends Fragment {
 
         eventService.drawLottery(eventId)
                 .addOnSuccessListener(result -> {
+                    if (!isAdded() || binding == null) return;
+                    
                     String status = (String) result.get("status");
                     if ("success".equals(status)) {
                         Integer winnersCount = (Integer) result.get("winnersCount");
                         Integer losersCount = (Integer) result.get("losersCount");
                         String message = "Lottery drawn! " + winnersCount + " winners, " + losersCount + " losers.";
-                        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+                        }
                         // Reload event to refresh UI (organizer view)
                         loadEvent();
                     } else {
                         String errorMsg = (String) result.get("message");
-                        Toast.makeText(requireContext(), "Error: " + errorMsg, Toast.LENGTH_SHORT).show();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Error: " + errorMsg, Toast.LENGTH_SHORT).show();
+                        }
                         binding.drawLotteryButton.setEnabled(true);
                         binding.drawLotteryButton.setText("Draw Lottery!");
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Error drawing lottery: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Error drawing lottery: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                     binding.drawLotteryButton.setEnabled(true);
                     binding.drawLotteryButton.setText("Draw Lottery!");
+                });
+    }
+
+    private void showSendNotificationDialog() {
+        if (eventId == null || currentEvent == null) {
+            Toast.makeText(requireContext(), "Event not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        DialogSendNotificationBinding dialogBinding = DialogSendNotificationBinding.inflate(getLayoutInflater());
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogBinding.getRoot())
+                .create();
+
+        dialogBinding.buttonReset.setOnClickListener(v -> {
+            dialogBinding.checkboxInvited.setChecked(false);
+            dialogBinding.checkboxCancelled.setChecked(false);
+            dialogBinding.checkboxEnrolled.setChecked(false);
+            dialogBinding.checkboxLost.setChecked(false);
+        });
+
+        dialogBinding.buttonOk.setOnClickListener(v -> {
+            List<String> selectedStatuses = new ArrayList<>();
+            if (dialogBinding.checkboxInvited.isChecked()) {
+                selectedStatuses.add("INVITED");
+            }
+            if (dialogBinding.checkboxEnrolled.isChecked()) {
+                selectedStatuses.add("ACCEPTED");
+            }
+            if (dialogBinding.checkboxLost.isChecked()) {
+                selectedStatuses.add("LOST");
+            }
+            if (dialogBinding.checkboxCancelled.isChecked()) {
+                selectedStatuses.add("CANCELLED");
+            }
+
+            if (selectedStatuses.isEmpty()) {
+                Toast.makeText(requireContext(), "Please select at least one group", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dialog.dismiss();
+            sendNotificationsToSelectedGroups(selectedStatuses);
+        });
+
+        dialog.show();
+    }
+
+    private void sendNotificationsToSelectedGroups(List<String> statuses) {
+        if (eventId == null || currentEvent == null) {
+            return;
+        }
+
+        String eventName = currentEvent.getEventName();
+        String title = "Update for " + eventName;
+        String message = "You have an update regarding " + eventName + ".";
+
+        eventService.sendNotificationsToEntrants(eventId, statuses, title, message)
+                .addOnSuccessListener(result -> {
+                    Integer totalSent = (Integer) result.get("totalSent");
+                    if (totalSent != null && totalSent > 0) {
+                        Toast.makeText(requireContext(), "Sent " + totalSent + " notifications", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(requireContext(), "No notifications sent", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to send notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -725,7 +917,7 @@ public class EventDetailFragment extends Fragment {
      * Shows "Lottery Status : Open" (green) or "Lottery Status : Closed" (red).
      */
     private void updateLotteryStatusDisplay() {
-        if (currentEvent == null) {
+        if (currentEvent == null || binding == null || !isAdded()) {
             return;
         }
 
@@ -757,13 +949,19 @@ public class EventDetailFragment extends Fragment {
     }
 
     private void navigateBack() {
-        NavController navController = Navigation.findNavController(requireView());
-        navController.navigateUp();
+        if (!isAdded() || getView() == null) return;
+        try {
+            NavController navController = Navigation.findNavController(getView());
+            navController.navigateUp();
+        } catch (Exception e) {
+            // Fragment may be detached, ignore
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        organizerViewSetup = false; // Reset flag when view is destroyed
         binding = null;
     }
 }

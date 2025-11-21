@@ -56,13 +56,14 @@ public class EventService {
     private final WaitingListRepository waitingListRepository;
     private final DecisionRepository decisionRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
 
     /**
      * Constructs a new EventService instance.
      */
     public EventService() {
-        this(new EventRepository(), new WaitingListRepository(), new DecisionRepository(), new UserRepository());
+        this(new EventRepository(), new WaitingListRepository(), new DecisionRepository(), new UserRepository(), new NotificationService());
     }
 
     /**
@@ -71,11 +72,13 @@ public class EventService {
     public EventService(EventRepository eventRepository, 
                        WaitingListRepository waitingListRepository,
                        DecisionRepository decisionRepository,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       NotificationService notificationService) {
         this.eventRepository = eventRepository;
         this.waitingListRepository = waitingListRepository;
         this.decisionRepository = decisionRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -194,12 +197,41 @@ public class EventService {
                         return com.google.android.gms.tasks.Tasks.forResult(result);
                     }
                     
-                    // Create waiting list entry
-                    WaitingListEntry entry = new WaitingListEntry();
-                    entry.setEntrantId(entrantId);
-                    entry.setJoinTimestamp(Timestamp.now());
-                    
-                    return waitingListRepository.addToWaitingList(eventId, entry)
+                    // Check maxEntrants limit if set
+                    return eventRepository.getEventById(eventId)
+                            .continueWithTask(eventTask -> {
+                                if (eventTask.isSuccessful() && eventTask.getResult() != null && eventTask.getResult().exists()) {
+                                    Event event = eventTask.getResult().toObject(Event.class);
+                                    if (event != null && event.getMaxEntrants() != null && event.getMaxEntrants() > 0) {
+                                        // Check current waiting list size
+                                        return waitingListRepository.getWaitingListForEvent(eventId)
+                                                .continueWithTask(listTask -> {
+                                                    if (listTask.isSuccessful()) {
+                                                        int currentSize = listTask.getResult().size();
+                                                        if (currentSize >= event.getMaxEntrants()) {
+                                                            Map<String, String> result = new HashMap<>();
+                                                            result.put("status", "limit_reached");
+                                                            return com.google.android.gms.tasks.Tasks.forResult(result);
+                                                        }
+                                                    }
+                                                    // Continue with adding to waiting list
+                                                    return addUserToWaitingList(eventId, entrantId);
+                                                });
+                                    }
+                                }
+                                // No limit set, continue with adding to waiting list
+                                return addUserToWaitingList(eventId, entrantId);
+                            });
+                });
+    }
+
+    private Task<Map<String, String>> addUserToWaitingList(String eventId, String entrantId) {
+        // Create waiting list entry
+        WaitingListEntry entry = new WaitingListEntry();
+        entry.setEntrantId(entrantId);
+        entry.setJoinTimestamp(Timestamp.now());
+        
+        return waitingListRepository.addToWaitingList(eventId, entry)
                             .continueWithTask(addTask -> {
                                 if (!addTask.isSuccessful()) {
                                     Map<String, String> result = new HashMap<>();
@@ -247,7 +279,6 @@ public class EventService {
                                             }
                                         });
                             });
-                });
     }
 
     /**
@@ -413,6 +444,7 @@ public class EventService {
                     }
 
                     int numberOfWinners = event.getNumberOfWinners();
+                    String eventName = event.getEventName();
 
                     // Get all PENDING decisions for this event
                     return decisionRepository.getDecisionsByStatus(eventId, "PENDING")
@@ -478,19 +510,55 @@ public class EventService {
 
                                 // Execute batch
                                 return batch.commit()
-                                        .continueWith(batchTask -> {
-                                            Map<String, Object> result = new HashMap<>();
-                                            if (batchTask.isSuccessful()) {
-                                                result.put("status", "success");
-                                                result.put("winnersCount", winners.size());
-                                                result.put("losersCount", losers.size());
-                                                result.put("message", "Lottery drawn successfully");
-                                            } else {
-                                                result.put("status", "error");
-                                                result.put("message", "Failed to update decisions: " + 
+                                        .continueWithTask(batchTask -> {
+                                            if (!batchTask.isSuccessful()) {
+                                                Map<String, Object> errorResult = new HashMap<>();
+                                                errorResult.put("status", "error");
+                                                errorResult.put("message", "Failed to update decisions: " + 
                                                     (batchTask.getException() != null ? batchTask.getException().getMessage() : "Unknown error"));
+                                                return com.google.android.gms.tasks.Tasks.forResult(errorResult);
                                             }
-                                            return result;
+
+                                            // Create notifications for winners
+                                            List<Task<DocumentReference>> winnerNotificationTasks = new ArrayList<>();
+                                            for (Decision winner : winners) {
+                                                Task<DocumentReference> notificationTask = notificationService.sendNotification(
+                                                        winner.getEntrantId(),
+                                                        eventId,
+                                                        "INVITED",
+                                                        "You won the lottery!",
+                                                        "Congratulations! You have been selected for " + eventName + ". Please accept or decline your invitation."
+                                                );
+                                                winnerNotificationTasks.add(notificationTask);
+                                            }
+
+                                            // Create notifications for losers
+                                            List<Task<DocumentReference>> loserNotificationTasks = new ArrayList<>();
+                                            for (Decision loser : losers) {
+                                                Task<DocumentReference> notificationTask = notificationService.sendNotification(
+                                                        loser.getEntrantId(),
+                                                        eventId,
+                                                        "LOST",
+                                                        "Lottery results",
+                                                        "Unfortunately, you were not selected for " + eventName + ". You may still have a chance if someone declines."
+                                                );
+                                                loserNotificationTasks.add(notificationTask);
+                                            }
+
+                                            // Wait for all notifications to be sent
+                                            List<Task<DocumentReference>> allNotificationTasks = new ArrayList<>();
+                                            allNotificationTasks.addAll(winnerNotificationTasks);
+                                            allNotificationTasks.addAll(loserNotificationTasks);
+
+                                            return com.google.android.gms.tasks.Tasks.whenAll(allNotificationTasks)
+                                                    .continueWith(notificationTask -> {
+                                                        Map<String, Object> result = new HashMap<>();
+                                                        result.put("status", "success");
+                                                        result.put("winnersCount", winners.size());
+                                                        result.put("losersCount", losers.size());
+                                                        result.put("message", "Lottery drawn successfully");
+                                                        return result;
+                                                    });
                                         });
                             });
                 });
@@ -558,6 +626,55 @@ public class EventService {
                     result.put("registrations", registrations);
                     result.put("status", "success");
                     return result;
+                });
+    }
+
+    /**
+     * Sends notifications to entrants with specified statuses for an event.
+     *
+     * @param eventId the event ID
+     * @param statuses list of statuses to send notifications for
+     * @param title the notification title
+     * @param message the notification message
+     * @return a Task that completes with a map containing notification results
+     */
+    public Task<Map<String, Object>> sendNotificationsToEntrants(String eventId, List<String> statuses, String title, String message) {
+        if (statuses == null || statuses.isEmpty()) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("status", "error");
+            result.put("message", "No statuses selected");
+            return com.google.android.gms.tasks.Tasks.forResult(result);
+        }
+
+        List<Task<Map<String, Object>>> statusTasks = new ArrayList<>();
+        for (String status : statuses) {
+            Task<Map<String, Object>> statusTask = notificationService.sendNotificationsToEntrantsByStatus(eventId, status, title, message);
+            statusTasks.add(statusTask);
+        }
+
+        return com.google.android.gms.tasks.Tasks.whenAll(statusTasks)
+                .continueWith(allTasks -> {
+                    int totalSent = 0;
+                    Map<String, Integer> statusCounts = new HashMap<>();
+                    
+                    for (int i = 0; i < statusTasks.size(); i++) {
+                        Task<Map<String, Object>> task = statusTasks.get(i);
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            Map<String, Object> result = task.getResult();
+                            Integer count = (Integer) result.get("count");
+                            if (count != null) {
+                                totalSent += count;
+                                statusCounts.put(statuses.get(i), count);
+                            }
+                        }
+                    }
+
+                    Map<String, Object> finalResult = new HashMap<>();
+                    finalResult.put("status", "success");
+                    finalResult.put("totalSent", totalSent);
+                    finalResult.put("statusCounts", statusCounts);
+                    finalResult.put("message", "Sent " + totalSent + " notifications");
+                    return finalResult;
                 });
     }
 }

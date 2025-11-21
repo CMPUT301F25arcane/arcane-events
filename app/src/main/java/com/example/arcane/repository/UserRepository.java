@@ -13,6 +13,7 @@
 package com.example.arcane.repository;
 
 import com.example.arcane.model.UserProfile;
+import com.example.arcane.model.Users;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -78,6 +79,16 @@ public class UserRepository {
     }
 
     /**
+     * Updates a Users model.
+     *
+     * @param user the Users model to update
+     * @return a Task that completes when the user is updated
+     */
+    public Task<Void> updateUser(Users user) {
+        return db.collection(COLLECTION_NAME).document(user.getId()).set(user);
+    }
+
+    /**
      * Deletes a user profile.
      *
      * @param userId the user ID to delete
@@ -97,6 +108,15 @@ public class UserRepository {
         return db.collection(COLLECTION_NAME)
                 .whereEqualTo("deviceId", deviceId)
                 .get();
+    }
+
+    /**
+     * Gets all users from the database.
+     *
+     * @return a Task that completes with the query snapshot of all users
+     */
+    public Task<QuerySnapshot> getAllUsers() {
+        return db.collection(COLLECTION_NAME).get();
     }
 }
 

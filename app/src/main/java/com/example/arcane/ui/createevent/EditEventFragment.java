@@ -118,6 +118,8 @@ public class EditEventFragment extends Fragment {
 
         eventRepository.getEventById(eventId)
                 .addOnSuccessListener(snapshot -> {
+                    if (!isAdded() || binding == null) return;
+                    
                     if (snapshot != null && snapshot.exists()) {
                         currentEvent = snapshot.toObject(Event.class);
                         if (currentEvent != null) {
@@ -125,13 +127,22 @@ public class EditEventFragment extends Fragment {
                             populateForm();
                         }
                     } else {
-                        Toast.makeText(requireContext(), "Event not found", Toast.LENGTH_SHORT).show();
-                        Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main).navigateUp();
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(), "Event not found", Toast.LENGTH_SHORT).show();
+                        }
+                        if (getActivity() != null) {
+                            Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main).navigateUp();
+                        }
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Failed to load event", Toast.LENGTH_SHORT).show();
-                    Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main).navigateUp();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Failed to load event", Toast.LENGTH_SHORT).show();
+                    }
+                    if (getActivity() != null) {
+                        Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main).navigateUp();
+                    }
                 });
     }
 
@@ -269,13 +280,21 @@ public class EditEventFragment extends Fragment {
 
         eventService.updateEvent(currentEvent)
                 .addOnSuccessListener(unused -> {
-                    Toast.makeText(requireContext(), "Event updated!", Toast.LENGTH_SHORT).show();
-                    Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main).navigateUp();
+                    if (!isAdded() || binding == null) return;
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Event updated!", Toast.LENGTH_SHORT).show();
+                    }
+                    if (getActivity() != null) {
+                        Navigation.findNavController(getActivity(), R.id.nav_host_fragment_activity_main).navigateUp();
+                    }
                 })
                 .addOnFailureListener(e -> {
+                    if (!isAdded() || binding == null) return;
                     binding.createEventButton.setEnabled(true);
                     binding.createEventButton.setText("Save Changes");
-                    Toast.makeText(requireContext(), "Failed to update: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(), "Failed to update: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 
