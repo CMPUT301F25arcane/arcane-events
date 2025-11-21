@@ -300,5 +300,17 @@ public class EventRepository {
                 .whereEqualTo("status", "OPEN")
                 .get();
     }
+
+    /**
+     * Removes the poster image from an event by setting posterImageUrl to null.
+     *
+     * @param eventId the event ID to update
+     * @return a Task that completes when the image is removed from the event
+     */
+    public Task<Void> removeEventImage(String eventId) {
+        Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("posterImageUrl", null);
+        return db.collection(COLLECTION_NAME).document(eventId).update(updates);
+    }
 }
 
