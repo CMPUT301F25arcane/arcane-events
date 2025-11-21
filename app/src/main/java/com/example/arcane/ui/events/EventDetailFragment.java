@@ -86,7 +86,7 @@ public class EventDetailFragment extends Fragment {
     private String waitingListEntryId = null;
     private String decisionId = null;
     private boolean organizerViewSetup = false; // Prevent multiple listener setups
-    private boolean isWaitlistFull = false;
+    private boolean isWaitlistFull = false; // Track if waitlist is full
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {

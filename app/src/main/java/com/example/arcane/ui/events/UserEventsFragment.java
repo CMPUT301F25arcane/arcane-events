@@ -1,6 +1,5 @@
 package com.example.arcane.ui.events;
 
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.Editable;
