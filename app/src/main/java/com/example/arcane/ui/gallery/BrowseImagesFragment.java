@@ -125,12 +125,13 @@ public class BrowseImagesFragment extends Fragment {
 
     /**
      * Called when the fragment becomes visible to the user.
-     * Refreshes the images list.
+     * Refreshes the images list and admin status.
      */
     @Override
     public void onResume() {
         super.onResume();
-        // Refresh images list when returning to this fragment
+        // Refresh admin status and images list when returning to this fragment
+        checkAdminStatus();
         loadAllEventImages();
     }
 
