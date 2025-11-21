@@ -67,5 +67,19 @@ public class UserService {
     public Task<DocumentSnapshot> getUserById(@NonNull String userId) {
         return db.collection("users").document(userId).get();
     }
+
+    /**
+     * Updates an existing user in Firestore.
+     *
+     * @param user the user to update
+     * @return a Task that completes when the user is updated
+     * @throws IllegalArgumentException if the user ID is null
+     */
+    public Task<Void> updateUser(@NonNull Users user) {
+        if (user.getId() == null) {
+            throw new IllegalArgumentException("User id (auth uid) cannot be null");
+        }
+        return db.collection("users").document(user.getId()).set(user);
+    }
 }
 

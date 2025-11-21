@@ -104,10 +104,11 @@ public class MainActivity extends AppCompatActivity {
                 getSupportActionBar().setDisplayHomeAsUpEnabled(!isTopLevel);
             }
 
-            // Hide action bar for welcome, create event, and QR scanner pages (they have their own toolbars)
+            // Hide action bar for welcome, create event, edit profile, and QR scanner pages (they have their own toolbars)
             if (destination.getId() == R.id.navigation_welcome
                     || destination.getId() == R.id.navigation_create_event
                     || destination.getId() == R.id.navigation_edit_event
+                    || destination.getId() == R.id.navigation_edit_profile
                     || destination.getId() == R.id.navigation_qr_code
                     || destination.getId() == R.id.navigation_browse_images
                     || destination.getId() == R.id.navigation_dashboard) {
@@ -117,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
                 // Remove top padding to eliminate gap
                 if (destination.getId() == R.id.navigation_create_event
                         || destination.getId() == R.id.navigation_edit_event
+                        || destination.getId() == R.id.navigation_edit_profile
                         || destination.getId() == R.id.navigation_qr_code
                         || destination.getId() == R.id.navigation_browse_images
                         || destination.getId() == R.id.navigation_dashboard) {

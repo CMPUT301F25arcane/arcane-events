@@ -101,6 +101,12 @@ public class NotificationsFragment extends Fragment {
 
         binding.deleteProfileButton.setOnClickListener(v -> showDeleteConfirmDialog());
 
+        // Edit profile button click handler
+        binding.editProfileButton.setOnClickListener(v -> {
+            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+            navController.navigate(R.id.navigation_edit_profile);
+        });
+
         // Notification toggle functionality
         binding.toggleNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
             updateNotificationPreference(!isChecked);
@@ -116,6 +122,15 @@ public class NotificationsFragment extends Fragment {
         // This ensures the fragment is properly attached before checking for user
         loadUserProfile();
         // Notifications are now shown in the Events section, not in profile
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh profile data when returning from edit screen
+        if (binding != null) {
+            loadUserProfile();
+        }
     }
 
     /**
@@ -244,8 +259,20 @@ public class NotificationsFragment extends Fragment {
         if (user.getEmail() != null) {
             binding.editEmail.setText(user.getEmail());
         }
+        if (user.getPronouns() != null && !user.getPronouns().isEmpty()) {
+            binding.editPronouns.setText(user.getPronouns());
+        }
         if (user.getPhone() != null && !user.getPhone().isEmpty()) {
             binding.editPhone.setText(user.getPhone());
+        }
+        
+        // Load and display profile picture if available
+        if (user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isEmpty()) {
+            loadProfilePicture(user.getProfilePictureUrl());
+        } else {
+            // Show placeholder when no profile picture is set
+            binding.profilePicture.setVisibility(View.GONE);
+            binding.profilePicturePlaceholder.setVisibility(View.VISIBLE);
         }
         
         // Show delete button only for non-organizer users
@@ -261,6 +288,28 @@ public class NotificationsFragment extends Fragment {
         binding.toggleNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
             updateNotificationPreference(!isChecked);
         });
+    }
+
+    /**
+     * Loads and displays a profile picture from a base64 string.
+     *
+     * @param base64String the base64 encoded image string
+     */
+    private void loadProfilePicture(String base64String) {
+        try {
+            byte[] imageBytes = android.util.Base64.decode(base64String, android.util.Base64.NO_WRAP);
+            android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+            if (bitmap != null) {
+                binding.profilePicture.setImageBitmap(bitmap);
+                binding.profilePicture.setVisibility(View.VISIBLE);
+                binding.profilePicturePlaceholder.setVisibility(View.GONE);
+            }
+        } catch (Exception e) {
+            android.util.Log.e("NotificationsFragment", "Error loading profile picture", e);
+            // Show placeholder if image fails to load
+            binding.profilePicture.setVisibility(View.GONE);
+            binding.profilePicturePlaceholder.setVisibility(View.VISIBLE);
+        }
     }
 
     private void showDeleteConfirmDialog() {

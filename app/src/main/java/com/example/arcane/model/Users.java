@@ -38,6 +38,8 @@ public class Users {
     private String role;       // e.g., "USER" or "ORGANISER"
     private List<String> registeredEventIds; // workaround array for My Events
     private Boolean notificationOptOut;  // whether user has opted out of notifications
+    private String pronouns;   // optional pronouns (e.g., "He/Him", "She/Her", "They/Them")
+    private String profilePictureUrl;  // base64 encoded profile picture
 
     /**
      * Required no-arg constructor for Firestore deserialization.
@@ -196,6 +198,42 @@ public class Users {
      */
     public void setNotificationOptOut(Boolean notificationOptOut) {
         this.notificationOptOut = notificationOptOut;
+    }
+
+    /**
+     * Gets the user's pronouns.
+     *
+     * @return the pronouns, or null if not set
+     */
+    public String getPronouns() {
+        return pronouns;
+    }
+
+    /**
+     * Sets the user's pronouns.
+     *
+     * @param pronouns the pronouns to set (nullable)
+     */
+    public void setPronouns(String pronouns) {
+        this.pronouns = pronouns;
+    }
+
+    /**
+     * Gets the profile picture URL (base64 encoded).
+     *
+     * @return the profile picture URL, or null if not set
+     */
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    /**
+     * Sets the profile picture URL (base64 encoded).
+     *
+     * @param profilePictureUrl the profile picture URL to set (nullable)
+     */
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 }
 
