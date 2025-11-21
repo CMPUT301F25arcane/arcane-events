@@ -590,6 +590,8 @@ public class NotificationsFragment extends Fragment {
                 notificationView.setBackgroundColor(getResources().getColor(R.color.status_won_bg, null));
             } else if ("LOST".equals(notification.getType())) {
                 notificationView.setBackgroundColor(getResources().getColor(R.color.status_lost_bg, null));
+            } else if ("REPLACEMENT_SELECTED".equals(notification.getType())) {
+                notificationView.setBackgroundColor(getResources().getColor(R.color.status_won_bg, null)); // Use same as INVITED
             }
 
             finalContainer.addView(notificationView);

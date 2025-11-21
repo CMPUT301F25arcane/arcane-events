@@ -95,6 +95,10 @@ public class NotificationCardAdapter extends RecyclerView.Adapter<NotificationCa
             } else if ("LOST".equals(type)) {
                 ((androidx.cardview.widget.CardView) cardView).setCardBackgroundColor(
                     cardView.getContext().getResources().getColor(R.color.status_lost_bg, null));
+            } else if ("REPLACEMENT_SELECTED".equals(type)) {
+                // Use a distinct color for replacement notifications (e.g., blue or info color)
+                ((androidx.cardview.widget.CardView) cardView).setCardBackgroundColor(
+                    cardView.getContext().getResources().getColor(R.color.status_won_bg, null)); // Use same as INVITED for now
             } else {
                 ((androidx.cardview.widget.CardView) cardView).setCardBackgroundColor(
                     cardView.getContext().getResources().getColor(R.color.surface, null));

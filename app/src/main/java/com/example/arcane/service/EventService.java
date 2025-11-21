@@ -444,12 +444,13 @@ public class EventService {
 
     /**
      * User declines a won lottery spot.
-     * Updates Decision status to DECLINED and updates both collections.
+     * Updates Decision status to DECLINED and selects someone from the waiting list
+     * (LOST or PENDING status) to give them another chance.
      *
      * @param eventId the event ID
      * @param userId the user ID
      * @param decisionId the decision ID
-     * @return a Task that completes when the decision is declined
+     * @return a Task that completes when the decision is declined and replacement is selected
      */
     public Task<Void> declineWin(String eventId, String userId, String decisionId) {
         return decisionRepository.getDecisionById(eventId, decisionId)
@@ -474,10 +475,127 @@ public class EventService {
                                     return com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to update decision"));
                                 }
                                 
-                                // Update userEvents mirror (if userEvents collection exists)
-                                // For now, keep registeredEventIds as-is
-                                
-                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                                // After declining, select someone from waiting list to give them another chance
+                                return selectNextFromWaitingList(eventId);
+                            });
+                });
+    }
+
+    /**
+     * Selects the next person from the waiting list when a spot becomes available.
+     * Prioritizes users with LOST status (those who previously didn't win),
+     * then falls back to PENDING status users.
+     *
+     * @param eventId the event ID
+     * @return a Task that completes when a replacement is selected (or if no eligible candidates)
+     */
+    private Task<Void> selectNextFromWaitingList(String eventId) {
+        // Get event to get event name for notification
+        return eventRepository.getEventById(eventId)
+                .continueWithTask(eventTask -> {
+                    if (!eventTask.isSuccessful() || eventTask.getResult() == null || !eventTask.getResult().exists()) {
+                        // Event not found, but don't fail - just skip replacement selection
+                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                    }
+
+                    Event event = eventTask.getResult().toObject(Event.class);
+                    String eventName = (event != null && event.getEventName() != null) ? event.getEventName() : "the event";
+
+                    // Get all decisions for the event to find eligible candidates
+                    return decisionRepository.getDecisionsForEvent(eventId)
+                            .continueWithTask(decisionsTask -> {
+                                if (!decisionsTask.isSuccessful() || decisionsTask.getResult() == null) {
+                                    return com.google.android.gms.tasks.Tasks.forResult(null);
+                                }
+
+                                QuerySnapshot decisionsSnapshot = decisionsTask.getResult();
+                                List<Decision> lostDecisions = new ArrayList<>();
+                                List<Decision> pendingDecisions = new ArrayList<>();
+
+                                // Separate LOST and PENDING decisions
+                                for (QueryDocumentSnapshot doc : decisionsSnapshot) {
+                                    Decision decision = doc.toObject(Decision.class);
+                                    decision.setDecisionId(doc.getId());
+                                    String status = decision.getStatus();
+                                    
+                                    if ("LOST".equals(status)) {
+                                        lostDecisions.add(decision);
+                                    } else if ("PENDING".equals(status)) {
+                                        pendingDecisions.add(decision);
+                                    }
+                                }
+
+                                // Prioritize LOST over PENDING
+                                List<Decision> eligibleCandidates = new ArrayList<>();
+                                if (!lostDecisions.isEmpty()) {
+                                    eligibleCandidates = lostDecisions;
+                                } else if (!pendingDecisions.isEmpty()) {
+                                    eligibleCandidates = pendingDecisions;
+                                }
+
+                                if (eligibleCandidates.isEmpty()) {
+                                    // No eligible candidates, nothing to do
+                                    return com.google.android.gms.tasks.Tasks.forResult(null);
+                                }
+
+                                // Randomly select one candidate (similar to lottery drawing)
+                                Collections.shuffle(eligibleCandidates);
+                                Decision selectedDecision = eligibleCandidates.get(0);
+
+                                // Update selected decision to INVITED
+                                selectedDecision.setStatus("INVITED");
+                                selectedDecision.setUpdatedAt(Timestamp.now());
+
+                                return decisionRepository.updateDecision(eventId, selectedDecision.getDecisionId(), selectedDecision)
+                                        .continueWithTask(updateTask -> {
+                                            if (!updateTask.isSuccessful()) {
+                                                // Failed to update, but don't fail the whole operation
+                                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                                            }
+
+                                            // Get organizer ID for notification
+                                            String organizerId = event != null ? event.getOrganizerId() : null;
+                                            
+                                            // Send notification to the selected user
+                                            Task<DocumentReference> userNotificationTask = notificationService.sendNotification(
+                                                    selectedDecision.getEntrantId(),
+                                                    eventId,
+                                                    "INVITED",
+                                                    "You won the lottery!",
+                                                    "Congratulations! A spot has opened up for " + eventName + ". You have been selected! Please accept or decline your invitation."
+                                            );
+                                            
+                                            // Send notification to organizer if organizer ID is available
+                                            if (organizerId != null && !organizerId.isEmpty()) {
+                                                // Get selected user's name for the notification
+                                                return userRepository.getUserById(selectedDecision.getEntrantId())
+                                                        .continueWithTask(userTask -> {
+                                                            String selectedUserName = "a participant";
+                                                            if (userTask.isSuccessful() && userTask.getResult() != null && userTask.getResult().exists()) {
+                                                                UserProfile selectedUser = userTask.getResult().toObject(UserProfile.class);
+                                                                if (selectedUser != null && selectedUser.getName() != null) {
+                                                                    selectedUserName = selectedUser.getName();
+                                                                }
+                                                            }
+                                                            
+                                                            // Send notification to organizer
+                                                            Task<DocumentReference> organizerNotificationTask = notificationService.sendNotification(
+                                                                    organizerId,
+                                                                    eventId,
+                                                                    "REPLACEMENT_SELECTED",
+                                                                    "Replacement Selected",
+                                                                    selectedUserName + " has been selected from the waiting list for " + eventName + " after a winner declined."
+                                                            );
+                                                            
+                                                            // Wait for both notifications to complete
+                                                            return com.google.android.gms.tasks.Tasks.whenAll(userNotificationTask, organizerNotificationTask)
+                                                                    .continueWith(allTask -> null);
+                                                        });
+                                            } else {
+                                                // No organizer ID, just wait for user notification
+                                                return userNotificationTask.continueWith(notificationTask -> null);
+                                            }
+                                        });
                             });
                 });
     }
