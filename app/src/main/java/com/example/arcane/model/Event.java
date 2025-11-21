@@ -42,6 +42,7 @@ public class Event {
     private GeoPoint geolocation;  // Optional
     private String posterImageUrl;  // Optional
     private Timestamp eventDate;
+    private Timestamp eventEndDate;  // End date/time of the event
     private String location;
     private Double cost;
     private Timestamp registrationStartDate;
@@ -275,6 +276,24 @@ public class Event {
      */
     public void setEventDate(Timestamp eventDate) {
         this.eventDate = eventDate;
+    }
+
+    /**
+     * Gets the event end date/time.
+     *
+     * @return the event end date
+     */
+    public Timestamp getEventEndDate() {
+        return eventEndDate;
+    }
+
+    /**
+     * Sets the event end date/time.
+     *
+     * @param eventEndDate the event end date to set
+     */
+    public void setEventEndDate(Timestamp eventEndDate) {
+        this.eventEndDate = eventEndDate;
     }
 
     /**

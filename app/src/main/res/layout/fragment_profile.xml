@@ -62,7 +62,7 @@
             app:cardCornerRadius="20dp"
             app:cardBackgroundColor="@color/surface"
             app:cardElevation="2dp"
-            app:strokeColor="@color/text_primary"
+            app:strokeColor="?attr/colorPrimary"
             app:strokeWidth="2dp"
             android:clickable="true"
             android:focusable="true"
@@ -75,7 +75,7 @@
                 android:layout_gravity="center"
                 android:src="@android:drawable/ic_menu_edit"
                 android:contentDescription="Edit Profile"
-                app:tint="@color/text_primary" />
+                app:tint="?attr/colorPrimary" />
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
@@ -209,7 +209,7 @@
                 android:id="@+id/toggle_notifications"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="true"
+                android:checked="false"
                 android:thumbTint="@color/on_brand"
                 android:trackTint="@color/brand_primary_light" />
 
@@ -239,7 +239,7 @@
                 android:id="@+id/toggle_geolocation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="true"
+                android:checked="false"
                 android:thumbTint="@color/on_brand"
                 android:trackTint="@color/brand_primary_light" />
 

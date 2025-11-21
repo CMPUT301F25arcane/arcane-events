@@ -25,6 +25,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -106,6 +108,9 @@ public class EntrantsFragment extends Fragment {
 
         // Hide view map button for now (can be implemented later)
         binding.viewMapButton.setVisibility(View.GONE);
+
+        // Configure window insets to separate notification panel from app content
+        setupWindowInsets();
 
         // Setup export CSV button
         binding.exportCsvButton.setOnClickListener(v -> exportEnrolledEntrantsToCSV());
@@ -358,6 +363,35 @@ public class EntrantsFragment extends Fragment {
         } catch (Exception e) {
             Toast.makeText(requireContext(), "Error sharing file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void setupWindowInsets() {
+        if (getActivity() == null) return;
+        
+        // Set status bar color to white/light to match the status spacer
+        getActivity().getWindow().setStatusBarColor(android.graphics.Color.WHITE);
+        
+        View decorView = getActivity().getWindow().getDecorView();
+        WindowInsetsControllerCompat controller = ViewCompat.getWindowInsetsController(decorView);
+        if (controller != null) {
+            // Set status bar icons to dark (light status bar)
+            controller.setAppearanceLightStatusBars(true);
+            // Allow system bars to show transiently when swiping down
+            controller.setSystemBarsBehavior(
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            );
+        }
+        
+        // Apply window insets to adjust status spacer height dynamically
+        ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, insets) -> {
+            int statusBarHeight = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars()).top;
+            if (statusBarHeight > 0 && binding.statusSpacerEntrants != null) {
+                android.view.ViewGroup.LayoutParams params = binding.statusSpacerEntrants.getLayoutParams();
+                params.height = statusBarHeight;
+                binding.statusSpacerEntrants.setLayoutParams(params);
+            }
+            return insets;
+        });
     }
 
     private void navigateBack() {

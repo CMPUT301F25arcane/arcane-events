@@ -92,6 +92,7 @@ public class CreateAccountFragment extends Fragment {
             String name = binding.etName.getText() != null ? binding.etName.getText().toString().trim() : "";
             String email = binding.etEmail.getText() != null ? binding.etEmail.getText().toString().trim() : "";
             String phone = binding.etPhone.getText() != null ? binding.etPhone.getText().toString().trim() : "";
+            String pronouns = binding.etPronouns.getText() != null ? binding.etPronouns.getText().toString().trim() : "";
             String password = binding.etPassword.getText() != null ? binding.etPassword.getText().toString() : "";
 
             if (TextUtils.isEmpty(name)) {
@@ -148,6 +149,9 @@ public class CreateAccountFragment extends Fragment {
                         String uid = user.getUid();
                         Users profile = new Users(uid, name, email, phone, null, Timestamp.now());
                         profile.setRole(selectedRole);
+                        profile.setPronouns(pronouns.isEmpty() ? null : pronouns);
+                        // Set notificationOptOut to true (notifications OFF by default)
+                        profile.setNotificationOptOut(true);
                         List<String> empty = new ArrayList<>();
                         profile.setRegisteredEventIds(empty);
 

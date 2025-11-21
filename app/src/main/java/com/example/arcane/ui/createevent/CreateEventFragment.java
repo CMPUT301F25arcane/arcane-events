@@ -332,8 +332,9 @@ public class CreateEventFragment extends Fragment {
         event.setNumberOfWinners(numberOfWinners);
         event.setGeolocationRequired(binding.enableGeolocationCheckbox.isChecked());
         
-        // Set event date (using start date as event date)
+        // Set event dates
         event.setEventDate(new Timestamp(startDateCalendar.getTime()));
+        event.setEventEndDate(new Timestamp(endDateCalendar.getTime()));
         
         // Set registration dates
         // Registration start: current time

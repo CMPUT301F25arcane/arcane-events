@@ -26,14 +26,13 @@
     <fragment
         android:id="@+id/navigation_home"
         android:name="com.example.arcane.ui.events.EventsRouterFragment"
-        android:label="@string/title_events"
         tools:layout="@layout/fragment_events_router" />
 
     <fragment
         android:id="@+id/navigation_dashboard"
-        android:name="com.example.arcane.ui.qrcode.QRScannerFragment"
+        android:name="com.example.arcane.ui.qrcode.ScanRouterFragment"
         android:label="@string/title_scan"
-        tools:layout="@layout/fragment_qr_scanner" />
+        tools:layout="@layout/fragment_scan_router" />
 
     <fragment
         android:id="@+id/navigation_notifications"

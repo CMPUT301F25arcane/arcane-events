@@ -71,27 +71,33 @@ public class MainActivity extends AppCompatActivity {
         updateBottomNavTitle();
 
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            // Hide bottom nav only for specific destinations (not dashboard, as it now shows events list for organizers)
             if (destination.getId() == R.id.navigation_welcome
                     || destination.getId() == R.id.navigation_login
                     || destination.getId() == R.id.navigation_create_account
                     || destination.getId() == R.id.navigation_create_event
                     || destination.getId() == R.id.navigation_edit_event
-                    || destination.getId() == R.id.navigation_qr_code
-                    || destination.getId() == R.id.navigation_dashboard) {
+                    || destination.getId() == R.id.navigation_qr_code) {
                 binding.navView.setVisibility(android.view.View.GONE);
             } else {
                 binding.navView.setVisibility(android.view.View.VISIBLE);
             }
             
-            // Update action bar title based on role for home destination
+            // Update action bar title based on destination
             if (destination.getId() == R.id.navigation_home) {
-                // Use post-delay to ensure fragment is loaded and Firebase query can complete
+                // Set title immediately using cached role (no label in navigation XML, so no override needed)
+                setActionBarTitleForHomeImmediate();
+                checkAdminAndSetupToolbar();
+                // Also update after a short delay to catch any role changes from Firebase
                 binding.getRoot().postDelayed(() -> {
-                updateActionBarTitleForHome();
-                    checkAdminAndSetupToolbar(); // Setup custom toolbar for admin
+                    updateActionBarTitleForHome();
+                    checkAdminAndSetupToolbar();
                 }, 300);
+            } else if (destination.getId() == R.id.navigation_dashboard) {
+                // Set "Scan" title for dashboard/scan destination
+                setActionBarTitleForScan();
             } else {
-                // Reset action bar when not on events tab
+                // Reset action bar when not on events or scan tab
                 resetActionBar();
             }
             
@@ -105,23 +111,25 @@ public class MainActivity extends AppCompatActivity {
             }
 
             // Hide action bar for welcome, create event, edit profile, and QR scanner pages (they have their own toolbars)
+            // Note: navigation_dashboard removed - it should show action bar with "Scan" title
             if (destination.getId() == R.id.navigation_welcome
                     || destination.getId() == R.id.navigation_create_event
                     || destination.getId() == R.id.navigation_edit_event
                     || destination.getId() == R.id.navigation_edit_profile
                     || destination.getId() == R.id.navigation_qr_code
                     || destination.getId() == R.id.navigation_browse_images
-                    || destination.getId() == R.id.navigation_dashboard) {
+                    || destination.getId() == R.id.navigation_entrants) {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
                 // Remove top padding to eliminate gap
+                // Note: navigation_dashboard removed - it should use normal padding for action bar
                 if (destination.getId() == R.id.navigation_create_event
                         || destination.getId() == R.id.navigation_edit_event
                         || destination.getId() == R.id.navigation_edit_profile
                         || destination.getId() == R.id.navigation_qr_code
                         || destination.getId() == R.id.navigation_browse_images
-                        || destination.getId() == R.id.navigation_dashboard) {
+                        || destination.getId() == R.id.navigation_entrants) {
                     binding.container.setPadding(
                         binding.container.getPaddingLeft(),
                         0,
@@ -133,13 +141,12 @@ public class MainActivity extends AppCompatActivity {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().show();
                 }
-                // Restore top padding for other pages
+                // Restore top padding for other pages (including dashboard which uses action bar)
                 if (destination.getId() != R.id.navigation_welcome
                         && destination.getId() != R.id.navigation_create_event
                         && destination.getId() != R.id.navigation_edit_event
                         && destination.getId() != R.id.navigation_qr_code
-                        && destination.getId() != R.id.navigation_browse_images
-                        && destination.getId() != R.id.navigation_dashboard) {
+                        && destination.getId() != R.id.navigation_browse_images) {
                     android.util.TypedValue tv = new android.util.TypedValue();
                     if (getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
                         int actionBarSize = android.util.TypedValue.complexToDimensionPixelSize(
@@ -251,6 +258,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * Sets the action bar title immediately using cached role (synchronous).
+     * This prevents NavigationUI from showing the default "Events" label.
+     */
+    private void setActionBarTitleForHomeImmediate() {
+        if (getSupportActionBar() == null) return;
+        
+        // Get cached role immediately (synchronous)
+        android.content.SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        String cachedRole = prefs.getString("user_role", null);
+        
+        if (cachedRole != null) {
+            String r = cachedRole.toUpperCase().trim();
+            if ("ADMIN".equals(r)) {
+                // Admin uses custom toolbar, title is set in setupAdminToolbar()
+            } else if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                getSupportActionBar().setTitle("My Events (Organizer)");
+            } else {
+                getSupportActionBar().setTitle("My Events");
+            }
+        } else {
+            // No cached role, default to "My Events"
+            getSupportActionBar().setTitle("My Events");
+        }
+    }
+
+    /**
+     * Sets the action bar title to "Scan" for the scan/dashboard destination.
+     */
+    private void setActionBarTitleForScan() {
+        if (getSupportActionBar() == null) return;
+        getSupportActionBar().setTitle("Scan");
+    }
+
+    /**
      * Updates the action bar title based on the current user's role.
      * Can be called from fragments to refresh the title after role is loaded.
      */
@@ -286,6 +327,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        // First, return cached role immediately for fast response
+        android.content.SharedPreferences prefs = getSharedPreferences("user_prefs", MODE_PRIVATE);
+        String cachedRole = prefs.getString("user_role", null);
+        if (cachedRole != null) {
+            callback.accept(cachedRole);
+        }
+
+        // Then verify/update from Firebase in the background
         UserRepository userRepository = new UserRepository();
         userRepository.getUserById(currentUser.getUid())
                 .addOnSuccessListener(snapshot -> {
@@ -303,9 +352,24 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     }
-                    callback.accept(role);
+                    // Update cache if role changed
+                    if (role != null && !role.equals(cachedRole)) {
+                        prefs.edit().putString("user_role", role).apply();
+                        // Callback again with updated role if it changed
+                        callback.accept(role);
+                    } else if (role == null && cachedRole == null) {
+                        // No role found, callback with null
+                        callback.accept(null);
+                    }
+                    // If role matches cached, no need to callback again (already called above)
                 })
-                .addOnFailureListener(e -> callback.accept(null));
+                .addOnFailureListener(e -> {
+                    // On failure, keep using cached role (already returned above)
+                    // Only callback with null if we had no cached role
+                    if (cachedRole == null) {
+                        callback.accept(null);
+                    }
+                });
     }
 
     /**

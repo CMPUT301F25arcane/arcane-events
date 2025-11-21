@@ -1,17 +1,15 @@
 /**
- * EventsRouterFragment.java
+ * ScanRouterFragment.java
  * 
- * Purpose: Router fragment that dynamically displays either OrganizerEventsFragment
- * or UserEventsFragment based on the user's role stored in SharedPreferences.
+ * Purpose: Router fragment that dynamically displays either OrganizerScanEventsFragment
+ * or QRScannerFragment based on the user's role stored in SharedPreferences.
  * 
  * Design Pattern: Router/Container pattern. Acts as a container that manages child fragments
  * based on user role, implementing dynamic fragment switching without navigation.
  * 
- * Outstanding Issues: None currently identified.
- * 
  * @version 1.0
  */
-package com.example.arcane.ui.events;
+package com.example.arcane.ui.qrcode;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -33,17 +31,17 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 /**
- * Router fragment for managing events display based on user role.
+ * Router fragment for managing scan display based on user role.
  *
- * <p>Dynamically displays either OrganizerEventsFragment or UserEventsFragment
+ * <p>Dynamically displays either OrganizerScanEventsFragment or QRScannerFragment
  * based on the user's role. Listens to SharedPreferences changes to update
  * the displayed fragment when the role changes.</p>
  *
  * @version 1.0
  */
-public class EventsRouterFragment extends Fragment {
+public class ScanRouterFragment extends Fragment {
 
-    private static final String CHILD_TAG = "events_router_child";
+    private static final String CHILD_TAG = "scan_router_child";
     private SharedPreferences sharedPreferences;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener =
@@ -72,7 +70,7 @@ public class EventsRouterFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_events_router, container, false);
+        return inflater.inflate(R.layout.fragment_scan_router, container, false);
     }
 
     @Override
@@ -94,10 +92,8 @@ public class EventsRouterFragment extends Fragment {
         }
 
         // First, use cached role from SharedPreferences for immediate routing
-        // This prevents showing the wrong fragment while Firebase loads
         String cachedRole = sharedPreferences.getString("user_role", null);
         routeToFragment(cachedRole);
-        updateMainActivityTitle();
 
         // Then verify/update from Firebase in the background
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -128,7 +124,6 @@ public class EventsRouterFragment extends Fragment {
                                 sharedPreferences.edit().putString("user_role", role).apply();
                                 // Only re-route if role changed
                                 routeToFragment(role);
-                                updateMainActivityTitle();
                             }
                         } else if (role == null && cachedRole != null) {
                             // Firebase doesn't have role but we had cached - keep using cached
@@ -147,36 +142,30 @@ public class EventsRouterFragment extends Fragment {
             return;
         }
 
-        boolean isAdmin = isAdmin(role);
         boolean showOrganizer = isOrganizer(role);
 
         Fragment current = getChildFragmentManager().findFragmentByTag(CHILD_TAG);
         if (current != null) {
             // Only skip replacement if the current fragment matches the desired fragment
-            if (isAdmin && current instanceof AdminEventsFragment) {
+            if (showOrganizer && current instanceof OrganizerScanEventsFragment) {
                 return;
             }
-            if (showOrganizer && current instanceof OrganizerEventsFragment) {
-                return;
-            }
-            if (!isAdmin && !showOrganizer && current instanceof UserEventsFragment) {
+            if (!showOrganizer && current instanceof QRScannerFragment) {
                 return;
             }
         }
 
         Fragment nextFragment;
-        if (isAdmin) {
-            nextFragment = new AdminEventsFragment();
-        } else if (showOrganizer) {
-            nextFragment = new OrganizerEventsFragment();
+        if (showOrganizer) {
+            nextFragment = new OrganizerScanEventsFragment();
         } else {
-            nextFragment = new UserEventsFragment();
+            nextFragment = new QRScannerFragment();
         }
 
         FragmentTransaction transaction = getChildFragmentManager()
                 .beginTransaction()
                 .setReorderingAllowed(true)
-                .replace(R.id.events_router_container, nextFragment, CHILD_TAG);
+                .replace(R.id.scan_router_container, nextFragment, CHILD_TAG);
 
         if (getChildFragmentManager().isStateSaved()) {
             transaction.commitAllowingStateLoss();
@@ -185,49 +174,12 @@ public class EventsRouterFragment extends Fragment {
         }
     }
 
-    private boolean isAdmin(@Nullable String role) {
-        if (role == null) {
-            return false;
-        }
-        String roleUpper = role.toUpperCase();
-        return "ADMIN".equals(roleUpper);
-    }
-
     private boolean isOrganizer(@Nullable String role) {
         if (role == null) {
             return false;
         }
         String roleUpper = role.toUpperCase();
         return "ORGANIZER".equals(roleUpper) || "ORGANISER".equals(roleUpper);
-    }
-
-    /**
-     * Notifies MainActivity to update the action bar title and bottom nav.
-     * This is called after the role is loaded from Firebase.
-     */
-    private void updateMainActivityTitle() {
-        if (!isAdded() || getActivity() == null) return;
-        if (getActivity() instanceof com.example.arcane.MainActivity) {
-            // Use post to ensure it runs on the main thread after current operations
-            View view = getView();
-            if (view != null) {
-                view.post(() -> {
-                    if (isAdded() && getActivity() != null) {
-                        com.example.arcane.MainActivity mainActivity = (com.example.arcane.MainActivity) getActivity();
-                        mainActivity.updateActionBarTitleForHome();
-                        mainActivity.updateBottomNavTitle();
-                        // Refresh bottom nav menu based on role
-                        com.google.android.material.bottomnavigation.BottomNavigationView navView = 
-                            getActivity().findViewById(com.example.arcane.R.id.nav_view);
-                        androidx.navigation.NavController navController = 
-                            androidx.navigation.Navigation.findNavController(getActivity(), com.example.arcane.R.id.nav_host_fragment_activity_main);
-                        if (navView != null && navController != null) {
-                            mainActivity.setupBottomNavigationMenu(navView, navController);
-                        }
-                    }
-                });
-            }
-        }
     }
 }
 

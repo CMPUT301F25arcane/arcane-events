@@ -66,7 +66,7 @@ public class Users {
         this.createdAt = createdAt;
         this.role = null;
         this.registeredEventIds = new ArrayList<>();
-        this.notificationOptOut = false;  // default to false (not opted out)
+        this.notificationOptOut = true;  // default to true (notifications OFF by default)
     }
 
     // Getters & setters

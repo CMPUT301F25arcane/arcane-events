@@ -175,12 +175,18 @@ public class EditEventFragment extends Fragment {
             startDateCalendar.setTime(currentEvent.getEventDate().toDate());
             binding.startDateInput.setText(dateTimeFormat.format(startDateCalendar.getTime()));
         }
+        if (currentEvent.getEventEndDate() != null) {
+            endDateCalendar.setTime(currentEvent.getEventEndDate().toDate());
+            binding.endDateInput.setText(dateTimeFormat.format(endDateCalendar.getTime()));
+        } else {
+            // Fallback: if no end date is set, use start date
+            binding.endDateInput.setText(binding.startDateInput.getText());
+            endDateCalendar.setTime(startDateCalendar.getTime());
+        }
         if (currentEvent.getRegistrationEndDate() != null) {
             registrationDeadlineCalendar.setTime(currentEvent.getRegistrationEndDate().toDate());
             binding.registrationDeadlineInput.setText(dateTimeFormat.format(registrationDeadlineCalendar.getTime()));
         }
-        binding.endDateInput.setText(binding.startDateInput.getText());
-        endDateCalendar.setTime(startDateCalendar.getTime());
     }
 
     private void setupDatePicker(TextInputEditText editText, Calendar calendar, String title) {
@@ -291,6 +297,7 @@ public class EditEventFragment extends Fragment {
         currentEvent.setNumberOfWinners(numberOfWinners);
         currentEvent.setGeolocationRequired(binding.enableGeolocationCheckbox.isChecked());
         currentEvent.setEventDate(new Timestamp(startDateCalendar.getTime()));
+        currentEvent.setEventEndDate(new Timestamp(endDateCalendar.getTime()));
         currentEvent.setRegistrationEndDate(new Timestamp(registrationDeadlineCalendar.getTime()));
         
         // Update image if a new one was selected

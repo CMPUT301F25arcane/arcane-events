@@ -65,7 +65,7 @@
                 app:cardCornerRadius="20dp"
                 app:cardBackgroundColor="@color/surface"
                 app:cardElevation="2dp"
-                app:strokeColor="@color/text_primary"
+                app:strokeColor="?attr/colorPrimary"
                 app:strokeWidth="2dp"
                 android:visibility="gone"
                 android:clickable="true"
@@ -77,7 +77,7 @@
                     android:layout_gravity="center"
                     android:src="@android:drawable/ic_menu_edit"
                     android:contentDescription="Edit Event"
-                    app:tint="@color/text_primary" />
+                    app:tint="?attr/colorPrimary" />
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
@@ -112,10 +112,12 @@
                 android:text="Send Notification"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
+                android:textStyle="bold"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
+                android:backgroundTint="@color/brand_primary_light"
                 app:strokeColor="@color/text_primary"
                 app:strokeWidth="2dp"
                 app:cornerRadius="8dp" />
@@ -331,10 +333,12 @@
                 android:text="Send Notification"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp"
+                android:textStyle="bold"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
+                android:backgroundTint="@color/brand_primary_light"
                 app:strokeColor="@color/text_primary"
                 app:strokeWidth="2dp"
                 app:cornerRadius="8dp" />
@@ -498,6 +502,8 @@
                     android:layout_marginEnd="8dp"
                     android:text="QR Code"
                     android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:backgroundTint="@color/brand_primary_light"
                     app:strokeColor="@color/text_primary"
                     app:strokeWidth="2dp"
                     app:cornerRadius="8dp" />
@@ -511,6 +517,8 @@
                     android:layout_weight="1"
                     android:text="Entrants"
                     android:textColor="@color/text_primary"
+                    android:textStyle="bold"
+                    android:backgroundTint="@color/brand_primary_light"
                     app:strokeColor="@color/text_primary"
                     app:strokeWidth="2dp"
                     app:cornerRadius="8dp" />
@@ -524,6 +532,8 @@
                 android:layout_height="wrap_content"
                 android:text="Draw Lottery!"
                 android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:backgroundTint="@color/brand_primary_light"
                 app:strokeColor="@color/text_primary"
                 app:strokeWidth="2dp"
                 app:cornerRadius="8dp" />
