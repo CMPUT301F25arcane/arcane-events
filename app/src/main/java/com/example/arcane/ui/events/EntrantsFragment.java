@@ -199,54 +199,55 @@ public class EntrantsFragment extends Fragment {
         binding.exportCsvButton.setEnabled(false);
         binding.exportCsvButton.setText("Exporting...");
 
-        decisionRepository.getDecisionsByStatus(eventId, "ACCEPTED")
+        decisionRepository.getDecisionsForEvent(eventId)
                 .addOnSuccessListener(decisionsSnapshot -> {
                     if (!isAdded() || binding == null) return;
 
                     if (decisionsSnapshot == null || decisionsSnapshot.isEmpty()) {
-                        Toast.makeText(requireContext(), "No enrolled entrants found", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), "No entrants found", Toast.LENGTH_SHORT).show();
                         binding.exportCsvButton.setEnabled(true);
                         binding.exportCsvButton.setText("Export CSV");
                         return;
                     }
 
-                    List<String> entrantIds = new ArrayList<>();
+                    Map<String, String> entrantStatusMap = new HashMap<>();
                     for (QueryDocumentSnapshot doc : decisionsSnapshot) {
                         Decision decision = doc.toObject(Decision.class);
                         if (decision.getEntrantId() != null) {
-                            entrantIds.add(decision.getEntrantId());
+                            entrantStatusMap.put(decision.getEntrantId(), decision.getStatus() != null ? decision.getStatus() : "PENDING");
                         }
                     }
 
-                    if (entrantIds.isEmpty()) {
-                        Toast.makeText(requireContext(), "No enrolled entrants found", Toast.LENGTH_SHORT).show();
+                    if (entrantStatusMap.isEmpty()) {
+                        Toast.makeText(requireContext(), "No entrants found", Toast.LENGTH_SHORT).show();
                         binding.exportCsvButton.setEnabled(true);
                         binding.exportCsvButton.setText("Export CSV");
                         return;
                     }
 
-                    loadUserDetailsAndExportCSV(entrantIds);
+                    loadUserDetailsAndExportCSV(new ArrayList<>(entrantStatusMap.keySet()), entrantStatusMap);
                 })
                 .addOnFailureListener(e -> {
                     if (!isAdded() || binding == null) return;
-                    Toast.makeText(requireContext(), "Failed to load enrolled entrants: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Failed to load entrants: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     binding.exportCsvButton.setEnabled(true);
                     binding.exportCsvButton.setText("Export CSV");
                 });
     }
 
-    private void loadUserDetailsAndExportCSV(List<String> entrantIds) {
-        List<EntrantItem> enrolledEntrants = new ArrayList<>();
+    private void loadUserDetailsAndExportCSV(List<String> entrantIds, Map<String, String> entrantStatusMap) {
+        List<EntrantItem> allEntrants = new ArrayList<>();
         final int[] remaining = {entrantIds.size()};
 
         if (entrantIds.isEmpty()) {
-            Toast.makeText(requireContext(), "No enrolled entrants found", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "No entrants found", Toast.LENGTH_SHORT).show();
             binding.exportCsvButton.setEnabled(true);
             binding.exportCsvButton.setText("Export CSV");
             return;
         }
 
         for (String entrantId : entrantIds) {
+            final String status = entrantStatusMap.get(entrantId);
             userService.getUserById(entrantId)
                     .addOnSuccessListener(userDoc -> {
                         if (!isAdded() || binding == null) return;
@@ -262,12 +263,12 @@ public class EntrantsFragment extends Fragment {
                             item.email = "";
                             item.phone = "";
                         }
-                        item.status = "ACCEPTED";
-                        enrolledEntrants.add(item);
+                        item.status = status != null ? status : "PENDING";
+                        allEntrants.add(item);
 
                         remaining[0] -= 1;
                         if (remaining[0] == 0) {
-                            generateAndShareCSV(enrolledEntrants);
+                            generateAndShareCSV(allEntrants);
                         }
                     })
                     .addOnFailureListener(e -> {
@@ -276,25 +277,25 @@ public class EntrantsFragment extends Fragment {
                         item.name = "Unknown";
                         item.email = "";
                         item.phone = "";
-                        item.status = "ACCEPTED";
-                        enrolledEntrants.add(item);
+                        item.status = status != null ? status : "PENDING";
+                        allEntrants.add(item);
 
                         remaining[0] -= 1;
                         if (remaining[0] == 0) {
-                            generateAndShareCSV(enrolledEntrants);
+                            generateAndShareCSV(allEntrants);
                         }
                     });
         }
     }
 
-    private void generateAndShareCSV(List<EntrantItem> enrolledEntrants) {
+    private void generateAndShareCSV(List<EntrantItem> allEntrants) {
         if (!isAdded() || binding == null) return;
 
         try {
             StringBuilder csv = new StringBuilder();
             csv.append("Name,Email,Phone,Status\n");
 
-            for (EntrantItem item : enrolledEntrants) {
+            for (EntrantItem item : allEntrants) {
                 String name = escapeCSV(item.name != null ? item.name : "");
                 String email = escapeCSV(item.email != null ? item.email : "");
                 String phone = escapeCSV(item.phone != null ? item.phone : "");
@@ -333,7 +334,7 @@ public class EntrantsFragment extends Fragment {
         try {
             File cacheDir = requireContext().getCacheDir();
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
-            String fileName = "enrolled_entrants_" + dateFormat.format(new Date()) + ".csv";
+            String fileName = "event_entrants_" + dateFormat.format(new Date()) + ".csv";
             File csvFile = new File(cacheDir, fileName);
 
             FileWriter writer = new FileWriter(csvFile);
