@@ -53,7 +53,7 @@
                 android:text="Air Show"
                 android:textColor="@color/brand_primary"
                 android:textStyle="bold"
-                android:textSize="28sp"
+                android:textSize="32sp"
                 android:letterSpacing="0.02" />
 
             <!-- Edit Icon (shown for organizer) - circular white button with pencil -->
@@ -361,7 +361,7 @@
                 android:text="Description:"
                 android:textStyle="bold"
                 android:textColor="@color/brand_primary"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:layout_marginBottom="8dp" />
 
             <!-- Description body -->
@@ -370,7 +370,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_primary"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:lineSpacingExtra="4dp"
                 android:text="This is an airshow that will be attended by many companies and countries. Jets like Russian made Sukhoi's will be on display.." />
         </LinearLayout>
