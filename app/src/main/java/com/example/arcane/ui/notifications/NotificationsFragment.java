@@ -103,7 +103,7 @@ public class NotificationsFragment extends Fragment {
         // Load user profile data after view is created and fragment is attached
         // This ensures the fragment is properly attached before checking for user
         loadUserProfile();
-        loadNotifications();
+        // Notifications are now shown in the Events section, not in profile
     }
 
     /**
@@ -294,6 +294,9 @@ public class NotificationsFragment extends Fragment {
                 });
     }
 
+    // Notifications are now displayed in the Events section, not in profile
+    // Keeping these methods commented out in case they're needed later
+    /*
     private void loadNotifications() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -383,6 +386,7 @@ public class NotificationsFragment extends Fragment {
                     notification.setRead(true);
                 });
     }
+    */
 
     private void clearCachedUserRole() {
         SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);

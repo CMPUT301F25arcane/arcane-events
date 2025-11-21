@@ -53,8 +53,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Fragment for displaying event details with role-based views.
@@ -84,6 +86,7 @@ public class EventDetailFragment extends Fragment {
     private String waitingListEntryId = null;
     private String decisionId = null;
     private boolean organizerViewSetup = false; // Prevent multiple listener setups
+    private boolean isWaitlistFull = false;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -378,7 +381,8 @@ public class EventDetailFragment extends Fragment {
                         waitingListEntryId = null;
                         decisionId = null;
                         isUserJoined = false;
-                        setupUserView();
+                        // Check if waitlist is full before showing join button
+                        checkWaitlistFull();
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -534,16 +538,55 @@ public class EventDetailFragment extends Fragment {
             showUserStatus();
             setupUserActionButtons();
         } else {
-            // User not joined - show Join button
+            // User not joined - show Join button or Waitlist Full button
             binding.abandonButtonContainer.setVisibility(View.GONE);
             binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
             binding.joinButtonContainer.setVisibility(View.VISIBLE);
 
-            binding.joinButton.setText("Join Waitlist");
-            binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                getResources().getColor(R.color.brand_primary, null)));
-            binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+            if (isWaitlistFull) {
+                // Waitlist is full - show orange disabled button
+                binding.joinButton.setText("Waitlist Full");
+                binding.joinButton.setEnabled(false);
+                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.status_declined, null)));
+                binding.joinButton.setOnClickListener(null);
+            } else {
+                // Waitlist has space - show blue Join button
+                binding.joinButton.setText("Join Waitlist");
+                binding.joinButton.setEnabled(true);
+                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.brand_primary, null)));
+                binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+            }
         }
+    }
+
+    private void checkWaitlistFull() {
+        if (currentEvent == null) {
+            isWaitlistFull = false;
+            return;
+        }
+
+        // Check if maxEntrants is set
+        if (currentEvent.getMaxEntrants() == null || currentEvent.getMaxEntrants() <= 0) {
+            isWaitlistFull = false;
+            return;
+        }
+
+        // Get current waiting list size
+        waitingListRepository.getWaitingListForEvent(eventId)
+                .addOnSuccessListener(querySnapshot -> {
+                    int currentSize = querySnapshot.size();
+                    isWaitlistFull = currentSize >= currentEvent.getMaxEntrants();
+                    // Update UI if already set up
+                    if (!isUserJoined) {
+                        setupUserView();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // On failure, assume not full
+                    isWaitlistFull = false;
+                });
     }
 
     private void showUserStatus() {
@@ -663,6 +706,12 @@ public class EventDetailFragment extends Fragment {
                             Toast.makeText(getContext(), "You are already on the waitlist", Toast.LENGTH_SHORT).show();
                         }
                         // Reload status in case UI is out of sync
+                        loadUserStatus();
+                    } else if ("limit_reached".equals(status)) {
+                        // Waiting list limit reached
+                        Toast.makeText(requireContext(), "Waiting list is full", Toast.LENGTH_SHORT).show();
+                        binding.joinButton.setEnabled(true);
+                        binding.joinButton.setText("Join Waitlist");
                         loadUserStatus();
                     } else {
                         if (getContext() != null) {
@@ -887,20 +936,61 @@ public class EventDetailFragment extends Fragment {
         }
 
         String eventName = currentEvent.getEventName();
-        String title = "Update for " + eventName;
-        String message = "You have an update regarding " + eventName + ".";
-
-        eventService.sendNotificationsToEntrants(eventId, statuses, title, message)
-                .addOnSuccessListener(result -> {
-                    Integer totalSent = (Integer) result.get("totalSent");
-                    if (totalSent != null && totalSent > 0) {
-                        Toast.makeText(requireContext(), "Sent " + totalSent + " notifications", Toast.LENGTH_SHORT).show();
+        
+        // Send notifications with status-specific messages
+        List<com.google.android.gms.tasks.Task<Map<String, Object>>> statusTasks = new ArrayList<>();
+        for (String status : statuses) {
+            String title;
+            String message;
+            
+            // Set appropriate title and message based on status
+            if ("INVITED".equals(status)) {
+                title = "You won the lottery!";
+                message = "Congratulations! You have been selected for " + eventName + ". Please accept or decline your invitation.";
+            } else if ("LOST".equals(status)) {
+                title = "Lottery results";
+                message = "Unfortunately, you were not selected for " + eventName + ". You may still have a chance if someone declines.";
+            } else if ("ACCEPTED".equals(status)) {
+                title = "Registration confirmed";
+                message = "Your registration for " + eventName + " has been confirmed. We look forward to seeing you!";
+            } else if ("CANCELLED".equals(status)) {
+                title = "Event update";
+                message = "Your participation in " + eventName + " has been cancelled.";
+            } else {
+                // Default for any other status
+                title = "Update for " + eventName;
+                message = "You have an update regarding " + eventName + ".";
+            }
+            
+            com.google.android.gms.tasks.Task<Map<String, Object>> statusTask = eventService.sendNotificationsToEntrantsByStatus(eventId, status, title, message);
+            statusTasks.add(statusTask);
+        }
+        
+        // Wait for all notifications to be sent
+        com.google.android.gms.tasks.Tasks.whenAll(statusTasks)
+                .addOnSuccessListener(allTasks -> {
+                    if (!isAdded() || getContext() == null) return;
+                    
+                    int totalSent = 0;
+                    for (com.google.android.gms.tasks.Task<Map<String, Object>> task : statusTasks) {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            Map<String, Object> result = task.getResult();
+                            Integer count = (Integer) result.get("count");
+                            if (count != null) {
+                                totalSent += count;
+                            }
+                        }
+                    }
+                    
+                    if (totalSent > 0) {
+                        Toast.makeText(getContext(), "Sent " + totalSent + " notifications", Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(requireContext(), "No notifications sent", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "No notifications sent", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Failed to send notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || getContext() == null) return;
+                    Toast.makeText(getContext(), "Failed to send notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
