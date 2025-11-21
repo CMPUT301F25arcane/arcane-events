@@ -40,6 +40,8 @@ import java.util.List;
 public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapter.GalleryImageViewHolder> {
 
     private final List<Event> events = new ArrayList<>();
+    private OnImageDeleteListener deleteListener;
+    private boolean isAdmin = false;
 
     /**
      * Sets the list of events to display.
@@ -50,6 +52,40 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
         events.clear();
         events.addAll(items);
         notifyDataSetChanged();
+    }
+
+    /**
+     * Sets the delete listener for handling image deletion.
+     *
+     * @param listener the listener to call when an image is deleted
+     */
+    public void setOnImageDeleteListener(OnImageDeleteListener listener) {
+        this.deleteListener = listener;
+    }
+
+    /**
+     * Sets whether the current user is an admin.
+     *
+     * @param isAdmin true if the user is an admin, false otherwise
+     */
+    public void setAdminMode(boolean isAdmin) {
+        this.isAdmin = isAdmin;
+        notifyDataSetChanged(); // Refresh to show/hide delete buttons
+    }
+
+    /**
+     * Removes an event from the adapter.
+     *
+     * @param eventId the event ID to remove
+     */
+    public void removeEvent(String eventId) {
+        for (int i = 0; i < events.size(); i++) {
+            if (events.get(i).getEventId().equals(eventId)) {
+                events.remove(i);
+                notifyItemRemoved(i);
+                break;
+            }
+        }
     }
 
     /**
@@ -77,6 +113,16 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
     public void onBindViewHolder(@NonNull GalleryImageViewHolder holder, int position) {
         Event event = events.get(position);
         loadEventImage(holder.imageView, event);
+        
+        // Show/hide options button based on admin status
+        if (holder.optionsButton != null) {
+            if (isAdmin && deleteListener != null) {
+                holder.optionsButton.setVisibility(View.VISIBLE);
+                holder.optionsButton.setOnClickListener(v -> deleteListener.onDeleteRequested(event));
+            } else {
+                holder.optionsButton.setVisibility(View.GONE);
+            }
+        }
     }
 
     /**
@@ -94,11 +140,25 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
      */
     static class GalleryImageViewHolder extends RecyclerView.ViewHolder {
         final ImageView imageView;
+        final android.widget.ImageButton optionsButton;
 
         GalleryImageViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.gallery_image_thumbnail);
+            optionsButton = itemView.findViewById(R.id.image_options_button);
         }
+    }
+
+    /**
+     * Interface for handling image deletion requests.
+     */
+    public interface OnImageDeleteListener {
+        /**
+         * Called when the user requests to delete an image.
+         *
+         * @param event the event containing the image to delete
+         */
+        void onDeleteRequested(Event event);
     }
 
     /**

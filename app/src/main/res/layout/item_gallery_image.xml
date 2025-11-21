@@ -28,7 +28,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:src="@tools:sample/backgrounds/scenic" />
 
-        <!-- Options Button (Three Dots) -->
+        <!-- Options Button (Close/Cross) -->
         <ImageButton
             android:id="@+id/image_options_button"
             android:layout_width="40dp"
@@ -36,9 +36,9 @@
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_three_dots"
+            android:src="@drawable/ic_close"
             android:tint="?attr/colorOnPrimary"
-            android:contentDescription="Image options"
+            android:contentDescription="Remove image"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 

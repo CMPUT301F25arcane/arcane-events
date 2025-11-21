@@ -105,4 +105,10 @@
         android:label="All Users"
         tools:layout="@layout/fragment_all_users" />
 
+    <fragment
+        android:id="@+id/navigation_all_notifications"
+        android:name="com.example.arcane.ui.notifications.AllNotificationsFragment"
+        android:label="All Notifications"
+        tools:layout="@layout/fragment_all_notifications" />
+
 </navigation>

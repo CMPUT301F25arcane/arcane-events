@@ -346,9 +346,10 @@ public class MainActivity extends AppCompatActivity {
         android.widget.ImageButton usersButton = customView.findViewById(R.id.admin_users_button);
         
         if (notificationsButton != null) {
-            notificationsButton.setOnClickListener(v -> {
-                // TODO: Handle notifications button click
-            });
+            notificationsButton.setOnClickListener(v -> 
+                Navigation.findNavController(this, R.id.nav_host_fragment_activity_main)
+                    .navigate(R.id.navigation_all_notifications)
+            );
         }
         
         if (usersButton != null) {
