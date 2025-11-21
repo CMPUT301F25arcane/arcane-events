@@ -166,7 +166,8 @@ public class BrowseImagesFragment extends Fragment {
                     
                     isAdmin = role != null && "ADMIN".equals(role.toUpperCase().trim());
                     
-                    // Setup delete listener only if admin
+                    // Setup delete listener and admin mode
+                    adapter.setAdminMode(isAdmin);
                     if (isAdmin) {
                         adapter.setOnImageDeleteListener(this::handleDeleteRequest);
                     }

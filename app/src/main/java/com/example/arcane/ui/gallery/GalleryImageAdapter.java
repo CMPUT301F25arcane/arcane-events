@@ -41,6 +41,7 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
 
     private final List<Event> events = new ArrayList<>();
     private OnImageDeleteListener deleteListener;
+    private boolean isAdmin = false;
 
     /**
      * Sets the list of events to display.
@@ -60,6 +61,16 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
      */
     public void setOnImageDeleteListener(OnImageDeleteListener listener) {
         this.deleteListener = listener;
+    }
+
+    /**
+     * Sets whether the current user is an admin.
+     *
+     * @param isAdmin true if the user is an admin, false otherwise
+     */
+    public void setAdminMode(boolean isAdmin) {
+        this.isAdmin = isAdmin;
+        notifyDataSetChanged(); // Refresh to show/hide delete buttons
     }
 
     /**
@@ -103,13 +114,18 @@ public class GalleryImageAdapter extends RecyclerView.Adapter<GalleryImageAdapte
         Event event = events.get(position);
         loadEventImage(holder.imageView, event);
         
-        // Setup options button click listener
-        if (holder.optionsButton != null && deleteListener != null) {
-            holder.optionsButton.setOnClickListener(v -> {
-                if (deleteListener != null) {
-                    deleteListener.onDeleteRequested(event);
-                }
-            });
+        // Show/hide options button based on admin status
+        if (holder.optionsButton != null) {
+            if (isAdmin && deleteListener != null) {
+                holder.optionsButton.setVisibility(View.VISIBLE);
+                holder.optionsButton.setOnClickListener(v -> {
+                    if (deleteListener != null) {
+                        deleteListener.onDeleteRequested(event);
+                    }
+                });
+            } else {
+                holder.optionsButton.setVisibility(View.GONE);
+            }
         }
     }
 
