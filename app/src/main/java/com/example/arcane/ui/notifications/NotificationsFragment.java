@@ -38,7 +38,10 @@ import com.example.arcane.model.Users;
 import com.example.arcane.repository.UserRepository;
 import com.example.arcane.service.NotificationService;
 import com.example.arcane.service.UserService;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -280,7 +283,92 @@ public class NotificationsFragment extends Fragment {
                 navController.navigate(R.id.navigation_welcome);
             })
             .addOnFailureListener(e -> {
+                // Check if error is due to requiring recent authentication
+                if (e instanceof FirebaseAuthException) {
+                    FirebaseAuthException authException = (FirebaseAuthException) e;
+                    String errorCode = authException.getErrorCode();
+                    if ("ERROR_REQUIRES_RECENT_LOGIN".equals(errorCode) || 
+                        (e.getMessage() != null && e.getMessage().contains("requires recent authentication"))) {
+                        // Prompt for password to re-authenticate
+                        promptForPasswordAndDelete(userId);
+                        return;
+                    }
+                }
                 Toast.makeText(requireContext(), "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
+    }
+
+    private void promptForPasswordAndDelete(String userId) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || currentUser.getEmail() == null) {
+            Toast.makeText(requireContext(), "Unable to re-authenticate. Please log out and log back in.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Create a dialog to get password
+        android.widget.EditText passwordInput = new android.widget.EditText(requireContext());
+        passwordInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        passwordInput.setHint("Enter your password");
+
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Re-authentication Required")
+            .setMessage("For security, please enter your password to confirm account deletion.")
+            .setView(passwordInput)
+            .setPositiveButton("Confirm", (dialog, which) -> {
+                String password = passwordInput.getText().toString().trim();
+                if (password.isEmpty()) {
+                    Toast.makeText(requireContext(), "Password is required", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                reAuthenticateAndDelete(currentUser, password, userId);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void reAuthenticateAndDelete(FirebaseUser currentUser, String password, String userId) {
+        String email = currentUser.getEmail();
+        if (email == null) {
+            Toast.makeText(requireContext(), "Unable to get email address", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Re-authenticate with email and password
+        AuthCredential credential = EmailAuthProvider.getCredential(email, password);
+        currentUser.reauthenticate(credential)
+            .addOnSuccessListener(aVoid -> {
+                // Re-authentication successful, now delete
+                userRepository.deleteUser(userId)
+                    .continueWithTask(task -> {
+                        // Then delete from Firebase Auth
+                        return currentUser.delete();
+                    })
+                    .addOnSuccessListener(v -> {
+                        clearCachedUserRole();
+                        Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
+                        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                        navController.navigate(R.id.navigation_welcome);
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(requireContext(), "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+            })
+            .addOnFailureListener(e -> {
+                String errorMessage = "Authentication failed";
+                if (e instanceof FirebaseAuthException) {
+                    FirebaseAuthException authException = (FirebaseAuthException) e;
+                    String errorCode = authException.getErrorCode();
+                    if ("ERROR_WRONG_PASSWORD".equals(errorCode)) {
+                        errorMessage = "Incorrect password. Please try again.";
+                    } else if ("ERROR_INVALID_EMAIL".equals(errorCode)) {
+                        errorMessage = "Invalid email address";
+                    } else {
+                        errorMessage = e.getMessage();
+                    }
+                } else if (e.getMessage() != null) {
+                    errorMessage = e.getMessage();
+                }
+                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
             });
     }
 

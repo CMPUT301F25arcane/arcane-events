@@ -78,6 +78,7 @@ public class EventDetailFragment extends Fragment {
     private Event currentEvent;
     private boolean isOrganizer = false;
     private boolean isUserJoined = false;
+    private boolean isWaitlistFull = false;
     private String userStatus = null; // WAITING, WON, LOST, ACCEPTED, DECLINED
     private String userDecision = null; // none, accepted, declined
     private String waitingListEntryId = null;
