@@ -78,6 +78,18 @@
             android:imeOptions="actionDone" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/rememberMeCheckbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/login_remember_me"
+        android:textColor="@color/text_primary"
+        app:buttonTint="@color/brand_primary"
+        app:layout_constraintTop_toBottomOf="@id/passwordLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/loginButton"
         android:layout_width="0dp"
@@ -85,7 +97,7 @@
         android:text="@string/login_sign_in"
         android:textColor="@color/on_brand"
         android:backgroundTint="@color/brand_primary"
-        app:layout_constraintTop_toBottomOf="@id/passwordLayout"
+        app:layout_constraintTop_toBottomOf="@id/rememberMeCheckbox"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginStart="24dp"

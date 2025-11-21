@@ -8,6 +8,7 @@
     <string name="login_password">Password</string>
     <string name="login_sign_in">Sign in</string>
     <string name="login_create_account">Create account</string>
+    <string name="login_remember_me">Remember me</string>
     <string name="back">Back</string>
     
     <!-- Profile Strings -->

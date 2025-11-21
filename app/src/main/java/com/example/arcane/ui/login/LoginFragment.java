@@ -77,6 +77,9 @@ public class LoginFragment extends Fragment {
             return;
         }
 
+        // Load saved email if available
+        loadSavedEmail();
+
         binding.loginButton.setOnClickListener(v -> {
             String email = binding.emailEditText.getText() != null ? binding.emailEditText.getText().toString().trim() : "";
             String password = binding.passwordEditText.getText() != null ? binding.passwordEditText.getText().toString() : "";
@@ -98,6 +101,12 @@ public class LoginFragment extends Fragment {
                         if (task.isSuccessful()) {
                             FirebaseUser signedIn = FirebaseAuth.getInstance().getCurrentUser();
                             if (signedIn != null) {
+                                // Save email if "Remember me" is checked
+                                if (binding.rememberMeCheckbox.isChecked()) {
+                                    saveEmail(email);
+                                } else {
+                                    clearSavedEmail();
+                                }
                                 routeByRole(signedIn);
                             }
                         } else {
@@ -171,6 +180,40 @@ public class LoginFragment extends Fragment {
         } else {
             editor.remove("user_role");
         }
+        editor.apply();
+    }
+
+    /**
+     * Saves the email address to SharedPreferences for device identification.
+     *
+     * @param email the email address to save
+     */
+    private void saveEmail(String email) {
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("saved_email", email);
+        editor.apply();
+    }
+
+    /**
+     * Loads the saved email address from SharedPreferences and pre-fills the email field.
+     */
+    private void loadSavedEmail() {
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
+        String savedEmail = prefs.getString("saved_email", null);
+        if (savedEmail != null && !savedEmail.isEmpty()) {
+            binding.emailEditText.setText(savedEmail);
+            binding.rememberMeCheckbox.setChecked(true);
+        }
+    }
+
+    /**
+     * Clears the saved email address from SharedPreferences.
+     */
+    private void clearSavedEmail() {
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove("saved_email");
         editor.apply();
     }
 
