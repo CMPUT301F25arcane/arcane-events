@@ -293,17 +293,15 @@ public class EntrantsFragment extends Fragment {
 
         try {
             StringBuilder csv = new StringBuilder();
-            csv.append("Name,Email,Phone,Status\n");
+            csv.append("Name,Email,Status\n");
 
             for (EntrantItem item : allEntrants) {
                 String name = escapeCSV(item.name != null ? item.name : "");
                 String email = escapeCSV(item.email != null ? item.email : "");
-                String phone = escapeCSV(item.phone != null ? item.phone : "");
                 String status = escapeCSV(item.status != null ? item.status : "");
 
                 csv.append(name).append(",");
                 csv.append(email).append(",");
-                csv.append(phone).append(",");
                 csv.append(status).append("\n");
             }
 
