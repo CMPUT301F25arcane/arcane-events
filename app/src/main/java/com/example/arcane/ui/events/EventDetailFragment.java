@@ -526,6 +526,13 @@ public class EventDetailFragment extends Fragment {
     private void setupUserView() {
         if (binding == null || !isAdded()) return;
         
+        // Only show user view for regular users (entrants), not organizers or admins
+        if (isOrganizer || isAdmin) {
+            // If somehow we got here as organizer/admin, hide join button
+            binding.joinButtonContainer.setVisibility(View.GONE);
+            return;
+        }
+        
         // Hide organizer-specific UI
         binding.lotteryStatusAndNotificationContainer.setVisibility(View.GONE);
         binding.editEventButton.setVisibility(View.GONE);
@@ -570,12 +577,20 @@ public class EventDetailFragment extends Fragment {
     private void checkWaitlistFull() {
         if (currentEvent == null) {
             isWaitlistFull = false;
+            // Still need to show the button if user hasn't joined
+            if (!isUserJoined) {
+                setupUserView();
+            }
             return;
         }
 
         // Check if maxEntrants is set
         if (currentEvent.getMaxEntrants() == null || currentEvent.getMaxEntrants() <= 0) {
             isWaitlistFull = false;
+            // Still need to show the button if user hasn't joined
+            if (!isUserJoined) {
+                setupUserView();
+            }
             return;
         }
 
@@ -591,6 +606,10 @@ public class EventDetailFragment extends Fragment {
                 .addOnFailureListener(e -> {
                     // On failure, assume not full
                     isWaitlistFull = false;
+                    // Still need to show the button if user hasn't joined
+                    if (!isUserJoined) {
+                        setupUserView();
+                    }
                 });
     }
 
