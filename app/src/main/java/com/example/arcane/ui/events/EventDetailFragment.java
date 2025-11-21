@@ -53,8 +53,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Fragment for displaying event details with role-based views.
@@ -84,6 +86,7 @@ public class EventDetailFragment extends Fragment {
     private String waitingListEntryId = null;
     private String decisionId = null;
     private boolean organizerViewSetup = false; // Prevent multiple listener setups
+    private boolean isWaitlistFull = false; // Track if waitlist is full
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -896,20 +899,61 @@ public class EventDetailFragment extends Fragment {
         }
 
         String eventName = currentEvent.getEventName();
-        String title = "Update for " + eventName;
-        String message = "You have an update regarding " + eventName + ".";
-
-        eventService.sendNotificationsToEntrants(eventId, statuses, title, message)
-                .addOnSuccessListener(result -> {
-                    Integer totalSent = (Integer) result.get("totalSent");
-                    if (totalSent != null && totalSent > 0) {
-                        Toast.makeText(requireContext(), "Sent " + totalSent + " notifications", Toast.LENGTH_SHORT).show();
+        
+        // Send notifications with status-specific messages
+        List<com.google.android.gms.tasks.Task<Map<String, Object>>> statusTasks = new ArrayList<>();
+        for (String status : statuses) {
+            String title;
+            String message;
+            
+            // Set appropriate title and message based on status
+            if ("INVITED".equals(status)) {
+                title = "You won the lottery!";
+                message = "Congratulations! You have been selected for " + eventName + ". Please accept or decline your invitation.";
+            } else if ("LOST".equals(status)) {
+                title = "Lottery results";
+                message = "Unfortunately, you were not selected for " + eventName + ". You may still have a chance if someone declines.";
+            } else if ("ACCEPTED".equals(status)) {
+                title = "Registration confirmed";
+                message = "Your registration for " + eventName + " has been confirmed. We look forward to seeing you!";
+            } else if ("CANCELLED".equals(status)) {
+                title = "Event update";
+                message = "Your participation in " + eventName + " has been cancelled.";
+            } else {
+                // Default for any other status
+                title = "Update for " + eventName;
+                message = "You have an update regarding " + eventName + ".";
+            }
+            
+            com.google.android.gms.tasks.Task<Map<String, Object>> statusTask = eventService.sendNotificationsToEntrantsByStatus(eventId, status, title, message);
+            statusTasks.add(statusTask);
+        }
+        
+        // Wait for all notifications to be sent
+        com.google.android.gms.tasks.Tasks.whenAll(statusTasks)
+                .addOnSuccessListener(allTasks -> {
+                    if (!isAdded() || getContext() == null) return;
+                    
+                    int totalSent = 0;
+                    for (com.google.android.gms.tasks.Task<Map<String, Object>> task : statusTasks) {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            Map<String, Object> result = task.getResult();
+                            Integer count = (Integer) result.get("count");
+                            if (count != null) {
+                                totalSent += count;
+                            }
+                        }
+                    }
+                    
+                    if (totalSent > 0) {
+                        Toast.makeText(getContext(), "Sent " + totalSent + " notifications", Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(requireContext(), "No notifications sent", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "No notifications sent", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Failed to send notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (!isAdded() || getContext() == null) return;
+                    Toast.makeText(getContext(), "Failed to send notifications: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 

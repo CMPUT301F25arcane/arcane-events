@@ -677,5 +677,18 @@ public class EventService {
                     return finalResult;
                 });
     }
+
+    /**
+     * Sends notifications to entrants with status-specific messages.
+     *
+     * @param eventId the event ID
+     * @param status the decision status to filter by
+     * @param title the notification title
+     * @param message the notification message
+     * @return a Task that completes with a map containing notification results
+     */
+    public Task<Map<String, Object>> sendNotificationsToEntrantsByStatus(String eventId, String status, String title, String message) {
+        return notificationService.sendNotificationsToEntrantsByStatus(eventId, status, title, message);
+    }
 }
 
