@@ -16,16 +16,23 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.arcane.databinding.FragmentBrowseImagesBinding;
 import com.example.arcane.model.Event;
+import com.example.arcane.model.UserProfile;
+import com.example.arcane.model.Users;
 import com.example.arcane.repository.EventRepository;
+import com.example.arcane.repository.UserRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
@@ -45,6 +52,7 @@ public class BrowseImagesFragment extends Fragment {
     private FragmentBrowseImagesBinding binding;
     private GalleryImageAdapter adapter;
     private EventRepository eventRepository;
+    private boolean isAdmin = false;
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -82,6 +90,9 @@ public class BrowseImagesFragment extends Fragment {
         binding.browseImagesToolbar.setNavigationOnClickListener(v -> 
             androidx.navigation.Navigation.findNavController(requireView()).navigateUp()
         );
+
+        // Check admin status and setup delete listener
+        checkAdminStatus();
 
         // Load all events with poster images
         loadAllEventImages();
@@ -121,6 +132,94 @@ public class BrowseImagesFragment extends Fragment {
         super.onResume();
         // Refresh images list when returning to this fragment
         loadAllEventImages();
+    }
+
+    /**
+     * Checks if the current user is an admin.
+     */
+    private void checkAdminStatus() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            isAdmin = false;
+            return;
+        }
+
+        UserRepository userRepository = new UserRepository();
+        userRepository.getUserById(currentUser.getUid())
+                .addOnSuccessListener(snapshot -> {
+                    if (!isAdded()) return;
+                    
+                    String role = null;
+                    if (snapshot.exists()) {
+                        // Try UserProfile first
+                        UserProfile profile = snapshot.toObject(UserProfile.class);
+                        if (profile != null && profile.getRole() != null) {
+                            role = profile.getRole();
+                        } else {
+                            // Fallback to Users model
+                            Users user = snapshot.toObject(Users.class);
+                            if (user != null && user.getRole() != null) {
+                                role = user.getRole();
+                            }
+                        }
+                    }
+                    
+                    isAdmin = role != null && "ADMIN".equals(role.toUpperCase().trim());
+                    
+                    // Setup delete listener only if admin
+                    if (isAdmin) {
+                        adapter.setOnImageDeleteListener(this::handleDeleteRequest);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    isAdmin = false;
+                });
+    }
+
+    /**
+     * Handles delete request from the adapter.
+     *
+     * @param event the event containing the image to delete
+     */
+    private void handleDeleteRequest(Event event) {
+        if (!isAdmin) {
+            Toast.makeText(requireContext(), "Only administrators can delete images", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show confirmation dialog
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Image")
+                .setMessage("Are you sure you want to delete this image? This will remove the image from the event: " + event.getEventName())
+                .setPositiveButton("Delete", (dialog, which) -> deleteImage(event))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /**
+     * Deletes the image from the event.
+     *
+     * @param event the event to remove the image from
+     */
+    private void deleteImage(Event event) {
+        if (event.getEventId() == null || event.getEventId().isEmpty()) {
+            Toast.makeText(requireContext(), "Error: Event ID not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        eventRepository.removeEventImage(event.getEventId())
+                .addOnSuccessListener(aVoid -> {
+                    if (!isAdded()) return;
+                    Toast.makeText(requireContext(), "Image deleted successfully", Toast.LENGTH_SHORT).show();
+                    // Remove from adapter
+                    adapter.removeEvent(event.getEventId());
+                    // Reload images to refresh the list
+                    loadAllEventImages();
+                })
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    Toast.makeText(requireContext(), "Error deleting image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     /**
