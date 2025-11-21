@@ -35,7 +35,9 @@ import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentProfileBinding;
 import com.example.arcane.model.Notification;
 import com.example.arcane.model.Users;
+import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.UserRepository;
+import com.example.arcane.repository.WaitingListRepository;
 import com.example.arcane.service.NotificationService;
 import com.example.arcane.service.UserService;
 import com.google.firebase.auth.AuthCredential;
@@ -48,6 +50,8 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import android.widget.LinearLayout;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -63,6 +67,8 @@ public class NotificationsFragment extends Fragment {
     private UserService userService;
     private UserRepository userRepository;
     private NotificationService notificationService;
+    private WaitingListRepository waitingListRepository;
+    private DecisionRepository decisionRepository;
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -83,6 +89,8 @@ public class NotificationsFragment extends Fragment {
         userService = new UserService();
         userRepository = new UserRepository();
         notificationService = new NotificationService();
+        waitingListRepository = new WaitingListRepository();
+        decisionRepository = new DecisionRepository();
 
         binding.logoutButton.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
@@ -270,10 +278,14 @@ public class NotificationsFragment extends Fragment {
 
         String userId = currentUser.getUid();
         
-        // Delete from Firestore first
-        userRepository.deleteUser(userId)
+        // First, remove user from all events (waiting lists and decisions)
+        cleanupUserEventRegistrations(userId)
             .continueWithTask(task -> {
-                // Then delete from Firebase Auth
+                // Then delete user from Firestore
+                return userRepository.deleteUser(userId);
+            })
+            .continueWithTask(task -> {
+                // Finally delete from Firebase Auth
                 return currentUser.delete();
             })
             .addOnSuccessListener(v -> {
@@ -296,6 +308,85 @@ public class NotificationsFragment extends Fragment {
                 }
                 Toast.makeText(requireContext(), "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             });
+    }
+
+    /**
+     * Removes the user from all events they're registered for (waiting lists and decisions).
+     * This ensures deleted users don't appear as "Unknown" in event entrant lists.
+     *
+     * @param userId the user ID to clean up
+     * @return a Task that completes when all registrations are removed
+     */
+    private com.google.android.gms.tasks.Task<Void> cleanupUserEventRegistrations(String userId) {
+        // Get all waiting list entries for this user
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> waitingListTask = 
+            waitingListRepository.getWaitingListEntriesByUser(userId);
+        
+        // Get all decisions for this user
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> decisionsTask = 
+            decisionRepository.getDecisionsByUser(userId);
+
+        // Wait for both queries to complete
+        return com.google.android.gms.tasks.Tasks.whenAll(waitingListTask, decisionsTask)
+            .continueWithTask(combinedTask -> {
+                // Delete all waiting list entries
+                com.google.android.gms.tasks.Task<Void> deleteWaitingListsTask = 
+                    waitingListTask.getResult().isEmpty() 
+                        ? com.google.android.gms.tasks.Tasks.forResult(null)
+                        : deleteAllWaitingListEntries(waitingListTask.getResult());
+
+                // Delete all decisions
+                com.google.android.gms.tasks.Task<Void> deleteDecisionsTask = 
+                    decisionsTask.getResult().isEmpty()
+                        ? com.google.android.gms.tasks.Tasks.forResult(null)
+                        : deleteAllDecisions(decisionsTask.getResult());
+
+                // Wait for both deletion operations to complete
+                return com.google.android.gms.tasks.Tasks.whenAll(deleteWaitingListsTask, deleteDecisionsTask);
+            })
+            .continueWith(task -> null); // Convert to Task<Void>
+    }
+
+    /**
+     * Deletes all waiting list entries from the query result.
+     */
+    private com.google.android.gms.tasks.Task<Void> deleteAllWaitingListEntries(com.google.firebase.firestore.QuerySnapshot snapshot) {
+        List<com.google.android.gms.tasks.Task<Void>> deleteTasks = new java.util.ArrayList<>();
+        
+        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshot) {
+            // Extract eventId from document path: events/{eventId}/waitingList/{entryId}
+            String path = doc.getReference().getPath();
+            String[] pathParts = path.split("/");
+            if (pathParts.length >= 2) {
+                String eventId = pathParts[1];
+                String entryId = doc.getId();
+                deleteTasks.add(waitingListRepository.removeFromWaitingList(eventId, entryId));
+            }
+        }
+        
+        return com.google.android.gms.tasks.Tasks.whenAll(deleteTasks)
+            .continueWith(task -> null);
+    }
+
+    /**
+     * Deletes all decisions from the query result.
+     */
+    private com.google.android.gms.tasks.Task<Void> deleteAllDecisions(com.google.firebase.firestore.QuerySnapshot snapshot) {
+        List<com.google.android.gms.tasks.Task<Void>> deleteTasks = new java.util.ArrayList<>();
+        
+        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshot) {
+            // Extract eventId from document path: events/{eventId}/decisions/{decisionId}
+            String path = doc.getReference().getPath();
+            String[] pathParts = path.split("/");
+            if (pathParts.length >= 2) {
+                String eventId = pathParts[1];
+                String decisionId = doc.getId();
+                deleteTasks.add(decisionRepository.deleteDecision(eventId, decisionId));
+            }
+        }
+        
+        return com.google.android.gms.tasks.Tasks.whenAll(deleteTasks)
+            .continueWith(task -> null);
     }
 
     private void promptForPasswordAndDelete(String userId) {
@@ -338,9 +429,14 @@ public class NotificationsFragment extends Fragment {
         currentUser.reauthenticate(credential)
             .addOnSuccessListener(aVoid -> {
                 // Re-authentication successful, now delete
-                userRepository.deleteUser(userId)
+                // First, remove user from all events (waiting lists and decisions)
+                cleanupUserEventRegistrations(userId)
                     .continueWithTask(task -> {
-                        // Then delete from Firebase Auth
+                        // Then delete user from Firestore
+                        return userRepository.deleteUser(userId);
+                    })
+                    .continueWithTask(task -> {
+                        // Finally delete from Firebase Auth
                         return currentUser.delete();
                     })
                     .addOnSuccessListener(v -> {

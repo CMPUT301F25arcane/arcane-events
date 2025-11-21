@@ -120,6 +120,7 @@ public class EntrantsFragment extends Fragment {
                     }
 
                     // Load user details for each registration
+                    // Filter out entries where the user doesn't exist (deleted users)
                     List<EntrantItem> entrantItems = new ArrayList<>();
                     final int[] remaining = {registrations.size()};
 
@@ -131,19 +132,19 @@ public class EntrantsFragment extends Fragment {
                                 .addOnSuccessListener(userDoc -> {
                                     if (!isAdded() || adapter == null) return;
                                     
-                                    Users user = userDoc.toObject(Users.class);
-                                    EntrantItem item = new EntrantItem();
-                                    if (user != null) {
-                                        item.name = user.getName();
-                                        item.email = user.getEmail();
-                                        item.phone = user.getPhone();
-                                    } else {
-                                        item.name = "Unknown";
-                                        item.email = "";
-                                        item.phone = "";
+                                    // Only add entry if user exists (not deleted)
+                                    if (userDoc.exists()) {
+                                        Users user = userDoc.toObject(Users.class);
+                                        if (user != null) {
+                                            EntrantItem item = new EntrantItem();
+                                            item.name = user.getName();
+                                            item.email = user.getEmail();
+                                            item.phone = user.getPhone();
+                                            item.status = decisionStatus != null ? decisionStatus : "PENDING";
+                                            entrantItems.add(item);
+                                        }
                                     }
-                                    item.status = decisionStatus != null ? decisionStatus : "PENDING";
-                                    entrantItems.add(item);
+                                    // If user doesn't exist (deleted), skip this entry
 
                                     remaining[0] -= 1;
                                     if (remaining[0] == 0) {
@@ -152,14 +153,8 @@ public class EntrantsFragment extends Fragment {
                                 })
                                 .addOnFailureListener(e -> {
                                     if (!isAdded() || adapter == null) return;
-                                    // On failure, still add entry with limited info
-                                    EntrantItem item = new EntrantItem();
-                                    item.name = "Unknown";
-                                    item.email = "";
-                                    item.phone = "";
-                                    item.status = decisionStatus != null ? decisionStatus : "PENDING";
-                                    entrantItems.add(item);
-
+                                    // On failure, skip this entry (user likely deleted)
+                                    // Don't add "Unknown" entries
                                     remaining[0] -= 1;
                                     if (remaining[0] == 0) {
                                         adapter.setItems(entrantItems);

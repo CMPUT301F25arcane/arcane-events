@@ -203,11 +203,11 @@ public class EventService {
                                 if (eventTask.isSuccessful() && eventTask.getResult() != null && eventTask.getResult().exists()) {
                                     Event event = eventTask.getResult().toObject(Event.class);
                                     if (event != null && event.getMaxEntrants() != null && event.getMaxEntrants() > 0) {
-                                        // Check current waiting list size
-                                        return waitingListRepository.getWaitingListForEvent(eventId)
-                                                .continueWithTask(listTask -> {
-                                                    if (listTask.isSuccessful()) {
-                                                        int currentSize = listTask.getResult().size();
+                                        // Check current waiting list size (only count valid users)
+                                        return getValidWaitingListCount(eventId)
+                                                .continueWithTask(countTask -> {
+                                                    if (countTask.isSuccessful()) {
+                                                        int currentSize = countTask.getResult();
                                                         if (currentSize >= event.getMaxEntrants()) {
                                                             Map<String, String> result = new HashMap<>();
                                                             result.put("status", "limit_reached");
@@ -221,6 +221,71 @@ public class EventService {
                                 }
                                 // No limit set, continue with adding to waiting list
                                 return addUserToWaitingList(eventId, entrantId);
+                            });
+                });
+    }
+
+    /**
+     * Gets the count of valid waiting list entries (only entries where the user still exists).
+     * This ensures deleted users don't count toward the waitlist limit.
+     *
+     * @param eventId the event ID
+     * @return a Task that completes with the count of valid entries
+     */
+    public Task<Integer> getValidWaitingListCount(String eventId) {
+        return waitingListRepository.getWaitingListForEvent(eventId)
+                .continueWithTask(listTask -> {
+                    if (!listTask.isSuccessful() || listTask.getResult() == null) {
+                        return com.google.android.gms.tasks.Tasks.forResult(0);
+                    }
+                    
+                    QuerySnapshot snapshot = listTask.getResult();
+                    if (snapshot.isEmpty()) {
+                        return com.google.android.gms.tasks.Tasks.forResult(0);
+                    }
+                    
+                    // Check each entry to see if the user still exists
+                    List<Task<Boolean>> userCheckTasks = new ArrayList<>();
+                    List<WaitingListEntry> entries = new ArrayList<>();
+                    
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                        if (entry != null && entry.getEntrantId() != null) {
+                            entries.add(entry);
+                            userCheckTasks.add(
+                                userRepository.getUserById(entry.getEntrantId())
+                                    .continueWith(userTask -> {
+                                        return userTask.isSuccessful() && 
+                                               userTask.getResult() != null && 
+                                               userTask.getResult().exists();
+                                    })
+                            );
+                        }
+                    }
+                    
+                    if (userCheckTasks.isEmpty()) {
+                        return com.google.android.gms.tasks.Tasks.forResult(0);
+                    }
+                    
+                    // Wait for all user checks to complete, then count valid ones
+                    return com.google.android.gms.tasks.Tasks.whenAll(userCheckTasks)
+                            .continueWith(checkTask -> {
+                                int validCount = 0;
+                                for (int i = 0; i < userCheckTasks.size(); i++) {
+                                    try {
+                                        Task<Boolean> userCheckTask = userCheckTasks.get(i);
+                                        if (userCheckTask.isSuccessful()) {
+                                            Boolean isValid = userCheckTask.getResult();
+                                            if (Boolean.TRUE.equals(isValid)) {
+                                                validCount++;
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        // Skip invalid entries
+                                    }
+                                }
+                                
+                                return validCount;
                             });
                 });
     }

@@ -87,7 +87,6 @@ public class EventDetailFragment extends Fragment {
     private String waitingListEntryId = null;
     private String decisionId = null;
     private boolean organizerViewSetup = false; // Prevent multiple listener setups
-    private boolean isWaitlistFull = false; // Track if waitlist is full
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -574,11 +573,10 @@ public class EventDetailFragment extends Fragment {
             return;
         }
 
-        // Get current waiting list size
-        waitingListRepository.getWaitingListForEvent(eventId)
-                .addOnSuccessListener(querySnapshot -> {
-                    int currentSize = querySnapshot.size();
-                    isWaitlistFull = currentSize >= currentEvent.getMaxEntrants();
+        // Get current waiting list size (only count valid users)
+        eventService.getValidWaitingListCount(eventId)
+                .addOnSuccessListener(validCount -> {
+                    isWaitlistFull = validCount >= currentEvent.getMaxEntrants();
                     // Update UI if already set up
                     if (!isUserJoined) {
                         setupUserView();
