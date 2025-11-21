@@ -678,6 +678,31 @@ public class EventDetailFragment extends Fragment {
             return;
         }
 
+        showLotteryGuidelinesDialog();
+    }
+
+    private void showLotteryGuidelinesDialog() {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_lottery_guidelines, null);
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        dialogView.findViewById(R.id.got_it_button).setOnClickListener(v -> {
+            dialog.dismiss();
+            proceedWithJoinWaitlist();
+        });
+
+        dialog.show();
+    }
+
+    private void proceedWithJoinWaitlist() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(requireContext(), "You must be logged in to join", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String userId = currentUser.getUid();
 
         // Disable button during operation
