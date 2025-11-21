@@ -12,8 +12,10 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import android.widget.ArrayAdapter;
 
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentEventsBinding;
@@ -68,9 +70,19 @@ public class UserEventsFragment extends Fragment {
     private List<Notification> shownNotifications = new ArrayList<>(); // Track which notifications have been shown
 
     // Filter state
-    private String filterLocation = null;
+    private List<String> filterCategories = new ArrayList<>();
     private Date filterDateFrom = null;
     private Date filterDateTo = null;
+    
+    // Available categories
+    private static final String[] CATEGORIES = {"Sports", "Entertainment", "Education", "Food & Dining", "Technology"};
+    private static final Map<String, String> CATEGORY_MAP = new HashMap<String, String>() {{
+        put("Sports", "SPORTS");
+        put("Entertainment", "ENTERTAINMENT");
+        put("Education", "EDUCATION");
+        put("Food & Dining", "FOOD_DINING");
+        put("Technology", "TECHNOLOGY");
+    }};
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -165,16 +177,15 @@ public class UserEventsFragment extends Fragment {
         
         List<Event> filtered = new ArrayList<>();
         for (Event event : allEvents) {
-            // Text search
-            if (queryLower != null && 
-                (event.getEventName() == null || !event.getEventName().toLowerCase().contains(queryLower))) {
+            // Text search (name or description)
+            if (queryLower != null && !matchesQuery(event, queryLower)) {
                 continue;
             }
             
-            // Location filter
-            if (filterLocation != null && !filterLocation.isEmpty()) {
-                String loc = event.getLocation();
-                if (loc == null || !loc.toLowerCase().contains(filterLocation.toLowerCase())) {
+            // Category filter
+            if (!filterCategories.isEmpty()) {
+                String eventCategory = event.getCategory();
+                if (eventCategory == null || !filterCategories.contains(eventCategory)) {
                     continue;
                 }
             }
@@ -195,22 +206,64 @@ public class UserEventsFragment extends Fragment {
     }
 
     /**
-     * Shows a simple filter dialog for location and date filtering.
+     * Returns true if the event matches the query in either name or description.
+     */
+    private boolean matchesQuery(@NonNull Event event, @NonNull String queryLower) {
+        String name = event.getEventName();
+        if (name != null && name.toLowerCase().contains(queryLower)) {
+            return true;
+        }
+        String description = event.getDescription();
+        return description != null && description.toLowerCase().contains(queryLower);
+    }
+
+    /**
+     * Shows a filter dialog for category and date filtering.
      */
     private void showFilterDialog() {
         View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_filter_events, null);
         
-        com.google.android.material.textfield.TextInputEditText locationInput = 
-            dialogView.findViewById(R.id.filter_location_edit_text);
+        android.widget.AutoCompleteTextView categoryDropdown = 
+            dialogView.findViewById(R.id.filter_category_dropdown);
+        com.google.android.material.chip.ChipGroup categoryChips = 
+            dialogView.findViewById(R.id.filter_category_chips);
         com.google.android.material.button.MaterialButton fromDateBtn = 
             dialogView.findViewById(R.id.filter_date_from_button);
         com.google.android.material.button.MaterialButton toDateBtn = 
             dialogView.findViewById(R.id.filter_date_to_button);
         
-        // Set current values
-        if (filterLocation != null) {
-            locationInput.setText(filterLocation);
-        }
+        // Setup category dropdown
+        android.widget.ArrayAdapter<String> categoryAdapter = new android.widget.ArrayAdapter<>(
+            requireContext(), android.R.layout.simple_dropdown_item_1line, CATEGORIES);
+        categoryDropdown.setAdapter(categoryAdapter);
+        
+        // Show dropdown when clicked
+        categoryDropdown.setOnClickListener(v -> {
+            categoryDropdown.showDropDown();
+        });
+        
+        // Also show dropdown when focused
+        categoryDropdown.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                categoryDropdown.showDropDown();
+            }
+        });
+        
+        // Load existing selected categories as chips
+        refreshCategoryChips(categoryChips);
+        
+        // Handle category selection
+        categoryDropdown.setOnItemClickListener((parent, view, position, id) -> {
+            String selectedCategory = CATEGORIES[position];
+            String internalCategory = CATEGORY_MAP.get(selectedCategory);
+            if (internalCategory != null && !filterCategories.contains(internalCategory)) {
+                filterCategories.add(internalCategory);
+                refreshCategoryChips(categoryChips);
+                categoryDropdown.setText(""); // Clear dropdown text
+            }
+        });
+        
+        // Set current date values
         SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
         if (filterDateFrom != null) fromDateBtn.setText(dateFormat.format(filterDateFrom));
         if (filterDateTo != null) toDateBtn.setText(dateFormat.format(filterDateTo));
@@ -238,8 +291,6 @@ public class UserEventsFragment extends Fragment {
         AlertDialog dialog = new AlertDialog.Builder(requireContext())
             .setView(dialogView)
             .setPositiveButton("Apply", (d, w) -> {
-                String loc = locationInput.getText() != null ? locationInput.getText().toString().trim() : "";
-                filterLocation = loc.isEmpty() ? null : loc;
                 if (filterDateFrom != null && filterDateTo != null && filterDateFrom.after(filterDateTo)) {
                     Toast.makeText(requireContext(), "From date must be before To date", Toast.LENGTH_SHORT).show();
                     return;
@@ -248,7 +299,7 @@ public class UserEventsFragment extends Fragment {
             })
             .setNegativeButton("Cancel", null)
             .setNeutralButton("Clear", (d, w) -> {
-                filterLocation = null;
+                filterCategories.clear();
                 filterDateFrom = null;
                 filterDateTo = null;
                 performSearch();
@@ -256,6 +307,36 @@ public class UserEventsFragment extends Fragment {
             .create();
         
         dialog.show();
+    }
+    
+    /**
+     * Refreshes the category chips display based on selected categories.
+     */
+    private void refreshCategoryChips(com.google.android.material.chip.ChipGroup chipGroup) {
+        chipGroup.removeAllViews();
+        for (String internalCategory : filterCategories) {
+            // Find display name for internal category
+            String displayName = null;
+            for (Map.Entry<String, String> entry : CATEGORY_MAP.entrySet()) {
+                if (entry.getValue().equals(internalCategory)) {
+                    displayName = entry.getKey();
+                    break;
+                }
+            }
+            if (displayName == null) continue;
+            
+            com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(requireContext());
+            chip.setText(displayName);
+            chip.setChipBackgroundColorResource(R.color.surface_alt);
+            chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+            chip.setCloseIconVisible(true);
+            chip.setCloseIconTint(ContextCompat.getColorStateList(requireContext(), R.color.text_primary));
+            chip.setOnCloseIconClickListener(v -> {
+                filterCategories.remove(internalCategory);
+                refreshCategoryChips(chipGroup);
+            });
+            chipGroup.addView(chip);
+        }
     }
 
     /**

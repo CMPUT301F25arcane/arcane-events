@@ -1,16 +1,21 @@
 package com.example.arcane.ui.events;
 
+import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import android.widget.ArrayAdapter;
 
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentEventsBinding;
@@ -19,12 +24,19 @@ import com.example.arcane.model.Users;
 import com.example.arcane.repository.EventRepository;
 import com.example.arcane.repository.UserRepository;
 import com.example.arcane.service.UserService;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * OrganizerEventsFragment.java
@@ -47,6 +59,21 @@ public class OrganizerEventsFragment extends Fragment {
     private UserRepository userRepository;
     private List<Event> allEvents = new ArrayList<>(); // Store all events for filtering
     private boolean isOrganizer = false;
+    
+    // Filter state
+    private List<String> filterCategories = new ArrayList<>();
+    private Date filterDateFrom = null;
+    private Date filterDateTo = null;
+    
+    // Available categories
+    private static final String[] CATEGORIES = {"Sports", "Entertainment", "Education", "Food & Dining", "Technology"};
+    private static final Map<String, String> CATEGORY_MAP = new HashMap<String, String>() {{
+        put("Sports", "SPORTS");
+        put("Entertainment", "ENTERTAINMENT");
+        put("Education", "EDUCATION");
+        put("Food & Dining", "FOOD_DINING");
+        put("Technology", "TECHNOLOGY");
+    }};
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -93,6 +120,9 @@ public class OrganizerEventsFragment extends Fragment {
 
         // Setup search functionality
         setupSearch();
+        
+        // Setup filter button
+        binding.filterButton.setOnClickListener(v -> showFilterDialog());
 
         // Check user role and set visibility accordingly
         checkUserRoleAndSetVisibility();
@@ -190,26 +220,174 @@ public class OrganizerEventsFragment extends Fragment {
     }
 
     /**
-     * Performs a case-insensitive search on event names.
+     * Performs search and applies filters.
      */
     private void performSearch() {
         String query = binding.searchEditText.getText() != null ? 
                 binding.searchEditText.getText().toString().trim() : "";
+        String queryLower = query.isEmpty() ? null : query.toLowerCase();
         
-        if (query.isEmpty()) {
-            // Show all events if search is empty
-            adapter.setItems(allEvents);
-        } else {
-            // Filter events case-insensitively
-            List<Event> filtered = new ArrayList<>();
-            String queryLower = query.toLowerCase();
-            for (Event event : allEvents) {
-                if (event.getEventName() != null && 
-                    event.getEventName().toLowerCase().contains(queryLower)) {
-                    filtered.add(event);
+        List<Event> filtered = new ArrayList<>();
+        for (Event event : allEvents) {
+            // Text search (name or description)
+            if (queryLower != null && !matchesQuery(event, queryLower)) {
+                continue;
+            }
+            
+            // Category filter
+            if (!filterCategories.isEmpty()) {
+                String eventCategory = event.getCategory();
+                if (eventCategory == null || !filterCategories.contains(eventCategory)) {
+                    continue;
                 }
             }
-            adapter.setItems(filtered);
+            
+            // Date filter
+            if (filterDateFrom != null || filterDateTo != null) {
+                Timestamp ts = event.getEventDate();
+                if (ts == null) continue;
+                Date eventDate = ts.toDate();
+                if (filterDateFrom != null && eventDate.before(filterDateFrom)) continue;
+                if (filterDateTo != null && eventDate.after(filterDateTo)) continue;
+            }
+            
+            filtered.add(event);
+        }
+        
+        adapter.setItems(filtered);
+    }
+
+    /**
+     * Returns true if the event matches the query in either name or description.
+     */
+    private boolean matchesQuery(@NonNull Event event, @NonNull String queryLower) {
+        String name = event.getEventName();
+        if (name != null && name.toLowerCase().contains(queryLower)) {
+            return true;
+        }
+        String description = event.getDescription();
+        return description != null && description.toLowerCase().contains(queryLower);
+    }
+    
+    /**
+     * Shows a filter dialog for category and date filtering.
+     */
+    private void showFilterDialog() {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_filter_events, null);
+        
+        android.widget.AutoCompleteTextView categoryDropdown = 
+            dialogView.findViewById(R.id.filter_category_dropdown);
+        com.google.android.material.chip.ChipGroup categoryChips = 
+            dialogView.findViewById(R.id.filter_category_chips);
+        com.google.android.material.button.MaterialButton fromDateBtn = 
+            dialogView.findViewById(R.id.filter_date_from_button);
+        com.google.android.material.button.MaterialButton toDateBtn = 
+            dialogView.findViewById(R.id.filter_date_to_button);
+        
+        // Setup category dropdown
+        android.widget.ArrayAdapter<String> categoryAdapter = new android.widget.ArrayAdapter<>(
+            requireContext(), android.R.layout.simple_dropdown_item_1line, CATEGORIES);
+        categoryDropdown.setAdapter(categoryAdapter);
+        
+        // Show dropdown when clicked
+        categoryDropdown.setOnClickListener(v -> {
+            categoryDropdown.showDropDown();
+        });
+        
+        // Also show dropdown when focused
+        categoryDropdown.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                categoryDropdown.showDropDown();
+            }
+        });
+        
+        // Load existing selected categories as chips
+        refreshCategoryChips(categoryChips);
+        
+        // Handle category selection
+        categoryDropdown.setOnItemClickListener((parent, view, position, id) -> {
+            String selectedCategory = CATEGORIES[position];
+            String internalCategory = CATEGORY_MAP.get(selectedCategory);
+            if (internalCategory != null && !filterCategories.contains(internalCategory)) {
+                filterCategories.add(internalCategory);
+                refreshCategoryChips(categoryChips);
+                categoryDropdown.setText(""); // Clear dropdown text
+            }
+        });
+        
+        // Set current date values
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+        if (filterDateFrom != null) fromDateBtn.setText(dateFormat.format(filterDateFrom));
+        if (filterDateTo != null) toDateBtn.setText(dateFormat.format(filterDateTo));
+        
+        // Date pickers
+        Calendar cal = Calendar.getInstance();
+        fromDateBtn.setOnClickListener(v -> {
+            if (filterDateFrom != null) cal.setTime(filterDateFrom);
+            new DatePickerDialog(requireContext(), (view, y, m, d) -> {
+                cal.set(y, m, d);
+                filterDateFrom = cal.getTime();
+                fromDateBtn.setText(dateFormat.format(filterDateFrom));
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
+        });
+        
+        toDateBtn.setOnClickListener(v -> {
+            if (filterDateTo != null) cal.setTime(filterDateTo);
+            new DatePickerDialog(requireContext(), (view, y, m, d) -> {
+                cal.set(y, m, d);
+                filterDateTo = cal.getTime();
+                toDateBtn.setText(dateFormat.format(filterDateTo));
+            }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
+        });
+        
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setPositiveButton("Apply", (d, w) -> {
+                if (filterDateFrom != null && filterDateTo != null && filterDateFrom.after(filterDateTo)) {
+                    Toast.makeText(requireContext(), "From date must be before To date", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                performSearch();
+            })
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Clear", (d, w) -> {
+                filterCategories.clear();
+                filterDateFrom = null;
+                filterDateTo = null;
+                performSearch();
+            })
+            .create();
+        
+        dialog.show();
+    }
+    
+    /**
+     * Refreshes the category chips display based on selected categories.
+     */
+    private void refreshCategoryChips(com.google.android.material.chip.ChipGroup chipGroup) {
+        chipGroup.removeAllViews();
+        for (String internalCategory : filterCategories) {
+            // Find display name for internal category
+            String displayName = null;
+            for (Map.Entry<String, String> entry : CATEGORY_MAP.entrySet()) {
+                if (entry.getValue().equals(internalCategory)) {
+                    displayName = entry.getKey();
+                    break;
+                }
+            }
+            if (displayName == null) continue;
+            
+            com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(requireContext());
+            chip.setText(displayName);
+            chip.setChipBackgroundColorResource(R.color.surface_alt);
+            chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+            chip.setCloseIconVisible(true);
+            chip.setCloseIconTint(ContextCompat.getColorStateList(requireContext(), R.color.text_primary));
+            chip.setOnCloseIconClickListener(v -> {
+                filterCategories.remove(internalCategory);
+                refreshCategoryChips(chipGroup);
+            });
+            chipGroup.addView(chip);
         }
     }
 

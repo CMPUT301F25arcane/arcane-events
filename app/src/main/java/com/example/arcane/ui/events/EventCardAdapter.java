@@ -117,6 +117,15 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
             holder.dateView.setText("");
         }
 
+        // Set category tag
+        String category = event.getCategory();
+        if (category != null && !category.isEmpty()) {
+            holder.categoryTag.setVisibility(View.VISIBLE);
+            setCategoryTag(holder.categoryTag, category);
+        } else {
+            holder.categoryTag.setVisibility(View.GONE);
+        }
+
         // Set status chip if enabled and status exists
         if (showStatus && event.getEventId() != null) {
             String status = eventStatusMap.get(event.getEventId());
@@ -167,6 +176,48 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
         
         // Show placeholder if no image or loading failed
         imageView.setImageResource(android.R.drawable.ic_menu_gallery);
+    }
+
+    private void setCategoryTag(@NonNull Chip chip, @NonNull String category) {
+        String displayName;
+        int textColor;
+        int bgColor;
+
+        switch (category.toUpperCase()) {
+            case "SPORTS":
+                displayName = "Sports";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.category_sports);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.category_sports_bg);
+                break;
+            case "ENTERTAINMENT":
+                displayName = "Entertainment";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.category_entertainment);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.category_entertainment_bg);
+                break;
+            case "EDUCATION":
+                displayName = "Education";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.category_education);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.category_education_bg);
+                break;
+            case "FOOD_DINING":
+                displayName = "Food & Dining";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.category_food_dining);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.category_food_dining_bg);
+                break;
+            case "TECHNOLOGY":
+                displayName = "Technology";
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.category_technology);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.category_technology_bg);
+                break;
+            default:
+                displayName = category;
+                textColor = ContextCompat.getColor(chip.getContext(), R.color.text_primary);
+                bgColor = ContextCompat.getColor(chip.getContext(), R.color.surface_alt);
+        }
+
+        chip.setText(displayName);
+        chip.setTextColor(textColor);
+        chip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(bgColor));
     }
 
     private void setStatusChip(@NonNull Chip chip, @NonNull String decisionStatus) {
@@ -233,6 +284,7 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
         TextView titleView;
         TextView dateView;
         TextView locationView;
+        Chip categoryTag;
         Chip statusChip;
 
         /**
@@ -246,6 +298,7 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
             titleView = itemView.findViewById(R.id.event_name);
             dateView = itemView.findViewById(R.id.event_date);
             locationView = itemView.findViewById(R.id.event_location);
+            categoryTag = itemView.findViewById(R.id.category_tag);
             statusChip = itemView.findViewById(R.id.waitlist_status);
         }
     }

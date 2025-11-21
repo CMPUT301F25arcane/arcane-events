@@ -50,4 +50,16 @@
     <!-- Lottery status colors -->
     <color name="lottery_status_open">#15803D</color>  <!-- Dark green -->
     <color name="lottery_status_closed">#DC2626</color>  <!-- Dark red -->
+
+    <!-- Category colors -->
+    <color name="category_sports">#FF2563EB</color>  <!-- Blue -->
+    <color name="category_sports_bg">#FFDBEAFE</color>
+    <color name="category_entertainment">#FFDC2626</color>  <!-- Red -->
+    <color name="category_entertainment_bg">#FFFEE2E2</color>
+    <color name="category_education">#FF10B981</color>  <!-- Green -->
+    <color name="category_education_bg">#FFD1FAE5</color>
+    <color name="category_food_dining">#FFF59E0B</color>  <!-- Orange -->
+    <color name="category_food_dining_bg">#FFFEF3C7</color>
+    <color name="category_technology">#FF8B5CF6</color>  <!-- Purple -->
+    <color name="category_technology_bg">#FFEDE9FE</color>
 </resources>

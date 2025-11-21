@@ -32,12 +32,17 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.zxing.BarcodeFormat;
 import com.example.arcane.util.QrCodeGenerator;
 import com.google.zxing.WriterException;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -128,11 +133,36 @@ public class CreateEventFragment extends Fragment {
         setupDatePicker(binding.endDateInput, endDateCalendar, "End Date & Time");
         setupDatePicker(binding.registrationDeadlineInput, registrationDeadlineCalendar, "Registration Deadline");
 
+        // Setup category dropdown
+        setupCategoryDropdown();
+
         // Setup image upload
         binding.imageUploadCard.setOnClickListener(v -> openImagePicker());
 
         // Setup create event button
         binding.createEventButton.setOnClickListener(v -> createEvent());
+    }
+
+    /**
+     * Sets up the category dropdown with predefined categories.
+     */
+    private void setupCategoryDropdown() {
+        String[] categories = {"Sports", "Entertainment", "Education", "Food & Dining", "Technology"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), 
+            android.R.layout.simple_dropdown_item_1line, categories);
+        binding.categoryInput.setAdapter(adapter);
+        
+        // Show dropdown when clicked
+        binding.categoryInput.setOnClickListener(v -> {
+            binding.categoryInput.showDropDown();
+        });
+        
+        // Also show dropdown when focused
+        binding.categoryInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                binding.categoryInput.showDropDown();
+            }
+        });
     }
 
     /**
@@ -202,6 +232,18 @@ public class CreateEventFragment extends Fragment {
             return;
         }
         binding.locationInputLayout.setError(null);
+
+        // Validate category
+        String categoryDisplay = binding.categoryInput.getText() != null ? 
+                binding.categoryInput.getText().toString().trim() : "";
+        if (categoryDisplay.isEmpty()) {
+            binding.categoryInputLayout.setError("Category is required");
+            return;
+        }
+        binding.categoryInputLayout.setError(null);
+        
+        // Convert display category to internal format
+        String category = convertCategoryToInternal(categoryDisplay);
 
         // Get current user
         FirebaseUser currentUser = auth.getCurrentUser();
@@ -284,6 +326,7 @@ public class CreateEventFragment extends Fragment {
         event.setDescription(description); // Description from form input
         event.setOrganizerId(organizerId);
         event.setLocation(locationName);
+        event.setCategory(category);
         event.setCost(cost);
         event.setMaxEntrants(maxEntrants);
         event.setNumberOfWinners(numberOfWinners);
@@ -462,6 +505,29 @@ public class CreateEventFragment extends Fragment {
                         Toast.makeText(requireContext(), "QR code couldn't be saved: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    /**
+     * Converts display category name to internal category format.
+     *
+     * @param displayCategory the display category name
+     * @return the internal category format
+     */
+    private String convertCategoryToInternal(String displayCategory) {
+        switch (displayCategory) {
+            case "Sports":
+                return "SPORTS";
+            case "Entertainment":
+                return "ENTERTAINMENT";
+            case "Education":
+                return "EDUCATION";
+            case "Food & Dining":
+                return "FOOD_DINING";
+            case "Technology":
+                return "TECHNOLOGY";
+            default:
+                return displayCategory.toUpperCase().replace(" ", "_");
+        }
     }
 
 }

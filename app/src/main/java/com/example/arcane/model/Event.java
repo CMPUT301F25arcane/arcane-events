@@ -50,6 +50,7 @@ public class Event {
     private Integer numberOfWinners;
     private Boolean geolocationRequired;
     private String status;  // "DRAFT", "OPEN", "CLOSED", "DRAWN", "COMPLETED"
+    private String category;  // "SPORTS", "ENTERTAINMENT", "EDUCATION", "FOOD_DINING", "TECHNOLOGY"
     private String qrCodeImageBase64;
     private Integer qrStyleVersion;
 
@@ -434,5 +435,23 @@ public class Event {
      */
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    /**
+     * Gets the event category.
+     *
+     * @return the category
+     */
+    public String getCategory() {
+        return category;
+    }
+
+    /**
+     * Sets the event category.
+     *
+     * @param category the category to set
+     */
+    public void setCategory(String category) {
+        this.category = category;
     }
 }
