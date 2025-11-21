@@ -364,7 +364,8 @@ public class EventDetailFragment extends Fragment {
                         waitingListEntryId = null;
                         decisionId = null;
                         isUserJoined = false;
-                        setupUserView();
+                        // Check if waitlist is full before showing join button
+                        checkWaitlistFull();
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -498,13 +499,55 @@ public class EventDetailFragment extends Fragment {
             showUserStatus();
             setupUserActionButtons();
         } else {
-            // User not joined - show Join button
+            // User not joined - show Join button or Waitlist Full button
             binding.abandonButtonContainer.setVisibility(View.GONE);
             binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
             binding.joinButtonContainer.setVisibility(View.VISIBLE);
 
-            binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+            if (isWaitlistFull) {
+                // Waitlist is full - show orange disabled button
+                binding.joinButton.setText("Waitlist Full");
+                binding.joinButton.setEnabled(false);
+                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.status_declined, null)));
+                binding.joinButton.setOnClickListener(null);
+            } else {
+                // Waitlist has space - show blue Join button
+                binding.joinButton.setText("Join Waitlist");
+                binding.joinButton.setEnabled(true);
+                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    getResources().getColor(R.color.brand_primary, null)));
+                binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+            }
         }
+    }
+
+    private void checkWaitlistFull() {
+        if (currentEvent == null) {
+            isWaitlistFull = false;
+            return;
+        }
+
+        // Check if maxEntrants is set
+        if (currentEvent.getMaxEntrants() == null || currentEvent.getMaxEntrants() <= 0) {
+            isWaitlistFull = false;
+            return;
+        }
+
+        // Get current waiting list size
+        waitingListRepository.getWaitingListForEvent(eventId)
+                .addOnSuccessListener(querySnapshot -> {
+                    int currentSize = querySnapshot.size();
+                    isWaitlistFull = currentSize >= currentEvent.getMaxEntrants();
+                    // Update UI if already set up
+                    if (!isUserJoined) {
+                        setupUserView();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // On failure, assume not full
+                    isWaitlistFull = false;
+                });
     }
 
     private void showUserStatus() {
@@ -624,6 +667,12 @@ public class EventDetailFragment extends Fragment {
                             Toast.makeText(getContext(), "You are already on the waitlist", Toast.LENGTH_SHORT).show();
                         }
                         // Reload status in case UI is out of sync
+                        loadUserStatus();
+                    } else if ("limit_reached".equals(status)) {
+                        // Waiting list limit reached
+                        Toast.makeText(requireContext(), "Waiting list is full", Toast.LENGTH_SHORT).show();
+                        binding.joinButton.setEnabled(true);
+                        binding.joinButton.setText("Join Waitlist");
                         loadUserStatus();
                     } else {
                         if (getContext() != null) {
