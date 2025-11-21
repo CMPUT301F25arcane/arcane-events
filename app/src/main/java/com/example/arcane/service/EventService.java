@@ -28,6 +28,8 @@ import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.EventRepository;
 import com.example.arcane.repository.UserRepository;
 import com.example.arcane.repository.WaitingListRepository;
+import android.util.Log;
+
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
@@ -474,10 +476,14 @@ public class EventService {
                                     return com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to update decision"));
                                 }
                                 
-                                // Update userEvents mirror (if userEvents collection exists)
-                                // For now, keep registeredEventIds as-is
-                                
-                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                                // Try to promote a replacement winner, but don't fail the decline if it errors out
+                                return promoteNextWinner(eventId)
+                                        .continueWith(taskResult -> {
+                                            if (!taskResult.isSuccessful()) {
+                                                Log.w("EventService", "Failed to promote replacement winner", taskResult.getException());
+                                            }
+                                            return null;
+                                        });
                             });
                 });
     }
@@ -626,6 +632,74 @@ public class EventService {
                                                     });
                                         });
                             });
+                });
+    }
+
+    /**
+     * Promote the next entrant from the waiting list when a winner declines.
+     * Prefers PENDING entrants (newly joined) before previously LOST entrants.
+     */
+    private Task<Void> promoteNextWinner(String eventId) {
+        return fetchReplacementCandidate(eventId, "PENDING")
+                .continueWithTask(candidateTask -> {
+                    Decision candidate = candidateTask.getResult();
+                    if (candidate != null) {
+                        return promoteCandidateToWinner(eventId, candidate);
+                    }
+                    return fetchReplacementCandidate(eventId, "LOST")
+                            .continueWithTask(lostTask -> {
+                                Decision fallback = lostTask.getResult();
+                                if (fallback != null) {
+                                    return promoteCandidateToWinner(eventId, fallback);
+                                }
+                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                            });
+                });
+    }
+
+    private Task<Decision> fetchReplacementCandidate(String eventId, String status) {
+        return decisionRepository.getDecisionsByStatus(eventId, status)
+                .continueWith(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null || task.getResult().isEmpty()) {
+                        return null;
+                    }
+                    List<Decision> candidates = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                        Decision decision = doc.toObject(Decision.class);
+                        decision.setDecisionId(doc.getId());
+                        candidates.add(decision);
+                    }
+                    if (candidates.isEmpty()) {
+                        return null;
+                    }
+                    Collections.shuffle(candidates);
+                    return candidates.get(0);
+                });
+    }
+
+    private Task<Void> promoteCandidateToWinner(String eventId, Decision candidate) {
+        candidate.setStatus("INVITED");
+        candidate.setUpdatedAt(Timestamp.now());
+        candidate.setRespondedAt(null);
+
+        return decisionRepository.updateDecision(eventId, candidate.getDecisionId(), candidate)
+                .continueWithTask(updateTask -> {
+                    if (!updateTask.isSuccessful()) {
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to promote replacement winner"));
+                    }
+
+                    return notificationService.sendNotification(
+                            candidate.getEntrantId(),
+                            eventId,
+                            "INVITED",
+                            "Spot available!",
+                            "A spot opened up and you have been invited from the waiting list."
+                    ).continueWith(notificationTask -> {
+                        if (!notificationTask.isSuccessful()) {
+                            Log.w("EventService", "Failed to notify replacement winner", notificationTask.getException());
+                        }
+                        return null;
+                    });
                 });
     }
 
