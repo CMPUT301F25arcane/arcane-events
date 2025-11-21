@@ -402,6 +402,7 @@ public class EventDetailFragment extends Fragment {
         binding.abandonButtonContainer.setVisibility(View.GONE);
         binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
         binding.joinButtonContainer.setVisibility(View.GONE);
+        binding.totalEntrantsContainer.setVisibility(View.GONE);
 
         // Show organizer-specific UI
         // Lottery status and send notification are in the same horizontal layout
@@ -512,6 +513,7 @@ public class EventDetailFragment extends Fragment {
         binding.statusDecisionContainer.setVisibility(View.GONE);
         binding.abandonButtonContainer.setVisibility(View.GONE);
         binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
+        binding.totalEntrantsContainer.setVisibility(View.GONE);
         
         // Show delete button for admin
         binding.joinButtonContainer.setVisibility(View.VISIBLE);
@@ -532,6 +534,10 @@ public class EventDetailFragment extends Fragment {
 
         // Show user-specific UI
         binding.statusDecisionContainer.setVisibility(View.VISIBLE);
+        
+        // Show total entrants count for entrants
+        binding.totalEntrantsContainer.setVisibility(View.VISIBLE);
+        loadTotalEntrantsCount();
 
         if (isUserJoined) {
             // User has joined - show status and decision
@@ -585,6 +591,30 @@ public class EventDetailFragment extends Fragment {
                 .addOnFailureListener(e -> {
                     // On failure, assume not full
                     isWaitlistFull = false;
+                });
+    }
+
+    /**
+     * Loads and displays the total number of entrants on the waiting list.
+     * This is shown to entrants when they view an event.
+     */
+    private void loadTotalEntrantsCount() {
+        if (eventId == null || binding == null || !isAdded()) {
+            return;
+        }
+
+        // Get current waiting list count (only count valid users)
+        eventService.getValidWaitingListCount(eventId)
+                .addOnSuccessListener(count -> {
+                    if (binding != null && isAdded()) {
+                        binding.totalEntrantsCount.setText(String.valueOf(count));
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // On failure, show 0 or error message
+                    if (binding != null && isAdded()) {
+                        binding.totalEntrantsCount.setText("0");
+                    }
                 });
     }
 
@@ -722,7 +752,7 @@ public class EventDetailFragment extends Fragment {
                         waitingListEntryId = result.get("entryId");
                         decisionId = result.get("decisionId");
                         
-                        // Reload user status to update UI
+                        // Reload user status to update UI (this will also refresh total entrants count)
                         loadUserStatus();
                     } else if ("already_exists".equals(status)) {
                         // User already in waiting list
@@ -789,7 +819,7 @@ public class EventDetailFragment extends Fragment {
                     waitingListEntryId = null;
                     decisionId = null;
                     
-                    // Update UI to show join button
+                    // Update UI to show join button (this will also refresh total entrants count)
                     setupUserView();
                 })
                 .addOnFailureListener(e -> {
