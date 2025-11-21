@@ -29,21 +29,29 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
+import androidx.appcompat.app.AlertDialog;
+
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentProfileBinding;
 import com.example.arcane.model.Notification;
 import com.example.arcane.model.Users;
+import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.UserRepository;
+import com.example.arcane.repository.WaitingListRepository;
 import com.example.arcane.service.NotificationService;
 import com.example.arcane.service.UserService;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -59,6 +67,8 @@ public class NotificationsFragment extends Fragment {
     private UserService userService;
     private UserRepository userRepository;
     private NotificationService notificationService;
+    private WaitingListRepository waitingListRepository;
+    private DecisionRepository decisionRepository;
 
     /**
      * Creates and returns the view hierarchy for this fragment.
@@ -79,15 +89,17 @@ public class NotificationsFragment extends Fragment {
         userService = new UserService();
         userRepository = new UserRepository();
         notificationService = new NotificationService();
+        waitingListRepository = new WaitingListRepository();
+        decisionRepository = new DecisionRepository();
 
-        // Logout button functionality
         binding.logoutButton.setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
-            // Clear cached user role on logout
             clearCachedUserRole();
             NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
             navController.navigate(R.id.navigation_welcome);
         });
+
+        binding.deleteProfileButton.setOnClickListener(v -> showDeleteConfirmDialog());
 
         // Notification toggle functionality
         binding.toggleNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -236,6 +248,11 @@ public class NotificationsFragment extends Fragment {
             binding.editPhone.setText(user.getPhone());
         }
         
+        // Show delete button only for non-organizer users
+        String role = user.getRole();
+        boolean isOrganizer = role != null && ("ORGANIZER".equalsIgnoreCase(role) || "ORGANISER".equalsIgnoreCase(role));
+        binding.deleteProfileButton.setVisibility(isOrganizer ? View.GONE : View.VISIBLE);
+
         // Set notification toggle state without triggering listener
         Boolean notificationOptOut = user.getNotificationOptOut();
         boolean notificationsEnabled = notificationOptOut == null || !notificationOptOut;
@@ -244,6 +261,211 @@ public class NotificationsFragment extends Fragment {
         binding.toggleNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
             updateNotificationPreference(!isChecked);
         });
+    }
+
+    private void showDeleteConfirmDialog() {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Delete Profile")
+            .setMessage("Are you sure you want to delete your profile? This action cannot be undone.")
+            .setPositiveButton("Delete", (d, w) -> deleteProfile())
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void deleteProfile() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) return;
+
+        String userId = currentUser.getUid();
+        
+        // First, remove user from all events (waiting lists and decisions)
+        cleanupUserEventRegistrations(userId)
+            .continueWithTask(task -> {
+                // Then delete user from Firestore
+                return userRepository.deleteUser(userId);
+            })
+            .continueWithTask(task -> {
+                // Finally delete from Firebase Auth
+                return currentUser.delete();
+            })
+            .addOnSuccessListener(v -> {
+                clearCachedUserRole();
+                Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
+                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                navController.navigate(R.id.navigation_welcome);
+            })
+            .addOnFailureListener(e -> {
+                // Check if error is due to requiring recent authentication
+                if (e instanceof FirebaseAuthException) {
+                    FirebaseAuthException authException = (FirebaseAuthException) e;
+                    String errorCode = authException.getErrorCode();
+                    if ("ERROR_REQUIRES_RECENT_LOGIN".equals(errorCode) || 
+                        (e.getMessage() != null && e.getMessage().contains("requires recent authentication"))) {
+                        // Prompt for password to re-authenticate
+                        promptForPasswordAndDelete(userId);
+                        return;
+                    }
+                }
+                Toast.makeText(requireContext(), "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
+    }
+
+    /**
+     * Removes the user from all events they're registered for (waiting lists and decisions).
+     * This ensures deleted users don't appear as "Unknown" in event entrant lists.
+     *
+     * @param userId the user ID to clean up
+     * @return a Task that completes when all registrations are removed
+     */
+    private com.google.android.gms.tasks.Task<Void> cleanupUserEventRegistrations(String userId) {
+        // Get all waiting list entries for this user
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> waitingListTask = 
+            waitingListRepository.getWaitingListEntriesByUser(userId);
+        
+        // Get all decisions for this user
+        com.google.android.gms.tasks.Task<com.google.firebase.firestore.QuerySnapshot> decisionsTask = 
+            decisionRepository.getDecisionsByUser(userId);
+
+        // Wait for both queries to complete
+        return com.google.android.gms.tasks.Tasks.whenAll(waitingListTask, decisionsTask)
+            .continueWithTask(combinedTask -> {
+                // Delete all waiting list entries
+                com.google.android.gms.tasks.Task<Void> deleteWaitingListsTask = 
+                    waitingListTask.getResult().isEmpty() 
+                        ? com.google.android.gms.tasks.Tasks.forResult(null)
+                        : deleteAllWaitingListEntries(waitingListTask.getResult());
+
+                // Delete all decisions
+                com.google.android.gms.tasks.Task<Void> deleteDecisionsTask = 
+                    decisionsTask.getResult().isEmpty()
+                        ? com.google.android.gms.tasks.Tasks.forResult(null)
+                        : deleteAllDecisions(decisionsTask.getResult());
+
+                // Wait for both deletion operations to complete
+                return com.google.android.gms.tasks.Tasks.whenAll(deleteWaitingListsTask, deleteDecisionsTask);
+            })
+            .continueWith(task -> null); // Convert to Task<Void>
+    }
+
+    /**
+     * Deletes all waiting list entries from the query result.
+     */
+    private com.google.android.gms.tasks.Task<Void> deleteAllWaitingListEntries(com.google.firebase.firestore.QuerySnapshot snapshot) {
+        List<com.google.android.gms.tasks.Task<Void>> deleteTasks = new java.util.ArrayList<>();
+        
+        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshot) {
+            // Extract eventId from document path: events/{eventId}/waitingList/{entryId}
+            String path = doc.getReference().getPath();
+            String[] pathParts = path.split("/");
+            if (pathParts.length >= 2) {
+                String eventId = pathParts[1];
+                String entryId = doc.getId();
+                deleteTasks.add(waitingListRepository.removeFromWaitingList(eventId, entryId));
+            }
+        }
+        
+        return com.google.android.gms.tasks.Tasks.whenAll(deleteTasks)
+            .continueWith(task -> null);
+    }
+
+    /**
+     * Deletes all decisions from the query result.
+     */
+    private com.google.android.gms.tasks.Task<Void> deleteAllDecisions(com.google.firebase.firestore.QuerySnapshot snapshot) {
+        List<com.google.android.gms.tasks.Task<Void>> deleteTasks = new java.util.ArrayList<>();
+        
+        for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshot) {
+            // Extract eventId from document path: events/{eventId}/decisions/{decisionId}
+            String path = doc.getReference().getPath();
+            String[] pathParts = path.split("/");
+            if (pathParts.length >= 2) {
+                String eventId = pathParts[1];
+                String decisionId = doc.getId();
+                deleteTasks.add(decisionRepository.deleteDecision(eventId, decisionId));
+            }
+        }
+        
+        return com.google.android.gms.tasks.Tasks.whenAll(deleteTasks)
+            .continueWith(task -> null);
+    }
+
+    private void promptForPasswordAndDelete(String userId) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null || currentUser.getEmail() == null) {
+            Toast.makeText(requireContext(), "Unable to re-authenticate. Please log out and log back in.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Create a dialog to get password
+        android.widget.EditText passwordInput = new android.widget.EditText(requireContext());
+        passwordInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        passwordInput.setHint("Enter your password");
+
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Re-authentication Required")
+            .setMessage("For security, please enter your password to confirm account deletion.")
+            .setView(passwordInput)
+            .setPositiveButton("Confirm", (dialog, which) -> {
+                String password = passwordInput.getText().toString().trim();
+                if (password.isEmpty()) {
+                    Toast.makeText(requireContext(), "Password is required", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                reAuthenticateAndDelete(currentUser, password, userId);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void reAuthenticateAndDelete(FirebaseUser currentUser, String password, String userId) {
+        String email = currentUser.getEmail();
+        if (email == null) {
+            Toast.makeText(requireContext(), "Unable to get email address", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Re-authenticate with email and password
+        AuthCredential credential = EmailAuthProvider.getCredential(email, password);
+        currentUser.reauthenticate(credential)
+            .addOnSuccessListener(aVoid -> {
+                // Re-authentication successful, now delete
+                // First, remove user from all events (waiting lists and decisions)
+                cleanupUserEventRegistrations(userId)
+                    .continueWithTask(task -> {
+                        // Then delete user from Firestore
+                        return userRepository.deleteUser(userId);
+                    })
+                    .continueWithTask(task -> {
+                        // Finally delete from Firebase Auth
+                        return currentUser.delete();
+                    })
+                    .addOnSuccessListener(v -> {
+                        clearCachedUserRole();
+                        Toast.makeText(requireContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
+                        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+                        navController.navigate(R.id.navigation_welcome);
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(requireContext(), "Failed to delete profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+            })
+            .addOnFailureListener(e -> {
+                String errorMessage = "Authentication failed";
+                if (e instanceof FirebaseAuthException) {
+                    FirebaseAuthException authException = (FirebaseAuthException) e;
+                    String errorCode = authException.getErrorCode();
+                    if ("ERROR_WRONG_PASSWORD".equals(errorCode)) {
+                        errorMessage = "Incorrect password. Please try again.";
+                    } else if ("ERROR_INVALID_EMAIL".equals(errorCode)) {
+                        errorMessage = "Invalid email address";
+                    } else {
+                        errorMessage = e.getMessage();
+                    }
+                } else if (e.getMessage() != null) {
+                    errorMessage = e.getMessage();
+                }
+                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+            });
     }
 
     private void updateNotificationPreference(boolean optOut) {
