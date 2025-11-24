@@ -61,6 +61,8 @@ dependencies {
     
     // Google Maps SDK for displaying interactive maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+    // Google Location Services for getting device location
+    implementation("com.google.android.gms:play-services-location:21.0.1")
     // Google Places SDK for address autocomplete functionality
     implementation("com.google.android.libraries.places:places:3.3.0")
 }

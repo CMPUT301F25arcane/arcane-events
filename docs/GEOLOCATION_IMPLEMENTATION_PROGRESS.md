@@ -158,6 +158,46 @@ This document tracks the implementation of geolocation and map features for the 
 
 ---
 
+## ✅ Commit 6: Create LocationService Utility Class
+
+**What was done:**
+- Created `LocationService.java` utility class in `util` package
+- Added Google Location Services dependency (`play-services-location:21.0.1`) to `build.gradle.kts`
+- Implemented methods to get device's current location using FusedLocationProviderClient
+- Added callback interface for handling location results
+- Added helper methods to convert between Android Location and Firestore GeoPoint
+- Provided both high-accuracy and balanced power/accuracy location retrieval options
+
+**Why this is important:**
+- **Problem solved:** Getting GPS coordinates from a device is complex - you need to use Google Play Services, handle callbacks, convert data formats, and manage errors. Without a service class, every place that needs location would have to write this complex code, leading to bugs and inconsistency. This is like having a GPS device - instead of building your own GPS from scratch, you use a ready-made one that works reliably.
+
+**How it solves our overall problem:**
+- **Location retrieval:** Provides a simple way to get the device's current GPS coordinates
+- **Data conversion:** Automatically converts Android Location to Firestore GeoPoint (the format we store in database)
+- **Error handling:** Centralized error handling means consistent behavior across the app
+- **Power efficiency:** Offers both high-accuracy and balanced modes (balanced uses less battery)
+- **Enables future commits:**
+  - Commit 9 (capture location on join) will use `getCurrentLocation()` when user joins waitlist
+  - Commit 11 (request location on join) will use this service to get coordinates
+  - All location capture features will use this service consistently
+
+**Key methods:**
+- `getCurrentLocation()` - Get high-accuracy GPS location
+- `getCurrentLocationBalanced()` - Get location with balanced power/accuracy
+- `locationToGeoPoint()` - Convert Android Location to Firestore GeoPoint
+- `geoPointToString()` - Convert GeoPoint to string for logging/display
+- `LocationCallback` interface - Handle location results (success/failure)
+
+**Files created:**
+- `app/src/main/java/com/example/arcane/util/LocationService.java`
+
+**Files modified:**
+- `app/build.gradle.kts` (added location services dependency)
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -167,7 +207,7 @@ This document tracks the implementation of geolocation and map features for the 
 
 ### Phase 2: Location Permission and User Preference
 - [x] Commit 5: Create LocationPermissionHelper utility class ✅
-- [ ] Commit 6: Create LocationService utility class
+- [x] Commit 6: Create LocationService utility class ✅
 - [ ] Commit 7: Add location permission dialog on login
 - [ ] Commit 8: Remove geolocation toggle from profile for organizer/admin
 
