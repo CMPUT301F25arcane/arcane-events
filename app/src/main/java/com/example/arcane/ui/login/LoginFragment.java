@@ -29,10 +29,15 @@ import androidx.navigation.Navigation;
 
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentLoginBinding;
+import com.example.arcane.model.Users;
+import com.example.arcane.service.UserService;
+import com.example.arcane.util.LocationPermissionHelper;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.FirebaseNetworkException;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 /**
  * Login screen fragment.
@@ -133,27 +138,27 @@ public class LoginFragment extends Fragment {
      * @param user the authenticated Firebase user
      */
     private void routeByRole(@NonNull FirebaseUser user) {
-        com.example.arcane.service.UserService userService = new com.example.arcane.service.UserService();
+        UserService userService = new UserService();
         userService.getUserById(user.getUid())
                 .addOnSuccessListener(snapshot -> {
                     String role = null;
+                    Users userModel = null;
                     if (snapshot.exists()) {
-                        com.example.arcane.model.Users u = snapshot.toObject(com.example.arcane.model.Users.class);
-                        if (u != null) role = u.getRole();
+                        userModel = snapshot.toObject(Users.class);
+                        if (userModel != null) role = userModel.getRole();
                     }
                     
                     // Cache role in SharedPreferences for bottom nav routing
                     cacheUserRole(role);
                     
-                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                    if (role != null) {
-                        String r = role.toUpperCase();
-                        if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
-                            navController.navigate(R.id.navigation_home);
-                            return;
-                        }
+                    // Check if we should show location permission dialog
+                    // Show dialog if field doesn't exist in Firestore (user hasn't been asked yet)
+                    if (userModel != null && shouldShowLocationDialog(snapshot, userModel)) {
+                        showLocationPermissionDialog(user, userModel, userService);
+                    } else {
+                        // Navigate directly if dialog not needed
+                        navigateToHome(role);
                     }
-                    navController.navigate(R.id.navigation_home);
                 })
                 .addOnFailureListener(e -> {
                     // Default to user events on failure, cache null role
@@ -161,6 +166,169 @@ public class LoginFragment extends Fragment {
                     NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
                     navController.navigate(R.id.navigation_home);
                 });
+    }
+
+    /**
+     * Checks if the location permission dialog should be shown.
+     *
+     * <p>The dialog should only be shown if the user hasn't been asked before.
+     * We check if the locationTrackingEnabled field exists in the Firestore document.
+     * If it doesn't exist, the user hasn't been asked yet.</p>
+     *
+     * @param snapshot the Firestore document snapshot
+     * @param user the user model
+     * @return true if dialog should be shown, false otherwise
+     */
+    private boolean shouldShowLocationDialog(@NonNull DocumentSnapshot snapshot, @NonNull Users user) {
+        // Show dialog if the field doesn't exist in Firestore (user hasn't been asked yet)
+        // This handles both new users and existing users who haven't seen the dialog
+        return !snapshot.contains("locationTrackingEnabled");
+    }
+
+    /**
+     * Shows the location permission dialog to the user.
+     *
+     * @param firebaseUser the authenticated Firebase user
+     * @param userModel the user model from Firestore
+     * @param userService the user service for updating the user
+     */
+    private void showLocationPermissionDialog(@NonNull FirebaseUser firebaseUser, 
+                                             @NonNull Users userModel, 
+                                             @NonNull UserService userService) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Enable Location Tracking?")
+                .setMessage("Would you like to enable location tracking? This allows us to show organizers where event participants joined from. You can change this later in your profile settings.")
+                .setPositiveButton("Allow", (dialog, which) -> {
+                    // User accepted - request location permission and update preference
+                    handleLocationPermissionAccept(firebaseUser, userModel, userService);
+                })
+                .setNegativeButton("Don't Allow", (dialog, which) -> {
+                    // User declined - just update preference to false and navigate
+                    handleLocationPermissionDecline(firebaseUser, userModel, userService);
+                })
+                .setCancelable(false) // Prevent dismissing without choosing
+                .show();
+    }
+
+    /**
+     * Handles when user accepts location tracking.
+     *
+     * @param firebaseUser the authenticated Firebase user
+     * @param userModel the user model
+     * @param userService the user service
+     */
+    private void handleLocationPermissionAccept(@NonNull FirebaseUser firebaseUser,
+                                               @NonNull Users userModel,
+                                               @NonNull UserService userService) {
+        // Update user preference to true
+        userModel.setLocationTrackingEnabled(true);
+        userService.updateUser(userModel)
+                .addOnSuccessListener(unused -> {
+                    // Request Android location permission
+                    if (LocationPermissionHelper.hasLocationPermission(requireContext())) {
+                        // Already has permission, just navigate
+                        navigateToHome(userModel.getRole());
+                    } else {
+                        // Request permission - result will be handled in onRequestPermissionsResult
+                        LocationPermissionHelper.requestLocationPermission(this);
+                        // Store user info temporarily to update after permission result
+                        pendingLocationUpdate = new PendingLocationUpdate(firebaseUser, userModel, userService, true);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("LoginFragment", "Failed to update location tracking preference", e);
+                    Toast.makeText(requireContext(), "Failed to save preference", Toast.LENGTH_SHORT).show();
+                    navigateToHome(userModel.getRole());
+                });
+    }
+
+    /**
+     * Handles when user declines location tracking.
+     *
+     * @param firebaseUser the authenticated Firebase user
+     * @param userModel the user model
+     * @param userService the user service
+     */
+    private void handleLocationPermissionDecline(@NonNull FirebaseUser firebaseUser,
+                                                 @NonNull Users userModel,
+                                                 @NonNull UserService userService) {
+        // Update user preference to false
+        userModel.setLocationTrackingEnabled(false);
+        userService.updateUser(userModel)
+                .addOnSuccessListener(unused -> {
+                    navigateToHome(userModel.getRole());
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("LoginFragment", "Failed to update location tracking preference", e);
+                    Toast.makeText(requireContext(), "Failed to save preference", Toast.LENGTH_SHORT).show();
+                    navigateToHome(userModel.getRole());
+                });
+    }
+
+    /**
+     * Helper class to store pending location update info.
+     */
+    private static class PendingLocationUpdate {
+        final FirebaseUser firebaseUser;
+        final Users userModel;
+        final UserService userService;
+        final boolean accepted;
+
+        PendingLocationUpdate(FirebaseUser firebaseUser, Users userModel, UserService userService, boolean accepted) {
+            this.firebaseUser = firebaseUser;
+            this.userModel = userModel;
+            this.userService = userService;
+            this.accepted = accepted;
+        }
+    }
+
+    private PendingLocationUpdate pendingLocationUpdate;
+
+    /**
+     * Navigates to the home screen based on user role.
+     *
+     * @param role the user's role
+     */
+    private void navigateToHome(@Nullable String role) {
+        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+        if (role != null) {
+            String r = role.toUpperCase();
+            if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                navController.navigate(R.id.navigation_home);
+                return;
+            }
+        }
+        navController.navigate(R.id.navigation_home);
+    }
+
+    /**
+     * Handles the result of location permission request.
+     *
+     * @param requestCode the request code
+     * @param permissions the permissions array
+     * @param grantResults the grant results array
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (LocationPermissionHelper.isLocationPermissionRequest(requestCode)) {
+            if (LocationPermissionHelper.isLocationPermissionGranted(grantResults)) {
+                // Permission granted - user preference already set to true
+                if (pendingLocationUpdate != null) {
+                    navigateToHome(pendingLocationUpdate.userModel.getRole());
+                    pendingLocationUpdate = null;
+                }
+            } else {
+                // Permission denied - but user preference is already set to true
+                // This is okay - they can still enable tracking, just won't have permission yet
+                Toast.makeText(requireContext(), "Location permission denied. You can enable it later in app settings.", Toast.LENGTH_LONG).show();
+                if (pendingLocationUpdate != null) {
+                    navigateToHome(pendingLocationUpdate.userModel.getRole());
+                    pendingLocationUpdate = null;
+                }
+            }
+        }
     }
 
     private void cacheUserRole(String role) {

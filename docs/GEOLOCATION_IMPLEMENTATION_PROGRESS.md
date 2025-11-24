@@ -198,6 +198,44 @@ This document tracks the implementation of geolocation and map features for the 
 
 ---
 
+## ✅ Commit 7: Add Location Permission Dialog on Login 🎉 FIRST TESTABLE FEATURE
+
+**What was done:**
+- Added location permission dialog to `LoginFragment` that appears after successful login
+- Dialog asks user: "Would you like to enable location tracking?"
+- Options: "Allow" or "Don't Allow"
+- If user accepts: Updates `locationTrackingEnabled` to `true` in Firestore and requests Android location permission
+- If user declines: Updates `locationTrackingEnabled` to `false` in Firestore
+- Dialog only shows once per user (checks if `locationTrackingEnabled` field exists in Firestore)
+- Handles permission request results in `onRequestPermissionsResult`
+
+**Why this is important:**
+- **Problem solved:** Users need to explicitly opt-in to location tracking for privacy compliance. Without this dialog, we can't ask users for their consent, and we'd have to assume they don't want tracking (which breaks the feature). This is like asking someone "Can I take your photo?" - you need to ask before you can use it.
+
+**How it solves our overall problem:**
+- **Privacy compliance:** Users explicitly consent to location tracking - we never track without permission
+- **User preference storage:** Saves user's choice to Firestore so we can check it later
+- **One-time prompt:** Dialog only appears once, so users aren't annoyed by repeated prompts
+- **Enables future features:**
+  - Commit 9 (capture location on join) will check this preference before capturing location
+  - Commit 11 (request location on join) will use this preference to decide if location should be captured
+  - Map features will only show locations for users who enabled tracking
+- **Foundation for location features:** This is the entry point - without user consent, no location features can work
+
+**Key features:**
+- Material Design dialog (MaterialAlertDialogBuilder)
+- Non-dismissible (user must choose Allow or Don't Allow)
+- Updates Firestore immediately with user's choice
+- Requests Android location permission if user accepts
+- Handles permission denial gracefully
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/ui/login/LoginFragment.java`
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -208,7 +246,7 @@ This document tracks the implementation of geolocation and map features for the 
 ### Phase 2: Location Permission and User Preference
 - [x] Commit 5: Create LocationPermissionHelper utility class ✅
 - [x] Commit 6: Create LocationService utility class ✅
-- [ ] Commit 7: Add location permission dialog on login
+- [x] Commit 7: Add location permission dialog on login ✅
 - [ ] Commit 8: Remove geolocation toggle from profile for organizer/admin
 
 ### Phase 3: Capture Location on Join Waitlist
