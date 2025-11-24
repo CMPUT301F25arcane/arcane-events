@@ -53,11 +53,37 @@ This document tracks the implementation of geolocation and map features for the 
 
 ---
 
+## ✅ Commit 3: Add Location Tracking Preference to Users Model
+
+**What was done:**
+- Added `locationTrackingEnabled` field (Boolean type) to track if user has opted-in to location tracking
+- Set default value to `false` in constructor (privacy-first approach)
+- Added getter and setter methods with null-safety handling
+- Updated class to store user's location tracking preference
+
+**Why this is important:**
+- **Problem solved:** We need to know if a user has given permission to track their location. Without this field, we can't distinguish between "user hasn't been asked yet" vs "user said no" vs "user said yes". This is like a checkbox that remembers the user's choice.
+
+**How it solves our overall problem:**
+- **Privacy control:** Users must explicitly opt-in (default is false) - we never track location without permission
+- **Conditional logic:** We can check this field before capturing location:
+  - If `true`: Capture and store location when joining events
+  - If `false`: Don't capture location, show message if event requires it
+- **Organizer visibility:** Only show entrant locations on map if they enabled tracking
+- **Compliance:** Ensures we respect user privacy preferences
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/model/Users.java`
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
-- [ ] Commit 2: Add geolocation field to WaitingListEntry model
-- [ ] Commit 3: Add location tracking preference to Users model
+- [x] Commit 2: Add geolocation field to WaitingListEntry model ✅
+- [x] Commit 3: Add location tracking preference to Users model ✅
 - [ ] Commit 4: Add Google Maps SDK dependency
 
 ### Phase 2: Location Permission and User Preference
