@@ -28,6 +28,31 @@ This document tracks the implementation of geolocation and map features for the 
 
 ---
 
+## ✅ Commit 2: Add Geolocation Field to WaitingListEntry Model
+
+**What was done:**
+- Added `joinLocation` field (GeoPoint type) to store where a user was when they joined an event's waitlist
+- Updated constructor to accept `joinLocation` parameter
+- Added getter and setter methods for the new field
+- Updated class documentation to reflect the new field
+
+**Why this is important:**
+- **Problem solved:** Previously, we could only track WHEN someone joined (timestamp) but not WHERE they joined. This field stores the GPS coordinates of where the user was when they clicked "Join Waitlist".
+
+**How it solves our overall problem:**
+- This is the data storage layer that enables the map feature:
+  - When a user joins an event, we can capture their location and store it here
+  - Organizers can later retrieve all these locations to display on a map
+  - Shows geographic distribution of event participants (e.g., "Most people joined from downtown")
+  - Helps organizers understand where their event audience is located
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/model/WaitingListEntry.java`
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model

@@ -14,12 +14,13 @@ package com.example.arcane.model;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
+import com.google.firebase.firestore.GeoPoint;
 
 /**
  * Represents an entry in the waiting list for an event.
  *
  * <p>Tracks the entrant who joined the waiting list, when they joined,
- * and optionally when they were invited by the organizer.</p>
+ * where they were when they joined (optional), and optionally when they were invited by the organizer.</p>
  *
  * @version 1.0
  */
@@ -30,6 +31,7 @@ public class WaitingListEntry {
     private String entrantId;  // Reference to UserProfile
     private Timestamp joinTimestamp;
     private Timestamp invitedAt;  // Optional
+    private GeoPoint joinLocation;  // Optional - location where user joined the waitlist
 
     /**
      * Required no-arg constructor for Firestore deserialization.
@@ -44,13 +46,15 @@ public class WaitingListEntry {
      * @param entrantId the ID of the entrant (UserProfile reference)
      * @param joinTimestamp when the entrant joined the waiting list
      * @param invitedAt when the organizer invited the entrant (nullable)
+     * @param joinLocation the geographic location where the entrant joined (nullable)
      */
     public WaitingListEntry(String entryId, String entrantId, Timestamp joinTimestamp, 
-                           Timestamp invitedAt) {
+                           Timestamp invitedAt, GeoPoint joinLocation) {
         this.entryId = entryId;
         this.entrantId = entrantId;
         this.joinTimestamp = joinTimestamp;
         this.invitedAt = invitedAt;
+        this.joinLocation = joinLocation;
     }
 
     // Getters and Setters
@@ -124,6 +128,24 @@ public class WaitingListEntry {
      */
     public void setInvitedAt(Timestamp invitedAt) {
         this.invitedAt = invitedAt;
+    }
+
+    /**
+     * Gets the geographic location where the entrant joined the waiting list.
+     *
+     * @return the join location, or null if not set
+     */
+    public GeoPoint getJoinLocation() {
+        return joinLocation;
+    }
+
+    /**
+     * Sets the geographic location where the entrant joined the waiting list.
+     *
+     * @param joinLocation the join location to set (nullable)
+     */
+    public void setJoinLocation(GeoPoint joinLocation) {
+        this.joinLocation = joinLocation;
     }
 }
 
