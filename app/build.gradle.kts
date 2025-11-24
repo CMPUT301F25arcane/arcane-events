@@ -58,6 +58,11 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation(libs.zxing.android.embedded)
     implementation(libs.zxing.core)
+    
+    // Google Maps SDK for displaying interactive maps
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    // Google Places SDK for address autocomplete functionality
+    implementation("com.google.android.libraries.places:places:3.3.0")
 }
 
 // JavaDoc task configuration

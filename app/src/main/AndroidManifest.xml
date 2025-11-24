@@ -18,6 +18,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Arcane">
+        
+        <!-- Google Maps API Key -->
+        <!-- TODO: Replace YOUR_API_KEY with your actual Google Maps API key -->
+        <!-- Get your API key from: https://console.cloud.google.com/google/maps-apis -->
+        <!-- Add this meta-data inside the <application> tag -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="YOUR_API_KEY" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

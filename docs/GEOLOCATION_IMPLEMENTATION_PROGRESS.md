@@ -79,15 +79,94 @@ This document tracks the implementation of geolocation and map features for the 
 
 ---
 
+## ✅ Commit 4: Add Google Maps SDK Dependency
+
+**What was done:**
+- Added Google Maps SDK dependency (`com.google.android.gms:play-services-maps:18.2.0`) to `build.gradle.kts`
+- Added Google Places SDK dependency (`com.google.android.libraries.places:places:3.3.0`) to `build.gradle.kts`
+- Added Maps API key placeholder in `AndroidManifest.xml` with instructions for developers
+
+**Why this is important:**
+- **Problem solved:** Without these SDK libraries, our app cannot display maps or use address autocomplete features. Think of it like installing a GPS navigation app on your phone - you need the app installed before you can use it. Similarly, we need these libraries "installed" in our project before we can write code that uses maps and places.
+
+**How it solves our overall problem:**
+- **Maps SDK enables:**
+  - Displaying interactive maps with zoom, pan, and marker functionality (for showing entrant locations)
+  - Showing event locations on maps
+  - Creating custom map views for organizers to see where participants joined from
+- **Places SDK enables:**
+  - Address autocomplete when organizers type event addresses (real-time suggestions as they type)
+  - Converting addresses to GPS coordinates automatically
+  - Making event creation faster and more accurate (no typos in addresses)
+- **Foundation for future commits:**
+  - Commit 12 will use Places SDK for address autocomplete in event creation
+  - Commits 15-18 will use Maps SDK to display entrant locations and event maps
+  - Without this commit, none of the map features would work
+
+**Files modified:**
+- `app/build.gradle.kts` (added dependencies)
+- `app/src/main/AndroidManifest.xml` (added API key placeholder)
+
+**Note for developers:**
+- Before running the app with map features, you must:
+  1. Get a Google Maps API key from [Google Cloud Console](https://console.cloud.google.com/google/maps-apis)
+     - Note: Your Firebase project IS a Google Cloud project (they share the same project ID)
+     - You can access it via Firebase Console → Project Settings → Google Cloud Platform → Open Google Cloud Console
+  2. Replace `YOUR_API_KEY` in `AndroidManifest.xml` with your actual API key
+  3. Enable "Maps SDK for Android" and "Places API" in your Firebase/Google Cloud project:
+     - Go to [Google Cloud Console APIs Library](https://console.cloud.google.com/apis/library)
+     - Select your Firebase project
+     - Search for and enable "Maps SDK for Android"
+     - Search for and enable "Places API"
+
+**Status:** ✅ COMPLETED
+
+---
+
+## ✅ Commit 5: Create LocationPermissionHelper Utility Class
+
+**What was done:**
+- Created `LocationPermissionHelper.java` utility class in `util` package
+- Added methods to check if location permissions are granted
+- Added methods to request location permissions from Fragment or Activity
+- Added helper methods to verify permission results
+- Defined constant for permission request code
+
+**Why this is important:**
+- **Problem solved:** Android's permission system is complex - you need to check permissions, request them, and handle results. Without a helper class, we'd have to write the same permission-checking code in multiple places (login dialog, event join, etc.), which leads to code duplication and bugs. This is like having a toolbox - instead of carrying around individual tools, we have one organized box with everything we need.
+
+**How it solves our overall problem:**
+- **Code reusability:** One place to handle all location permission logic - any fragment or activity can use these methods
+- **Consistency:** All permission requests work the same way across the app
+- **Simplifies future commits:**
+  - Commit 7 (location dialog) will use `requestLocationPermission()` to ask for permission
+  - Commit 11 (join waitlist) will use `hasLocationPermission()` to check before capturing location
+  - All map features will use these helpers to ensure permissions are granted
+- **Error prevention:** Centralized logic means fewer bugs - if we fix a permission issue, it's fixed everywhere
+
+**Key methods:**
+- `hasLocationPermission()` - Check if app has location permission
+- `hasFineLocationPermission()` - Check for precise GPS permission
+- `requestLocationPermission()` - Request permissions from Fragment or Activity
+- `isLocationPermissionGranted()` - Verify permission results
+- `isLocationPermissionRequest()` - Check if callback is for location permissions
+
+**Files created:**
+- `app/src/main/java/com/example/arcane/util/LocationPermissionHelper.java`
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
 - [x] Commit 2: Add geolocation field to WaitingListEntry model ✅
 - [x] Commit 3: Add location tracking preference to Users model ✅
-- [ ] Commit 4: Add Google Maps SDK dependency
+- [x] Commit 4: Add Google Maps SDK dependency ✅
 
 ### Phase 2: Location Permission and User Preference
-- [ ] Commit 5: Create LocationPermissionHelper utility class
+- [x] Commit 5: Create LocationPermissionHelper utility class ✅
 - [ ] Commit 6: Create LocationService utility class
 - [ ] Commit 7: Add location permission dialog on login
 - [ ] Commit 8: Remove geolocation toggle from profile for organizer/admin
@@ -143,4 +222,17 @@ This document tracks the implementation of geolocation and map features for the 
 - **Privacy:** Users must explicitly opt-in to location tracking - it's never automatic
 - **Data Storage:** Locations stored as Firestore GeoPoint objects for efficient querying
 - **Backward Compatibility:** Events created before this feature show "Unknown" location
+
+---
+
+## 🎯 Testable Features Timeline
+
+**See [TESTABLE_FEATURES_ROADMAP.md](./TESTABLE_FEATURES_ROADMAP.md) for detailed testing guide.**
+
+### Quick Summary:
+- **Commit 7:** First testable feature - Location permission dialog on login ✅
+- **Commit 12:** Second major feature - Address autocomplete for event creation ✅
+- **Commits 15-17:** Third major feature - Map view of entrant locations ✅
+
+Each feature is independently testable once its dependencies are complete.
 
