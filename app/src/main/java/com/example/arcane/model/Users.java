@@ -1,11 +1,8 @@
 /**
  * Users.java
- * 
  * Purpose: Represents a user in the system with authentication and profile information.
- * 
  * Design Pattern: Domain Model pattern. This class serves as the user data model
  * for Firestore persistence.
- * 
  * Outstanding Issues:
  * - The registeredEventIds field is a workaround for tracking user's registered events;
  *   ideally this should be managed through subcollections or queries
