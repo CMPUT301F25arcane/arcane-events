@@ -277,6 +277,48 @@ This document tracks the implementation of geolocation and map features for the 
 
 ---
 
+## ✅ Commit 9: Update EventService to Use Session Location on Join
+
+**What was done:**
+- Updated `EventService.joinWaitingList()` to accept `GeoPoint sessionLocation` parameter
+- Added logic to check `event.geolocationRequired` before storing location:
+  - If `true` and `sessionLocation != null`: Store session location in `WaitingListEntry.joinLocation`
+  - If `false` or `sessionLocation == null`: Set `joinLocation = null` (don't store)
+- Updated `addUserToWaitingList()` to accept `GeoPoint joinLocation` parameter
+- Set `entry.setJoinLocation(joinLocation)` when creating waiting list entry
+
+**Why this is important:**
+- **Problem solved:** Connects session location (captured at login) to event join flow. Without this, the location captured at login would never be used when users join events.
+- **Respects organizer preference:** Only stores location if event requires it (`geolocationRequired = true`)
+- **US 02.02.03 implementation:** Implements organizer's ability to enable/disable geolocation requirement per event
+
+**How it solves our overall problem:**
+- **Data storage:** Entrant join locations are stored in database (only for events that require it)
+- **Enables map feature:** Organizers can see where entrants joined from (for events with location enabled)
+- **Session-based:** Location represents where user was when they logged in
+- **Privacy-aware:** Organizers can disable location tracking for specific events
+
+**Key logic:**
+```java
+// Check if event requires geolocation
+if (event.geolocationRequired == true && sessionLocation != null) {
+    joinLocation = sessionLocation; // Store location
+} else {
+    joinLocation = null; // Don't store location
+}
+```
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/service/EventService.java`
+  - Updated `joinWaitingList()` signature to accept `GeoPoint sessionLocation`
+  - Added logic to check `event.geolocationRequired` and conditionally set location
+  - Updated `addUserToWaitingList()` signature to accept `GeoPoint joinLocation`
+  - Set `entry.setJoinLocation(joinLocation)` when creating entry
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -291,7 +333,7 @@ This document tracks the implementation of geolocation and map features for the 
 - [x] Commit 8: Create SessionLocationManager utility class ✅
 
 ### Phase 3: Use Session Location on Join Waitlist
-- [ ] Commit 9: Update EventService to use session location on join (CHANGED) 🔄
+- [x] Commit 9: Update EventService to use session location on join ✅
 - [ ] Commit 10: ~~Add location validation in EventService~~ (CANCELLED) ❌
 - [ ] Commit 11: Update EventDetailFragment to pass session location on join (CHANGED) 🔄
 

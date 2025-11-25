@@ -33,6 +33,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
@@ -180,13 +181,15 @@ public class EventService {
     /**
      * User joins waiting list for an event.
      *
-     * <p>Creates both WaitingListEntry and Decision records.</p>
+     * <p>Creates both WaitingListEntry and Decision records.
+     * Stores session location if event requires geolocation.</p>
      *
      * @param eventId the event ID
      * @param entrantId the entrant's user ID
+     * @param sessionLocation the user's session location (captured at login), or null if not available
      * @return a Task that completes with a map containing status and IDs
      */
-    public Task<Map<String, String>> joinWaitingList(String eventId, String entrantId) {
+    public Task<Map<String, String>> joinWaitingList(String eventId, String entrantId, @androidx.annotation.Nullable GeoPoint sessionLocation) {
         // Check if already in waiting list
         return waitingListRepository.checkUserInWaitingList(eventId, entrantId)
                 .continueWithTask(checkTask -> {
@@ -197,30 +200,43 @@ public class EventService {
                         return com.google.android.gms.tasks.Tasks.forResult(result);
                     }
                     
-                    // Check maxEntrants limit if set
+                    // Get event to check geolocationRequired and maxEntrants
                     return eventRepository.getEventById(eventId)
                             .continueWithTask(eventTask -> {
                                 if (eventTask.isSuccessful() && eventTask.getResult() != null && eventTask.getResult().exists()) {
                                     Event event = eventTask.getResult().toObject(Event.class);
-                                    if (event != null && event.getMaxEntrants() != null && event.getMaxEntrants() > 0) {
-                                        // Check current waiting list size (only count valid users)
-                                        return getValidWaitingListCount(eventId)
-                                                .continueWithTask(countTask -> {
-                                                    if (countTask.isSuccessful()) {
-                                                        int currentSize = countTask.getResult();
-                                                        if (currentSize >= event.getMaxEntrants()) {
-                                                            Map<String, String> result = new HashMap<>();
-                                                            result.put("status", "limit_reached");
-                                                            return com.google.android.gms.tasks.Tasks.forResult(result);
+                                    if (event != null) {
+                                        // Determine join location based on event's geolocationRequired setting
+                                        GeoPoint joinLocation = null;
+                                        if (Boolean.TRUE.equals(event.getGeolocationRequired()) && sessionLocation != null) {
+                                            // Event requires geolocation and session location is available
+                                            joinLocation = sessionLocation;
+                                        }
+                                        // If geolocationRequired is false or sessionLocation is null, joinLocation remains null
+                                        
+                                        // Check maxEntrants limit if set
+                                        if (event.getMaxEntrants() != null && event.getMaxEntrants() > 0) {
+                                            // Check current waiting list size (only count valid users)
+                                            return getValidWaitingListCount(eventId)
+                                                    .continueWithTask(countTask -> {
+                                                        if (countTask.isSuccessful()) {
+                                                            int currentSize = countTask.getResult();
+                                                            if (currentSize >= event.getMaxEntrants()) {
+                                                                Map<String, String> result = new HashMap<>();
+                                                                result.put("status", "limit_reached");
+                                                                return com.google.android.gms.tasks.Tasks.forResult(result);
+                                                            }
                                                         }
-                                                    }
-                                                    // Continue with adding to waiting list
-                                                    return addUserToWaitingList(eventId, entrantId);
-                                                });
+                                                        // Continue with adding to waiting list with location
+                                                        return addUserToWaitingList(eventId, entrantId, joinLocation);
+                                                    });
+                                        }
+                                        // No limit set, continue with adding to waiting list with location
+                                        return addUserToWaitingList(eventId, entrantId, joinLocation);
                                     }
                                 }
-                                // No limit set, continue with adding to waiting list
-                                return addUserToWaitingList(eventId, entrantId);
+                                // Event not found or error - continue without location
+                                return addUserToWaitingList(eventId, entrantId, null);
                             });
                 });
     }
@@ -290,11 +306,20 @@ public class EventService {
                 });
     }
 
-    private Task<Map<String, String>> addUserToWaitingList(String eventId, String entrantId) {
+    /**
+     * Adds a user to the waiting list for an event.
+     *
+     * @param eventId the event ID
+     * @param entrantId the entrant's user ID
+     * @param joinLocation the location where the user joined (null if not required or not available)
+     * @return a Task that completes with a map containing status and IDs
+     */
+    private Task<Map<String, String>> addUserToWaitingList(String eventId, String entrantId, @androidx.annotation.Nullable GeoPoint joinLocation) {
         // Create waiting list entry
         WaitingListEntry entry = new WaitingListEntry();
         entry.setEntrantId(entrantId);
         entry.setJoinTimestamp(Timestamp.now());
+        entry.setJoinLocation(joinLocation); // Set location (null if event doesn't require it or location not available)
         
         return waitingListRepository.addToWaitingList(eventId, entry)
                             .continueWithTask(addTask -> {
