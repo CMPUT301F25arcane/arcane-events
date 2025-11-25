@@ -109,7 +109,9 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
         holder.titleView.setText(event.getEventName());
-        holder.locationView.setText(event.getLocation());
+        // Show "Unknown" for legacy events without location
+        String location = event.getLocation();
+        holder.locationView.setText(location != null && !location.isEmpty() ? location : "Unknown");
 
         if (event.getEventDate() != null) {
             holder.dateView.setText(android.text.format.DateFormat.format("yyyy-MM-dd", event.getEventDate().toDate()));

@@ -255,9 +255,12 @@ public class EventDetailFragment extends Fragment {
             binding.eventDateText.setText(sdf.format(date));
         }
 
-        // Location
-        if (currentEvent.getLocation() != null) {
-            binding.eventLocationText.setText(currentEvent.getLocation());
+        // Location - show "Unknown" for legacy events without location
+        String location = currentEvent.getLocation();
+        if (location != null && !location.isEmpty()) {
+            binding.eventLocationText.setText(location);
+        } else {
+            binding.eventLocationText.setText("Unknown");
         }
 
         // Cost

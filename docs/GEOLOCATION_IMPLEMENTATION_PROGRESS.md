@@ -437,6 +437,57 @@ event.setGeolocation(null); // No coordinates, will show "Unknown" (Commit 14)
 
 ---
 
+## ✅ Commit 14: Show "Unknown" Location for Legacy Events
+
+**What was done:**
+- Updated `EventCardAdapter.onBindViewHolder()` to show "Unknown" when `event.getLocation()` is null or empty
+- Updated `EventDetailFragment.populateEventDetails()` to show "Unknown" when `event.getLocation()` is null or empty
+- Added null-safety checks for location display in both event cards and event detail page
+
+**Why this is important:**
+- **Problem solved:** Legacy events (created before geolocation feature) don't have location data. Without this fix, these events would show blank location fields, which looks broken and confusing to users.
+- **User experience:** Users can now clearly see when an event doesn't have location information, rather than seeing an empty field
+- **Backward compatibility:** Ensures the app gracefully handles events created before the geolocation feature was added
+
+**How it solves our overall problem:**
+- **Graceful degradation:** Legacy events display "Unknown" instead of blank fields
+- **Consistent UI:** All events show location information (either the actual location or "Unknown")
+- **Foundation for map features:** When we add map views (Commit 18), we can check for null geolocation and show "Location: Unknown" instead of trying to display a map
+- **Data integrity:** Makes it clear which events have location data and which don't
+
+**Key logic:**
+```java
+// In EventCardAdapter and EventDetailFragment:
+String location = event.getLocation();
+if (location != null && !location.isEmpty()) {
+    // Show actual location
+    locationView.setText(location);
+} else {
+    // Show "Unknown" for legacy events
+    locationView.setText("Unknown");
+}
+```
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/ui/events/EventCardAdapter.java`
+  - Updated `onBindViewHolder()` to handle null/empty location
+- `app/src/main/java/com/example/arcane/ui/events/EventDetailFragment.java`
+  - Updated `populateEventDetails()` to show "Unknown" for null/empty location
+
+**Commit message:**
+```
+feat: Show "Unknown" location for legacy events without location data
+
+- Add null-safety checks in EventCardAdapter for location display
+- Add null-safety checks in EventDetailFragment for location display
+- Show "Unknown" instead of blank fields for events without location
+- Ensures backward compatibility with events created before geolocation feature
+```
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -458,7 +509,7 @@ event.setGeolocation(null); // No coordinates, will show "Unknown" (Commit 14)
 ### Phase 4: Event Creation with Location
 - [x] Commit 12: Add Google Places Autocomplete to CreateEventFragment ✅
 - [x] Commit 13: Update CreateEventFragment to save event geolocation ✅
-- [ ] Commit 14: Show "Unknown" location for legacy events
+- [x] Commit 14: Show "Unknown" location for legacy events ✅
 
 ### Phase 5: Map Display Functionality
 - [ ] Commit 15: Create EntrantsMapFragment
