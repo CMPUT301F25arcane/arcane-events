@@ -210,39 +210,38 @@ This document tracks the implementation of geolocation and map features for the 
 
 ---
 
-## 🔄 Commit 7: Auto-capture Location on Login (REQUIRES RESTRUCTURING)
+## ✅ Commit 7: Auto-capture Location on Login
 
-**⚠️ STATUS CHANGED:** Requirements have changed. This commit needs to be restructured.
-
-**What was done (OLD - NEEDS REMOVAL):**
-- Added location permission dialog to `LoginFragment` that appears after successful login
-- Dialog asks user: "Would you like to enable location tracking?"
-- Options: "Allow" or "Don't Allow"
-- If user accepts: Updates `locationTrackingEnabled` to `true` in Firestore and requests Android location permission
-- If user declines: Updates `locationTrackingEnabled` to `false` in Firestore
-
-**What needs to be done (NEW):**
-- **Remove** location permission dialog (no user choice)
-- **Automatically** request location permission (system dialog, not custom)
-- **Automatically** capture location after permission granted
-- **Store** location in SharedPreferences (session storage)
-- **Clear** session location on logout
+**What was done:**
+- **Removed** location permission dialog (no user choice needed)
+- **Automatically** requests location permission (system dialog) after successful login
+- **Automatically** captures location after permission is granted
+- **Stores** location in session using `SessionLocationManager` (SharedPreferences)
+- **Clears** session location on logout in `NotificationsFragment`
 
 **Why this is important:**
-- **Problem solved:** Location is automatically captured for the session - no user choice needed
-- **Simpler UX:** No dialog interruption, seamless experience
-- **Session-based:** One location per login session, used for all events joined
+- **Problem solved:** Location is automatically captured for the session - no user choice needed. Without this, we can't capture location at login, and users would need to manually enable it each time.
+- **Simpler UX:** No dialog interruption, seamless experience - users just log in and location is captured automatically
+- **Session-based:** One location per login session, used for all events joined during that session
 
 **How it solves our overall problem:**
-- **Foundation for location capture:** Every user who logs in gets their location captured
-- **Enables event join:** When user joins event, we use this session location
-- **No user friction:** No dialogs, no choices, just works
+- **Foundation for location capture:** Every user who logs in gets their location captured automatically
+- **Enables event join:** When user joins event (Commit 11), we use this session location
+- **No user friction:** No dialogs, no choices, just works - location is captured in the background
+- **Privacy-aware:** Location is only stored in session (cleared on logout), not persisted permanently
 
-**Files to modify:**
-- `LoginFragment.java` - Remove dialog, add auto-capture logic
-- `NotificationsFragment.java` - Clear session location on logout
+**Key features:**
+- Checks if location permission is already granted
+- If yes: Captures location immediately and stores in session
+- If no: Requests permission, then captures location after permission is granted
+- Handles permission denial gracefully (continues without location)
+- Location capture is optional - app works even if location can't be captured
 
-**Status:** 🔄 NEEDS RESTRUCTURING - See [GEOLOCATION_REQUIREMENTS_CHANGE.md](./GEOLOCATION_REQUIREMENTS_CHANGE.md)
+**Files modified:**
+- `LoginFragment.java` - Removed dialog code, added auto-capture logic using `LocationService` and `SessionLocationManager`
+- `NotificationsFragment.java` - Added `SessionLocationManager.clearSessionLocation()` call in `clearCachedUserRole()` method
+
+**Status:** ✅ COMPLETED
 
 ---
 
@@ -288,7 +287,7 @@ This document tracks the implementation of geolocation and map features for the 
 ### Phase 2: Session Location Management
 - [x] Commit 5: Create LocationPermissionHelper utility class ✅
 - [x] Commit 6: Create LocationService utility class ✅
-- [ ] Commit 7: Auto-capture location on login (NEEDS RESTRUCTURING) 🔄
+- [x] Commit 7: Auto-capture location on login ✅
 - [x] Commit 8: Create SessionLocationManager utility class ✅
 
 ### Phase 3: Use Session Location on Join Waitlist
