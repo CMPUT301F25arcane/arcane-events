@@ -319,6 +319,42 @@ if (event.geolocationRequired == true && sessionLocation != null) {
 
 ---
 
+## ✅ Commit 11: Update EventDetailFragment to Pass Session Location on Join
+
+**What was done:**
+- Added `SessionLocationManager` import to `EventDetailFragment`
+- Updated `handleJoinWaitlist()` to get session location using `SessionLocationManager.getSessionLocation()`
+- Passed session location to `EventService.joinWaitingList()` as the third parameter
+
+**Why this is important:**
+- **Problem solved:** Connects session location (captured at login) to event join flow. Without this, the location captured at login would never be passed to EventService when users join events.
+- **Completes the flow:** Login → Location captured → Stored in session → Retrieved when joining event → Passed to EventService → Stored in database (if event requires it)
+
+**How it solves our overall problem:**
+- **Complete location flow:** User logs in → Location captured → User joins event → Location stored (if event requires it)
+- **Enables map feature:** Organizers can see where entrants joined from (for events with location enabled)
+- **US 02.02.02 foundation:** Location data is now stored in database, ready for map visualization
+
+**Key logic:**
+```java
+// Get session location (captured at login)
+GeoPoint sessionLocation = SessionLocationManager.getSessionLocation(requireContext());
+
+// Pass to EventService (will check geolocationRequired and store if needed)
+eventService.joinWaitingList(eventId, userId, sessionLocation)
+```
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/ui/events/EventDetailFragment.java`
+  - Added `SessionLocationManager` import
+  - Updated `handleJoinWaitlist()` to get and pass session location
+
+**Feature:** Session-based location capture (foundation for US 02.02.02 - Organizer sees entrants on a map)
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -335,7 +371,7 @@ if (event.geolocationRequired == true && sessionLocation != null) {
 ### Phase 3: Use Session Location on Join Waitlist
 - [x] Commit 9: Update EventService to use session location on join ✅
 - [ ] Commit 10: ~~Add location validation in EventService~~ (CANCELLED) ❌
-- [ ] Commit 11: Update EventDetailFragment to pass session location on join (CHANGED) 🔄
+- [x] Commit 11: Update EventDetailFragment to pass session location on join ✅
 
 ### Phase 4: Event Creation with Location
 - [ ] Commit 12: Add Google Places Autocomplete to CreateEventFragment (address suggestions as organizer types)

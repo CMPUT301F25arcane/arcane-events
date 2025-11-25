@@ -46,6 +46,7 @@ import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.EventRepository;
 import com.example.arcane.repository.WaitingListRepository;
 import com.example.arcane.service.UserService;
+import com.example.arcane.util.SessionLocationManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -753,11 +754,14 @@ public class EventDetailFragment extends Fragment {
 
         String userId = currentUser.getUid();
 
+        // Get session location (captured at login)
+        com.google.firebase.firestore.GeoPoint sessionLocation = SessionLocationManager.getSessionLocation(requireContext());
+
         // Disable button during operation
         binding.joinButton.setEnabled(false);
         binding.joinButton.setText("Joining...");
 
-        eventService.joinWaitingList(eventId, userId)
+        eventService.joinWaitingList(eventId, userId, sessionLocation)
                 .addOnSuccessListener(result -> {
                     if (!isAdded() || binding == null) return;
                     
