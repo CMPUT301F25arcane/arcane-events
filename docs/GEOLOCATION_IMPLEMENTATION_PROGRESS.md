@@ -355,6 +355,50 @@ eventService.joinWaitingList(eventId, userId, sessionLocation)
 
 ---
 
+## ✅ Commit 12: Add Google Places Autocomplete to CreateEventFragment
+
+**What was done:**
+- Added Google Places SDK imports to `CreateEventFragment`
+- Initialized Places SDK in `onViewCreated()` (reads API key from AndroidManifest)
+- Created `ActivityResultLauncher` for Places Autocomplete intent
+- Added `setupLocationAutocomplete()` method to handle location input clicks
+- Added `openPlacesAutocomplete()` method to launch Places Autocomplete activity
+- Added `handlePlaceSelection()` method to process selected place:
+  - Sets address in location input field
+  - Stores coordinates in `selectedLocationGeoPoint` (for Commit 13)
+- Made location input field clickable to launch autocomplete
+
+**Why this is important:**
+- **Problem solved:** Organizers can now get address suggestions as they type, making event creation faster and more accurate. Without this, organizers have to manually type full addresses, leading to typos and inconsistent formats.
+- **Better UX:** Real-time address suggestions from Google Places database
+- **Accurate addresses:** No typos, consistent format, validated addresses
+
+**How it solves our overall problem:**
+- **Foundation for Commit 13:** Address is selected and coordinates are stored in `selectedLocationGeoPoint`
+- **Enables geocoding:** Selected place includes coordinates that will be saved to `event.geolocation` in Commit 13
+- **Better data quality:** All event addresses are validated and properly formatted
+
+**Key features:**
+- Full-screen Places Autocomplete activity (simple, clean UI)
+- Extracts address and coordinates from selected place
+- Stores coordinates for later use (Commit 13 will save to event)
+- Handles errors gracefully (shows toast if autocomplete fails)
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/ui/createevent/CreateEventFragment.java`
+  - Added Places SDK imports
+  - Added Places initialization
+  - Added autocomplete launcher and handlers
+  - Added `selectedLocationGeoPoint` field to store coordinates
+
+**Feature:** Address autocomplete suggestions (foundation for US 02.02.03 - enable/disable geolocation requirement)
+
+**Note:** Requires Google Places API key in AndroidManifest. Will work once API key is configured.
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -374,7 +418,7 @@ eventService.joinWaitingList(eventId, userId, sessionLocation)
 - [x] Commit 11: Update EventDetailFragment to pass session location on join ✅
 
 ### Phase 4: Event Creation with Location
-- [ ] Commit 12: Add Google Places Autocomplete to CreateEventFragment (address suggestions as organizer types)
+- [x] Commit 12: Add Google Places Autocomplete to CreateEventFragment ✅
 - [ ] Commit 13: Update CreateEventFragment to save event geolocation
 - [ ] Commit 14: Show "Unknown" location for legacy events
 
