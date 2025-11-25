@@ -462,8 +462,9 @@ public class CreateEventFragment extends Fragment {
         // Set status to "OPEN" for new events
         event.setStatus("OPEN");
         
-        // Optional fields
-        event.setGeolocation(null); // Can be set later if geolocation is enabled
+        // Set geolocation if address was selected via Places Autocomplete
+        // selectedLocationGeoPoint is set in handlePlaceSelection() when organizer selects address
+        event.setGeolocation(selectedLocationGeoPoint); // null if no address selected via autocomplete
         event.setPosterImageUrl(selectedImageBase64); // Set the base64 encoded image
 
         // Save to Firebase using EventService (per docs architecture)

@@ -399,6 +399,44 @@ eventService.joinWaitingList(eventId, userId, sessionLocation)
 
 ---
 
+## ✅ Commit 13: Update CreateEventFragment to Save Event Geolocation
+
+**What was done:**
+- Updated `createEvent()` method to save `selectedLocationGeoPoint` to `event.geolocation`
+- Changed from `event.setGeolocation(null)` to `event.setGeolocation(selectedLocationGeoPoint)`
+- Coordinates from Places Autocomplete (Commit 12) are now saved to the event
+- The existing `enableGeolocationCheckbox` already sets `event.geolocationRequired` (US 02.02.03)
+
+**Why this is important:**
+- **Problem solved:** Event geolocation coordinates are now saved to the database. Without this, the coordinates selected via Places Autocomplete would be lost and not stored with the event.
+- **Enables map features:** Event location can now be displayed on maps (Commit 18)
+- **US 02.02.03 complete:** Organizer can enable/disable geolocation requirement via checkbox, and coordinates are saved when address is selected
+
+**How it solves our overall problem:**
+- **Data storage:** Event geolocation coordinates are stored in Firestore
+- **Enables map display:** Event location can be shown on maps (for organizers and users)
+- **Complete US 02.02.03:** Organizer can toggle geolocation requirement, and coordinates are saved
+- **Foundation for Commit 18:** Event location will be displayed on event detail page map
+
+**Key logic:**
+```java
+// If organizer selected address via Places Autocomplete:
+event.setGeolocation(selectedLocationGeoPoint); // Coordinates saved
+
+// If organizer didn't select address (typed manually):
+event.setGeolocation(null); // No coordinates, will show "Unknown" (Commit 14)
+```
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/ui/createevent/CreateEventFragment.java`
+  - Updated `createEvent()` to save `selectedLocationGeoPoint` to `event.geolocation`
+
+**Feature:** US 02.02.03 - Organizer enables/disables geolocation requirement (complete with coordinate saving)
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -419,7 +457,7 @@ eventService.joinWaitingList(eventId, userId, sessionLocation)
 
 ### Phase 4: Event Creation with Location
 - [x] Commit 12: Add Google Places Autocomplete to CreateEventFragment ✅
-- [ ] Commit 13: Update CreateEventFragment to save event geolocation
+- [x] Commit 13: Update CreateEventFragment to save event geolocation ✅
 - [ ] Commit 14: Show "Unknown" location for legacy events
 
 ### Phase 5: Map Display Functionality
