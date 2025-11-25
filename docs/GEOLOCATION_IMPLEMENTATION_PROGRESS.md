@@ -3,6 +3,18 @@
 ## Overview
 This document tracks the implementation of geolocation and map features for the Arcane Events app, including address autocomplete for event creation and map visualization of entrant locations.
 
+## ⚠️ Requirements Change Notice
+
+**IMPORTANT:** Requirements have changed. See [GEOLOCATION_REQUIREMENTS_CHANGE.md](./GEOLOCATION_REQUIREMENTS_CHANGE.md) for complete details.
+
+**Key Changes:**
+- ❌ **REMOVED:** Location permission dialog at login (no user choice)
+- ✅ **NEW:** Automatic location capture on login (stored in session)
+- ✅ **NEW:** Session-based location (one location per login, used for all events)
+- ✅ **NEW:** Location captured at login, not at event join time
+
+**Commit 7 Status:** 🔄 **NEEDS RESTRUCTURING** - See requirements change document for new approach.
+
 ---
 
 ## ✅ Commit 1: Add Location Permissions to AndroidManifest
@@ -198,39 +210,69 @@ This document tracks the implementation of geolocation and map features for the 
 
 ---
 
-## ✅ Commit 7: Add Location Permission Dialog on Login 🎉 FIRST TESTABLE FEATURE
+## 🔄 Commit 7: Auto-capture Location on Login (REQUIRES RESTRUCTURING)
 
-**What was done:**
+**⚠️ STATUS CHANGED:** Requirements have changed. This commit needs to be restructured.
+
+**What was done (OLD - NEEDS REMOVAL):**
 - Added location permission dialog to `LoginFragment` that appears after successful login
 - Dialog asks user: "Would you like to enable location tracking?"
 - Options: "Allow" or "Don't Allow"
 - If user accepts: Updates `locationTrackingEnabled` to `true` in Firestore and requests Android location permission
 - If user declines: Updates `locationTrackingEnabled` to `false` in Firestore
-- Dialog only shows once per user (checks if `locationTrackingEnabled` field exists in Firestore)
-- Handles permission request results in `onRequestPermissionsResult`
+
+**What needs to be done (NEW):**
+- **Remove** location permission dialog (no user choice)
+- **Automatically** request location permission (system dialog, not custom)
+- **Automatically** capture location after permission granted
+- **Store** location in SharedPreferences (session storage)
+- **Clear** session location on logout
 
 **Why this is important:**
-- **Problem solved:** Users need to explicitly opt-in to location tracking for privacy compliance. Without this dialog, we can't ask users for their consent, and we'd have to assume they don't want tracking (which breaks the feature). This is like asking someone "Can I take your photo?" - you need to ask before you can use it.
+- **Problem solved:** Location is automatically captured for the session - no user choice needed
+- **Simpler UX:** No dialog interruption, seamless experience
+- **Session-based:** One location per login session, used for all events joined
 
 **How it solves our overall problem:**
-- **Privacy compliance:** Users explicitly consent to location tracking - we never track without permission
-- **User preference storage:** Saves user's choice to Firestore so we can check it later
-- **One-time prompt:** Dialog only appears once, so users aren't annoyed by repeated prompts
-- **Enables future features:**
-  - Commit 9 (capture location on join) will check this preference before capturing location
-  - Commit 11 (request location on join) will use this preference to decide if location should be captured
-  - Map features will only show locations for users who enabled tracking
-- **Foundation for location features:** This is the entry point - without user consent, no location features can work
+- **Foundation for location capture:** Every user who logs in gets their location captured
+- **Enables event join:** When user joins event, we use this session location
+- **No user friction:** No dialogs, no choices, just works
 
-**Key features:**
-- Material Design dialog (MaterialAlertDialogBuilder)
-- Non-dismissible (user must choose Allow or Don't Allow)
-- Updates Firestore immediately with user's choice
-- Requests Android location permission if user accepts
-- Handles permission denial gracefully
+**Files to modify:**
+- `LoginFragment.java` - Remove dialog, add auto-capture logic
+- `NotificationsFragment.java` - Clear session location on logout
 
-**Files modified:**
-- `app/src/main/java/com/example/arcane/ui/login/LoginFragment.java`
+**Status:** 🔄 NEEDS RESTRUCTURING - See [GEOLOCATION_REQUIREMENTS_CHANGE.md](./GEOLOCATION_REQUIREMENTS_CHANGE.md)
+
+---
+
+## ✅ Commit 8: Create SessionLocationManager Utility Class
+
+**What was done:**
+- Created `SessionLocationManager.java` utility class in `util` package
+- Added methods to save, retrieve, check, and clear session location
+- Uses SharedPreferences to store location (latitude/longitude as doubles)
+- Provides clean abstraction for session location management
+
+**Why this is important:**
+- **Problem solved:** Centralized location for session location management. Without this utility, every fragment would need to know SharedPreferences keys and handle location storage/retrieval manually, leading to code duplication and bugs.
+- **Code reusability:** One place to handle all session location operations - any fragment can use these simple methods
+- **Consistency:** All fragments use the same methods, ensuring consistent behavior
+
+**How it solves our overall problem:**
+- **Foundation for Commit 7:** `LoginFragment` will use `saveSessionLocation()` to store location after capture
+- **Foundation for Commit 11:** `EventDetailFragment` will use `getSessionLocation()` to retrieve location when user joins event
+- **Clean abstraction:** Fragments don't need to know about SharedPreferences keys or storage details
+- **Maintainable:** If we change storage mechanism (e.g., switch to database), only one file needs updating
+
+**Key methods:**
+- `saveSessionLocation(Context, GeoPoint)` - Store location in SharedPreferences
+- `getSessionLocation(Context)` - Retrieve location from SharedPreferences (returns GeoPoint or null)
+- `hasSessionLocation(Context)` - Check if location exists
+- `clearSessionLocation(Context)` - Clear location (called on logout)
+
+**Files created:**
+- `app/src/main/java/com/example/arcane/util/SessionLocationManager.java`
 
 **Status:** ✅ COMPLETED
 
@@ -243,16 +285,16 @@ This document tracks the implementation of geolocation and map features for the 
 - [x] Commit 3: Add location tracking preference to Users model ✅
 - [x] Commit 4: Add Google Maps SDK dependency ✅
 
-### Phase 2: Location Permission and User Preference
+### Phase 2: Session Location Management
 - [x] Commit 5: Create LocationPermissionHelper utility class ✅
 - [x] Commit 6: Create LocationService utility class ✅
-- [x] Commit 7: Add location permission dialog on login ✅
-- [ ] Commit 8: Remove geolocation toggle from profile for organizer/admin
+- [ ] Commit 7: Auto-capture location on login (NEEDS RESTRUCTURING) 🔄
+- [x] Commit 8: Create SessionLocationManager utility class ✅
 
-### Phase 3: Capture Location on Join Waitlist
-- [ ] Commit 9: Update EventService to capture location on join
-- [ ] Commit 10: Add location validation in EventService
-- [ ] Commit 11: Update EventDetailFragment to request location on join
+### Phase 3: Use Session Location on Join Waitlist
+- [ ] Commit 9: Update EventService to use session location on join (CHANGED) 🔄
+- [ ] Commit 10: ~~Add location validation in EventService~~ (CANCELLED) ❌
+- [ ] Commit 11: Update EventDetailFragment to pass session location on join (CHANGED) 🔄
 
 ### Phase 4: Event Creation with Location
 - [ ] Commit 12: Add Google Places Autocomplete to CreateEventFragment (address suggestions as organizer types)
@@ -279,9 +321,10 @@ This document tracks the implementation of geolocation and map features for the 
    - Makes event creation faster and more accurate
 
 2. **Location Tracking for Users**
-   - Users can opt-in to location tracking on login
-   - Their location is captured when they join event waitlists
-   - Only shown to organizers if user has enabled tracking
+   - Location is automatically captured on login (no user choice)
+   - Location stored in session (SharedPreferences)
+   - Session location used when user joins event waitlists
+   - Same location used for all events joined during that session
 
 3. **Map Visualization for Organizers**
    - Organizers can see all entrant join locations on an interactive map
@@ -297,9 +340,10 @@ This document tracks the implementation of geolocation and map features for the 
 ## Technical Notes
 
 - **Permissions:** Android requires both FINE and COARSE location permissions for compatibility across Android versions
-- **Privacy:** Users must explicitly opt-in to location tracking - it's never automatic
+- **Session-based:** Location captured once per login session, stored in SharedPreferences
 - **Data Storage:** Locations stored as Firestore GeoPoint objects for efficient querying
 - **Backward Compatibility:** Events created before this feature show "Unknown" location
+- **⚠️ Requirements Changed:** See [GEOLOCATION_REQUIREMENTS_CHANGE.md](./GEOLOCATION_REQUIREMENTS_CHANGE.md) for details
 
 ---
 
@@ -308,9 +352,11 @@ This document tracks the implementation of geolocation and map features for the 
 **See [TESTABLE_FEATURES_ROADMAP.md](./TESTABLE_FEATURES_ROADMAP.md) for detailed testing guide.**
 
 ### Quick Summary:
-- **Commit 7:** First testable feature - Location permission dialog on login ✅
+- **Commit 7:** First testable feature - Auto-capture location on login (NEEDS RESTRUCTURING) 🔄
 - **Commit 12:** Second major feature - Address autocomplete for event creation ✅
 - **Commits 15-17:** Third major feature - Map view of entrant locations ✅
+
+**⚠️ Note:** Commit 7 needs restructuring due to requirements change. See [GEOLOCATION_REQUIREMENTS_CHANGE.md](./GEOLOCATION_REQUIREMENTS_CHANGE.md).
 
 Each feature is independently testable once its dependencies are complete.
 
