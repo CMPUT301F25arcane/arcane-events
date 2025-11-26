@@ -111,7 +111,9 @@ public class MainActivity extends AppCompatActivity {
                     || destination.getId() == R.id.navigation_edit_profile
                     || destination.getId() == R.id.navigation_qr_code
                     || destination.getId() == R.id.navigation_browse_images
-                    || destination.getId() == R.id.navigation_dashboard) {
+                    || destination.getId() == R.id.navigation_dashboard
+                    || destination.getId() == R.id.navigation_entrants
+                    || destination.getId() == R.id.navigation_entrants_map) {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
@@ -121,7 +123,9 @@ public class MainActivity extends AppCompatActivity {
                         || destination.getId() == R.id.navigation_edit_profile
                         || destination.getId() == R.id.navigation_qr_code
                         || destination.getId() == R.id.navigation_browse_images
-                        || destination.getId() == R.id.navigation_dashboard) {
+                        || destination.getId() == R.id.navigation_dashboard
+                        || destination.getId() == R.id.navigation_entrants
+                        || destination.getId() == R.id.navigation_entrants_map) {
                     binding.container.setPadding(
                         binding.container.getPaddingLeft(),
                         0,

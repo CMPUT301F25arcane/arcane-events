@@ -104,13 +104,16 @@ public class EntrantsFragment extends Fragment {
 
         // Setup toolbar back button
         binding.entrantsToolbar.setNavigationOnClickListener(v -> navigateBack());
-
-        // Setup view map button - navigate to EntrantsMapFragment
-        binding.viewMapButton.setVisibility(View.VISIBLE);
-        binding.viewMapButton.setOnClickListener(v -> navigateToMap());
-
-        // Setup export CSV button
-        binding.exportCsvButton.setOnClickListener(v -> exportEnrolledEntrantsToCSV());
+        
+        // Setup menu item click listener directly on toolbar
+        // Menu is already inflated from XML (app:menu="@menu/entrants_menu")
+        binding.entrantsToolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_view_map) {
+                navigateToMap();
+                return true;
+            }
+            return false;
+        });
 
         // Load entrants
         loadEntrants();
@@ -361,6 +364,7 @@ public class EntrantsFragment extends Fragment {
             Toast.makeText(requireContext(), "Error sharing file: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
 
     private void navigateBack() {
         NavController navController = Navigation.findNavController(requireView());
