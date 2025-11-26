@@ -488,6 +488,71 @@ feat: Show "Unknown" location for legacy events without location data
 
 ---
 
+## ✅ Commit 15: Create EntrantsMapFragment
+
+**What was done:**
+- Created `EntrantsMapFragment.java` - New fragment for displaying entrant locations on a map
+- Created `fragment_entrants_map.xml` - Layout file with SupportMapFragment
+- Implemented data loading: Loads Event and WaitingListEntry documents
+- Implemented filtering: Only shows entries where `joinLocation != null`
+- Implemented map markers: Adds markers for entrant join locations and event location
+- Implemented user name loading: Fetches user names to display on markers
+- Added map configuration: Zoom controls, compass, map toolbar enabled
+
+**Why this is important:**
+- **Problem solved:** Organizers can now visualize where entrants joined from on an interactive map. Without this fragment, the location data stored in `WaitingListEntry.joinLocation` would be invisible to organizers.
+- **Foundation for map feature:** This creates the basic map display structure. Commit 17 will enhance marker interaction and styling.
+
+**How it solves our overall problem:**
+- **US 02.02.02 foundation:** Enables organizers to see entrant join locations on a map (map display is ready, navigation will be added in Commit 16)
+- **Data visualization:** Helps organizers understand geographic distribution of participants
+- **User experience:** Provides visual representation of where event participants are located
+
+**Key logic:**
+```java
+// Load event to get event.geolocation
+eventRepository.getEventById(eventId)
+  ↓
+// Load waiting list entries
+waitingListRepository.getWaitingListForEvent(eventId)
+  ↓
+// Filter: Only entries with joinLocation != null
+for (WaitingListEntry entry : entries) {
+    if (entry.getJoinLocation() != null) {
+        // Add marker for this entrant
+    }
+}
+  ↓
+// Add event location marker (different style)
+if (event.geolocation != null) {
+    // Add event marker
+}
+```
+
+**Files created:**
+- `app/src/main/java/com/example/arcane/ui/events/EntrantsMapFragment.java`
+- `app/src/main/res/layout/fragment_entrants_map.xml`
+
+**Files modified:** None (this is a new feature)
+
+**Commit message:**
+```
+feat: Create EntrantsMapFragment for displaying entrant join locations
+
+- Add EntrantsMapFragment with Google Maps integration
+- Add fragment_entrants_map.xml layout with SupportMapFragment
+- Load Event and WaitingListEntry documents
+- Filter entries with joinLocation != null
+- Display markers for entrant join locations
+- Display event location marker (if available)
+- Load user names for marker titles
+- Configure map with zoom controls and compass
+```
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -512,7 +577,7 @@ feat: Show "Unknown" location for legacy events without location data
 - [x] Commit 14: Show "Unknown" location for legacy events ✅
 
 ### Phase 5: Map Display Functionality
-- [ ] Commit 15: Create EntrantsMapFragment
+- [x] Commit 15: Create EntrantsMapFragment ✅
 - [ ] Commit 16: Add map navigation to EntrantsFragment
 - [ ] Commit 17: Implement map marker display logic
 - [ ] Commit 18: Add map view to event detail page
