@@ -171,11 +171,16 @@ public class LoginFragment extends Fragment {
      * @param role the user's role (for navigation after location capture)
      */
     private void captureAndStoreSessionLocation(@Nullable String role) {
-        if (LocationPermissionHelper.hasLocationPermission(requireContext())) {
+        boolean hasPermission = LocationPermissionHelper.hasLocationPermission(requireContext());
+        Log.d("LoginFragment", "DEBUG: Location permission status: " + (hasPermission ? "GRANTED" : "DENIED"));
+        
+        if (hasPermission) {
             // Permission already granted - capture location immediately
+            Log.d("LoginFragment", "DEBUG: Attempting to capture location...");
             captureLocation(role);
         } else {
             // Request permission - will capture location after permission is granted
+            Log.d("LoginFragment", "DEBUG: Requesting location permission...");
             LocationPermissionHelper.requestLocationPermission(this);
             // Store role temporarily to navigate after permission result
             pendingRoleForLocation = role;
@@ -195,7 +200,9 @@ public class LoginFragment extends Fragment {
             public void onLocationSuccess(@NonNull com.google.firebase.firestore.GeoPoint geoPoint) {
                 // Store location in session
                 SessionLocationManager.saveSessionLocation(requireContext(), geoPoint);
-                Log.d("LoginFragment", "Location captured and stored in session: " + 
+                Log.d("LoginFragment", "DEBUG: SUCCESS: Location = " + 
+                      geoPoint.getLatitude() + ", " + geoPoint.getLongitude());
+                Log.d("LoginFragment", "DEBUG: Session location saved: " + 
                       geoPoint.getLatitude() + ", " + geoPoint.getLongitude());
                 // Navigate to home
                 navigateToHome(role);
@@ -204,6 +211,7 @@ public class LoginFragment extends Fragment {
             @Override
             public void onLocationFailure(@NonNull Exception exception) {
                 // Location capture failed - log but continue (location is optional)
+                Log.e("LoginFragment", "DEBUG: FAILURE: " + exception.getMessage());
                 Log.w("LoginFragment", "Failed to capture location: " + exception.getMessage());
                 // Navigate anyway - location is optional for session
                 navigateToHome(role);

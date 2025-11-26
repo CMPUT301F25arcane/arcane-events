@@ -201,13 +201,32 @@ public class CreateEventFragment extends Fragment {
     
     /**
      * Sets up location autocomplete functionality.
-     * When user clicks on location input, opens Places Autocomplete.
+     * When user clicks on location input, opens Places Autocomplete if available.
+     * If autocomplete is not available, allows manual typing.
      */
     private void setupLocationAutocomplete() {
-        binding.locationInput.setOnClickListener(v -> openPlacesAutocomplete());
-        binding.locationInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
+        // Only trigger autocomplete on click if Places is initialized
+        // Otherwise, allow manual typing
+        binding.locationInput.setOnClickListener(v -> {
+            if (Places.isInitialized()) {
                 openPlacesAutocomplete();
+            } else {
+                // Places not initialized - allow manual typing
+                // Just focus the field so user can type
+                binding.locationInput.requestFocus();
+            }
+        });
+        
+        // On focus, only open autocomplete if Places is initialized and field is empty
+        binding.locationInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && Places.isInitialized()) {
+                String currentText = binding.locationInput.getText() != null 
+                    ? binding.locationInput.getText().toString() 
+                    : "";
+                // Only open autocomplete if field is empty
+                if (currentText.isEmpty()) {
+                    openPlacesAutocomplete();
+                }
             }
         });
     }
@@ -216,22 +235,46 @@ public class CreateEventFragment extends Fragment {
      * Opens Google Places Autocomplete activity.
      */
     private void openPlacesAutocomplete() {
-        // Specify the fields to be returned
-        List<Place.Field> fields = java.util.Arrays.asList(
-            Place.Field.ID,
-            Place.Field.NAME,
-            Place.Field.ADDRESS,
-            Place.Field.LAT_LNG
-        );
+        // Check if Places SDK is initialized
+        if (!Places.isInitialized()) {
+            Log.w(TAG, "Places SDK not initialized. Attempting to initialize...");
+            initializePlaces();
+            
+            // If still not initialized, show error and allow manual typing
+            if (!Places.isInitialized()) {
+                Toast.makeText(requireContext(), 
+                    "Places API not configured. You can type the location manually.", 
+                    Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Cannot open autocomplete: Places SDK not initialized");
+                return;
+            }
+        }
         
-        // Build the autocomplete intent
-        android.content.Intent intent = new Autocomplete.IntentBuilder(
-            AutocompleteActivityMode.FULLSCREEN,
-            fields
-        ).build(requireContext());
-        
-        // Launch the autocomplete activity
-        placesAutocompleteLauncher.launch(intent);
+        try {
+            // Specify the fields to be returned
+            List<Place.Field> fields = java.util.Arrays.asList(
+                Place.Field.ID,
+                Place.Field.NAME,
+                Place.Field.ADDRESS,
+                Place.Field.LAT_LNG
+            );
+            
+            // Build the autocomplete intent
+            android.content.Intent intent = new Autocomplete.IntentBuilder(
+                AutocompleteActivityMode.FULLSCREEN,
+                fields
+            ).build(requireContext());
+            
+            // Launch the autocomplete activity
+            placesAutocompleteLauncher.launch(intent);
+        } catch (Exception e) {
+            // Catch any exceptions and allow manual typing
+            Log.e(TAG, "Error opening Places Autocomplete: " + e.getMessage(), e);
+            Toast.makeText(requireContext(), 
+                "Autocomplete unavailable. You can type the location manually.", 
+                Toast.LENGTH_LONG).show();
+            // Don't crash - allow user to type manually
+        }
     }
     
     /**

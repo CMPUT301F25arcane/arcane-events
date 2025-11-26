@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -759,6 +760,16 @@ public class EventDetailFragment extends Fragment {
 
         // Get session location (captured at login)
         com.google.firebase.firestore.GeoPoint sessionLocation = SessionLocationManager.getSessionLocation(requireContext());
+        Log.d("EventDetailFragment", "DEBUG: Session location: " + (sessionLocation != null ? "EXISTS" : "NULL"));
+        if (sessionLocation != null) {
+            Log.d("EventDetailFragment", "DEBUG: Session location coordinates: " + 
+                  sessionLocation.getLatitude() + ", " + sessionLocation.getLongitude());
+        }
+        
+        // Log event geolocation requirement
+        if (currentEvent != null) {
+            Log.d("EventDetailFragment", "DEBUG: Event geolocationRequired: " + currentEvent.getGeolocationRequired());
+        }
 
         // Disable button during operation
         binding.joinButton.setEnabled(false);

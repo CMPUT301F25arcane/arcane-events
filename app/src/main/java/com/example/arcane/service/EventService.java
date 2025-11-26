@@ -207,12 +207,16 @@ public class EventService {
                                     Event event = eventTask.getResult().toObject(Event.class);
                                     if (event != null) {
                                         // Determine join location based on event's geolocationRequired setting
-                                        GeoPoint joinLocation = null;
-                                        if (Boolean.TRUE.equals(event.getGeolocationRequired()) && sessionLocation != null) {
-                                            // Event requires geolocation and session location is available
-                                            joinLocation = sessionLocation;
-                                        }
-                                        // If geolocationRequired is false or sessionLocation is null, joinLocation remains null
+                                        // Use ternary operator to make it effectively final for lambda
+                                        boolean geolocationRequired = Boolean.TRUE.equals(event.getGeolocationRequired());
+                                        android.util.Log.d("EventService", "DEBUG: Event geolocationRequired: " + geolocationRequired);
+                                        android.util.Log.d("EventService", "DEBUG: Session location provided: " + (sessionLocation != null));
+                                        
+                                        final GeoPoint joinLocation = (geolocationRequired && sessionLocation != null)
+                                                ? sessionLocation
+                                                : null;
+                                        
+                                        android.util.Log.d("EventService", "DEBUG: Join location will be: " + (joinLocation != null ? "SET" : "NULL"));
                                         
                                         // Check maxEntrants limit if set
                                         if (event.getMaxEntrants() != null && event.getMaxEntrants() > 0) {
@@ -315,13 +319,13 @@ public class EventService {
      * @return a Task that completes with a map containing status and IDs
      */
     private Task<Map<String, String>> addUserToWaitingList(String eventId, String entrantId, @androidx.annotation.Nullable GeoPoint joinLocation) {
-        // Create waiting list entry
-        WaitingListEntry entry = new WaitingListEntry();
-        entry.setEntrantId(entrantId);
-        entry.setJoinTimestamp(Timestamp.now());
+                    // Create waiting list entry
+                    WaitingListEntry entry = new WaitingListEntry();
+                    entry.setEntrantId(entrantId);
+                    entry.setJoinTimestamp(Timestamp.now());
         entry.setJoinLocation(joinLocation); // Set location (null if event doesn't require it or location not available)
-        
-        return waitingListRepository.addToWaitingList(eventId, entry)
+                    
+                    return waitingListRepository.addToWaitingList(eventId, entry)
                             .continueWithTask(addTask -> {
                                 if (!addTask.isSuccessful()) {
                                     Map<String, String> result = new HashMap<>();
@@ -367,8 +371,8 @@ public class EventService {
                                                 result.put("status", "error");
                                                 return com.google.android.gms.tasks.Tasks.forResult(result);
                                             }
-                                        });
                             });
+                });
     }
 
     /**
