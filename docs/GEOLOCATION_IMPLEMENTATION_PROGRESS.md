@@ -553,6 +553,61 @@ feat: Create EntrantsMapFragment for displaying entrant join locations
 
 ---
 
+## ✅ Commit 16: Add Map Navigation to EntrantsFragment
+
+**What was done:**
+- Added `navigation_entrants_map` destination to `mobile_navigation.xml` with `eventId` argument
+- Made "View Map" button visible in `EntrantsFragment` (changed from `View.GONE` to `View.VISIBLE`)
+- Wired "View Map" button click listener to navigate to `EntrantsMapFragment`
+- Added `navigateToMap()` method to handle navigation with `eventId` argument
+- Added Navigation imports to `EntrantsFragment`
+
+**Why this is important:**
+- **Problem solved:** The map fragment created in Commit 15 was not accessible from the UI. Without this navigation, organizers couldn't actually view the map even though the fragment existed. This is like building a room but forgetting to add a door - the room exists but no one can enter it.
+- **Completes the user flow:** Entrants list → Click "View Map" → See map with entrant locations
+
+**How it solves our overall problem:**
+- **US 02.02.02 completion:** Organizers can now access the map view from the entrants list
+- **User experience:** Seamless navigation from list view to map view
+- **Feature accessibility:** Makes the map feature discoverable and usable
+
+**Key logic:**
+```java
+// Button click handler
+binding.viewMapButton.setOnClickListener(v -> navigateToMap());
+
+// Navigation method
+private void navigateToMap() {
+    Bundle args = new Bundle();
+    args.putString("eventId", eventId);
+    navController.navigate(R.id.navigation_entrants_map, args);
+}
+```
+
+**Files modified:**
+- `app/src/main/res/navigation/mobile_navigation.xml`
+  - Added `navigation_entrants_map` fragment destination with `eventId` argument
+- `app/src/main/java/com/example/arcane/ui/events/EntrantsFragment.java`
+  - Changed `viewMapButton.setVisibility(View.GONE)` to `View.VISIBLE`
+  - Added `setOnClickListener` for "View Map" button
+  - Added `navigateToMap()` method
+  - Added Navigation imports
+
+**Commit message:**
+```
+feat: Add map navigation from EntrantsFragment to EntrantsMapFragment
+
+- Add navigation_entrants_map destination to navigation graph
+- Make "View Map" button visible in EntrantsFragment
+- Wire button click to navigate to EntrantsMapFragment with eventId
+- Add navigateToMap() method for navigation handling
+- Enables organizers to view entrant locations on map
+```
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -578,7 +633,7 @@ feat: Create EntrantsMapFragment for displaying entrant join locations
 
 ### Phase 5: Map Display Functionality
 - [x] Commit 15: Create EntrantsMapFragment ✅
-- [ ] Commit 16: Add map navigation to EntrantsFragment
+- [x] Commit 16: Add map navigation to EntrantsFragment ✅
 - [ ] Commit 17: Implement map marker display logic
 - [ ] Commit 18: Add map view to event detail page
 
