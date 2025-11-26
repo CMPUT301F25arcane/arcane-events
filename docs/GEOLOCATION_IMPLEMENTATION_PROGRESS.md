@@ -608,6 +608,80 @@ feat: Add map navigation from EntrantsFragment to EntrantsMapFragment
 
 ---
 
+## ✅ Commit 17: Implement Map Marker Display Logic
+
+**What was done:**
+- Enhanced marker styling with color differentiation: **RED** markers for event location, **BLUE** markers for entrant locations
+- Implemented proper `LatLngBounds.Builder` to calculate bounds that include all markers
+- Added padding (100dp) around bounds for better visual spacing
+- Improved marker info windows: event marker shows event name, entrant markers show entrant names
+- Added `eventName` field to store event name during loading for marker display
+- Updated `loadEventAndEntrants()` to capture event name
+- Completely rewrote `centerMapOnMarkers()` to use `LatLngBounds.Builder` instead of simple centering
+
+**Why this is important:**
+- **Problem solved:** Previously, all markers looked identical (default red), making it impossible to distinguish between event location and entrant locations. The map also used a simple centering approach that didn't guarantee all markers were visible.
+- **Visual clarity:** Color coding (red for event, blue for entrants) provides immediate visual distinction
+- **Better UX:** Proper bounds calculation ensures all markers are visible with optimal zoom level, preventing markers from being cut off at screen edges
+- **Professional appearance:** Proper padding and bounds calculation create a polished, user-friendly map experience
+
+**How it solves our overall problem:**
+- **US 02.02.02 enhancement:** Organizers can now clearly distinguish between event location and entrant join locations on the map
+- **User experience:** Improved visual hierarchy and information display makes the map more useful and easier to understand
+- **Feature completeness:** Completes the marker display functionality, making the map feature fully functional
+
+**Key logic:**
+```java
+// Event marker - RED color
+googleMap.addMarker(new MarkerOptions()
+    .position(eventLocation)
+    .title(eventName)  // Shows event name
+    .snippet("Event venue")
+    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+// Entrant markers - BLUE color
+googleMap.addMarker(new MarkerOptions()
+    .position(entrantLatLng)
+    .title(entrantName)  // Shows entrant name
+    .snippet("Joined from here")
+    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+
+// Proper bounds calculation
+LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+for (LatLng location : allLocations) {
+    boundsBuilder.include(location);
+}
+LatLngBounds bounds = boundsBuilder.build();
+int padding = (int) (100 * requireContext().getResources().getDisplayMetrics().density);
+googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
+```
+
+**Files modified:**
+- `app/src/main/java/com/example/arcane/ui/events/EntrantsMapFragment.java`
+  - Added `BitmapDescriptorFactory` and `LatLngBounds` imports
+  - Added `eventName` field
+  - Updated `loadEventAndEntrants()` to store event name
+  - Enhanced `addEventMarker()` with red marker and event name
+  - Enhanced `addMarkersToMap()` with blue markers for entrants
+  - Completely rewrote `centerMapOnMarkers()` with proper bounds calculation
+
+**Commit message:**
+```
+feat: Enhance map marker display with color coding and proper bounds
+
+- Add color differentiation: RED markers for event location, BLUE for entrants
+- Implement LatLngBounds.Builder for proper map bounds calculation
+- Add padding around bounds for better visual spacing
+- Display event name in event marker title
+- Improve marker info windows with better titles and snippets
+- Ensure all markers are visible with optimal zoom level
+- Enhances visual clarity and user experience for organizers viewing entrant locations
+```
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -634,7 +708,7 @@ feat: Add map navigation from EntrantsFragment to EntrantsMapFragment
 ### Phase 5: Map Display Functionality
 - [x] Commit 15: Create EntrantsMapFragment ✅
 - [x] Commit 16: Add map navigation to EntrantsFragment ✅
-- [ ] Commit 17: Implement map marker display logic
+- [x] Commit 17: Implement map marker display logic ✅
 - [ ] Commit 18: Add map view to event detail page
 
 ### Phase 6: UI Polish and Event Cards

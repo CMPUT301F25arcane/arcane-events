@@ -35,7 +35,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.firestore.GeoPoint;
@@ -67,6 +69,7 @@ public class EntrantsMapFragment extends Fragment implements OnMapReadyCallback 
     private Map<String, String> entrantNamesMap = new HashMap<>(); // entrantId -> name
     private List<LatLng> entrantLocations = new ArrayList<>();
     private LatLng eventLocation;
+    private String eventName; // Store event name for marker
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -123,9 +126,13 @@ public class EntrantsMapFragment extends Fragment implements OnMapReadyCallback 
 
                     if (eventSnapshot != null && eventSnapshot.exists()) {
                         Event event = eventSnapshot.toObject(Event.class);
-                        if (event != null && event.getGeolocation() != null) {
-                            GeoPoint geoPoint = event.getGeolocation();
-                            eventLocation = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+                        if (event != null) {
+                            // Store event name for marker
+                            eventName = event.getEventName();
+                            if (event.getGeolocation() != null) {
+                                GeoPoint geoPoint = event.getGeolocation();
+                                eventLocation = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+                            }
                         }
                     }
 
@@ -222,12 +229,12 @@ public class EntrantsMapFragment extends Fragment implements OnMapReadyCallback 
     private void addMarkersToMap(List<WaitingListEntry> entries) {
         if (googleMap == null) return;
 
-        // Add event location marker (if available)
+        // Add event location marker (if available) - RED marker
         if (eventLocation != null) {
             addEventMarker();
         }
 
-        // Add entrant location markers
+        // Add entrant location markers - BLUE markers
         for (WaitingListEntry entry : entries) {
             GeoPoint joinLocation = entry.getJoinLocation();
             if (joinLocation != null) {
@@ -236,36 +243,50 @@ public class EntrantsMapFragment extends Fragment implements OnMapReadyCallback 
 
                 String entrantName = entrantNamesMap.getOrDefault(entry.getEntrantId(), "Unknown");
                 
+                // Use blue marker for entrants
                 googleMap.addMarker(new MarkerOptions()
                         .position(latLng)
                         .title(entrantName)
-                        .snippet("Joined from here"));
+                        .snippet("Joined from here")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
             }
         }
 
-        // Center map to show all markers
+        // Center map to show all markers with proper bounds
         centerMapOnMarkers();
     }
 
     /**
      * Adds event location marker with different color/style.
+     * Uses RED marker to distinguish from entrant locations.
      */
     private void addEventMarker() {
         if (googleMap == null || eventLocation == null) return;
 
+        String title = eventName != null && !eventName.isEmpty() ? eventName : "Event Location";
+        
+        // Use red marker for event location to make it stand out
         googleMap.addMarker(new MarkerOptions()
                 .position(eventLocation)
-                .title("Event Location")
-                .snippet("Event venue"));
+                .title(title)
+                .snippet("Event venue")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
     }
 
     /**
-     * Centers the map to show all markers.
+     * Centers the map to show all markers with proper bounds calculation.
+     * Uses LatLngBounds.Builder to ensure all markers are visible.
      */
     private void centerMapOnMarkers() {
         if (googleMap == null) return;
 
-        if (entrantLocations.isEmpty() && eventLocation == null) {
+        // Collect all locations
+        List<LatLng> allLocations = new ArrayList<>(entrantLocations);
+        if (eventLocation != null) {
+            allLocations.add(eventLocation);
+        }
+
+        if (allLocations.isEmpty()) {
             // No locations - center on default location (e.g., center of city)
             LatLng defaultLocation = new LatLng(43.6532, -79.3832); // Toronto default
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10f));
@@ -273,19 +294,16 @@ public class EntrantsMapFragment extends Fragment implements OnMapReadyCallback 
         }
 
         // Calculate bounds to include all markers
-        List<LatLng> allLocations = new ArrayList<>(entrantLocations);
-        if (eventLocation != null) {
-            allLocations.add(eventLocation);
+        LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+        for (LatLng location : allLocations) {
+            boundsBuilder.include(location);
         }
+        LatLngBounds bounds = boundsBuilder.build();
 
-        if (allLocations.isEmpty()) {
-            return;
-        }
-
-        // Simple approach: center on first location with appropriate zoom
-        // More sophisticated: calculate bounds and use CameraUpdateFactory.newLatLngBounds()
-        LatLng centerLocation = allLocations.get(0);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(centerLocation, 12f));
+        // Move camera to show all markers with padding
+        // Padding in pixels from edges of map (100dp converted to pixels)
+        int padding = (int) (100 * requireContext().getResources().getDisplayMetrics().density);
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
     }
 
     /**
