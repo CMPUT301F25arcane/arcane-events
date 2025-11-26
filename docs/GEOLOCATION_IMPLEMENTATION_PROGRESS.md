@@ -766,6 +766,75 @@ feat: Add map view to event detail page
 
 ---
 
+## ✅ Commit 19: Add Location Chip/Tag to Event Cards
+
+**What was done:**
+- Added `location_chip` to `item_event_card.xml` layout
+- Positioned location chip between event location text and status chip
+- Added `locationChip` field to `EventViewHolder` class
+- Implemented `setLocationChip()` method to style the chip with green colors (using education category colors)
+- Added logic in `onBindViewHolder()` to show/hide chip based on `event.getGeolocationRequired()`
+- Updated barrier constraint to include `location_chip` in layout calculations
+- Chip displays "📍 Location" text with green text and light green background
+
+**Why this is important:**
+- **Problem solved:** Users couldn't quickly identify which events have location tracking enabled. They had to open the event detail page to see if geolocation was enabled. This is like having a feature but no way to see it at a glance.
+- **Visual indicator:** Provides immediate visual feedback about which events support location features
+- **Feature visibility:** Makes the geolocation feature more discoverable and prominent
+- **User experience:** Helps users quickly filter or identify events with location tracking
+
+**How it solves our overall problem:**
+- **Feature discoverability:** Users can now see at a glance which events have location features enabled
+- **Better UX:** Quick visual indicator helps users understand event capabilities without opening details
+- **Consistency:** Follows the same chip pattern used for category and status chips
+
+**Key logic:**
+```java
+// Check if geolocation is enabled for this event
+if (event.getGeolocationRequired() != null && event.getGeolocationRequired()) {
+    holder.locationChip.setVisibility(View.VISIBLE);
+    setLocationChip(holder.locationChip);
+} else {
+    holder.locationChip.setVisibility(View.GONE);
+}
+
+// Style the chip
+private void setLocationChip(@NonNull Chip chip) {
+    int textColor = ContextCompat.getColor(chip.getContext(), R.color.category_education); // Green
+    int bgColor = ContextCompat.getColor(chip.getContext(), R.color.category_education_bg); // Light green
+    
+    chip.setText("📍 Location");
+    chip.setTextColor(textColor);
+    chip.setChipBackgroundColor(ColorStateList.valueOf(bgColor));
+}
+```
+
+**Files modified:**
+- `app/src/main/res/layout/item_event_card.xml`
+  - Added `location_chip` Chip view
+  - Positioned between event location and status chip
+  - Updated barrier constraint to include location chip
+- `app/src/main/java/com/example/arcane/ui/events/EventCardAdapter.java`
+  - Added `locationChip` field to `EventViewHolder`
+  - Added `setLocationChip()` method for styling
+  - Added logic in `onBindViewHolder()` to conditionally show chip
+
+**Commit message:**
+```
+feat: Add location chip to event cards for geolocation-enabled events
+
+- Add location_chip to item_event_card.xml layout
+- Display "📍 Location" chip when event.geolocationRequired is true
+- Style chip with green colors (category_education colors) for visibility
+- Position chip between location text and status chip
+- Hide chip for events without geolocation requirement
+- Enhances feature discoverability and user experience
+```
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -796,7 +865,7 @@ feat: Add map view to event detail page
 - [x] Commit 18: Add map view to event detail page ✅
 
 ### Phase 6: UI Polish and Event Cards
-- [ ] Commit 19: Add location chip/tag to event cards
+- [x] Commit 19: Add location chip/tag to event cards ✅
 - [ ] Commit 20: Update navigation graph for map fragments
 
 ---
