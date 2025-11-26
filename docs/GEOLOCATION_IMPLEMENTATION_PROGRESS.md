@@ -682,6 +682,90 @@ feat: Enhance map marker display with color coding and proper bounds
 
 ---
 
+## ✅ Commit 18: Add Map View to Event Detail Page
+
+**What was done:**
+- Added `SupportMapFragment` to `fragment_event_detail.xml` layout after the location row
+- Wrapped map fragment in a `MaterialCardView` with rounded corners and elevation
+- Made map card visibility conditional (hidden if event has no geolocation)
+- Implemented `OnMapReadyCallback` in `EventDetailFragment`
+- Added `setupEventMap()` method to initialize map when event has geolocation
+- Implemented `onMapReady()` to display event location marker and center map
+- Added Google Maps imports (`GoogleMap`, `OnMapReadyCallback`, `SupportMapFragment`, `BitmapDescriptorFactory`, `LatLng`, `MarkerOptions`, `CameraUpdateFactory`)
+- Added `GeoPoint` import for Firestore geolocation
+
+**Why this is important:**
+- **Problem solved:** Users viewing event details couldn't see the event location on a map. They only saw text location, which doesn't provide spatial context. This is like having an address but no way to visualize where it is on a map.
+- **User experience:** Visual map display helps users understand exactly where the event is located, making it easier to plan attendance
+- **Feature completeness:** Complements the text location display with visual representation
+- **Consistency:** Uses same marker styling (red marker) as `EntrantsMapFragment` for consistency
+
+**How it solves our overall problem:**
+- **User experience enhancement:** Both users and organizers can now see event location visually
+- **Better event discovery:** Users can quickly understand event location without leaving the detail page
+- **Professional appearance:** Map integration makes the app feel more complete and polished
+
+**Key logic:**
+```java
+// Check if event has geolocation
+if (currentEvent.getGeolocation() == null) {
+    binding.eventMapCard.setVisibility(View.GONE);  // Hide map if no location
+    return;
+}
+
+// Show map and initialize
+binding.eventMapCard.setVisibility(View.VISIBLE);
+SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
+        .findFragmentById(R.id.eventMapFragment);
+mapFragment.getMapAsync(this);
+
+// When map is ready
+@Override
+public void onMapReady(@NonNull GoogleMap googleMap) {
+    GeoPoint geoPoint = currentEvent.getGeolocation();
+    LatLng eventLatLng = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+    
+    // Add red marker (consistent with EntrantsMapFragment)
+    googleMap.addMarker(new MarkerOptions()
+            .position(eventLatLng)
+            .title(currentEvent.getEventName())
+            .snippet("Event venue")
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+    
+    // Center map with zoom level 15 (good for viewing a specific location)
+    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(eventLatLng, 15f));
+}
+```
+
+**Files modified:**
+- `app/src/main/res/layout/fragment_event_detail.xml`
+  - Added `MaterialCardView` with `eventMapCard` ID
+  - Added `SupportMapFragment` with `eventMapFragment` ID
+  - Set initial visibility to `gone` (shown only when event has geolocation)
+- `app/src/main/java/com/example/arcane/ui/events/EventDetailFragment.java`
+  - Added `implements OnMapReadyCallback`
+  - Added Google Maps imports
+  - Added `setupEventMap()` method
+  - Implemented `onMapReady()` callback
+  - Called `setupEventMap()` from `populateEventDetails()`
+
+**Commit message:**
+```
+feat: Add map view to event detail page
+
+- Add SupportMapFragment to fragment_event_detail.xml layout
+- Wrap map in MaterialCardView with conditional visibility
+- Implement OnMapReadyCallback in EventDetailFragment
+- Display event location marker (red) when geolocation is available
+- Center map on event location with appropriate zoom level
+- Hide map card for events without geolocation (legacy events)
+- Enhances user experience by providing visual location context
+```
+
+**Status:** ✅ COMPLETED
+
+---
+
 ## 📋 Remaining Commits
 
 ### Phase 1: Foundation and Data Model
@@ -709,7 +793,7 @@ feat: Enhance map marker display with color coding and proper bounds
 - [x] Commit 15: Create EntrantsMapFragment ✅
 - [x] Commit 16: Add map navigation to EntrantsFragment ✅
 - [x] Commit 17: Implement map marker display logic ✅
-- [ ] Commit 18: Add map view to event detail page
+- [x] Commit 18: Add map view to event detail page ✅
 
 ### Phase 6: UI Polish and Event Cards
 - [ ] Commit 19: Add location chip/tag to event cards

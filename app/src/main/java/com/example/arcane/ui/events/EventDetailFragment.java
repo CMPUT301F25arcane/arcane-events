@@ -48,8 +48,16 @@ import com.example.arcane.repository.EventRepository;
 import com.example.arcane.repository.WaitingListRepository;
 import com.example.arcane.service.UserService;
 import com.example.arcane.util.SessionLocationManager;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
@@ -69,7 +77,7 @@ import java.util.Map;
  *
  * @version 1.0
  */
-public class EventDetailFragment extends Fragment {
+public class EventDetailFragment extends Fragment implements OnMapReadyCallback {
 
     private FragmentEventDetailBinding binding;
     private EventRepository eventRepository;
@@ -275,6 +283,60 @@ public class EventDetailFragment extends Fragment {
 
         // Load event image
         loadEventImage();
+
+        // Setup map if event has geolocation
+        setupEventMap();
+    }
+
+    /**
+     * Sets up the event location map if geolocation is available.
+     */
+    private void setupEventMap() {
+        if (currentEvent == null || binding == null || !isAdded()) return;
+
+        // Check if event has geolocation
+        if (currentEvent.getGeolocation() == null) {
+            // Hide map card if no geolocation
+            binding.eventMapCard.setVisibility(View.GONE);
+            return;
+        }
+
+        // Show map card
+        binding.eventMapCard.setVisibility(View.VISIBLE);
+
+        // Initialize map fragment
+        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
+                .findFragmentById(R.id.eventMapFragment);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
+    }
+
+    /**
+     * Called when the map is ready to be used.
+     * Displays the event location on the map.
+     */
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        if (currentEvent == null || currentEvent.getGeolocation() == null) return;
+
+        GeoPoint geoPoint = currentEvent.getGeolocation();
+        LatLng eventLatLng = new LatLng(geoPoint.getLatitude(), geoPoint.getLongitude());
+
+        // Add marker for event location
+        googleMap.addMarker(new MarkerOptions()
+                .position(eventLatLng)
+                .title(currentEvent.getEventName() != null ? currentEvent.getEventName() : "Event Location")
+                .snippet("Event venue")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+
+        // Center map on event location with appropriate zoom
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(eventLatLng, 15f));
+
+        // Configure map settings
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
+        googleMap.getUiSettings().setCompassEnabled(true);
+        googleMap.getUiSettings().setMapToolbarEnabled(true);
     }
 
     private void loadEventImage() {
