@@ -109,7 +109,9 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
         holder.titleView.setText(event.getEventName());
-        holder.locationView.setText(event.getLocation());
+        // Show "Unknown" for legacy events without location
+        String location = event.getLocation();
+        holder.locationView.setText(location != null && !location.isEmpty() ? location : "Unknown");
 
         if (event.getEventDate() != null) {
             holder.dateView.setText(android.text.format.DateFormat.format("yyyy-MM-dd", event.getEventDate().toDate()));
@@ -124,6 +126,14 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
             setCategoryTag(holder.categoryTag, category);
         } else {
             holder.categoryTag.setVisibility(View.GONE);
+        }
+
+        // Set location chip if geolocation is enabled
+        if (event.getGeolocationRequired() != null && event.getGeolocationRequired()) {
+            holder.locationChip.setVisibility(View.VISIBLE);
+            setLocationChip(holder.locationChip);
+        } else {
+            holder.locationChip.setVisibility(View.GONE);
         }
 
         // Set status chip if enabled and status exists
@@ -265,6 +275,21 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
     }
 
     /**
+     * Sets the location chip to indicate geolocation is enabled.
+     *
+     * @param chip the chip to style
+     */
+    private void setLocationChip(@NonNull Chip chip) {
+        // Use a blue/green color scheme to indicate location feature
+        int textColor = ContextCompat.getColor(chip.getContext(), R.color.category_education); // Green color
+        int bgColor = ContextCompat.getColor(chip.getContext(), R.color.category_education_bg); // Light green background
+
+        chip.setText("📍 Location");
+        chip.setTextColor(textColor);
+        chip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(bgColor));
+    }
+
+    /**
      * Gets the number of items in the adapter.
      *
      * @return the number of events
@@ -285,6 +310,7 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
         TextView dateView;
         TextView locationView;
         Chip categoryTag;
+        Chip locationChip;
         Chip statusChip;
 
         /**
@@ -299,6 +325,7 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
             dateView = itemView.findViewById(R.id.event_date);
             locationView = itemView.findViewById(R.id.event_location);
             categoryTag = itemView.findViewById(R.id.category_tag);
+            locationChip = itemView.findViewById(R.id.location_chip);
             statusChip = itemView.findViewById(R.id.waitlist_status);
         }
     }

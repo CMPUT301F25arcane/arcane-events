@@ -29,6 +29,11 @@ import androidx.navigation.Navigation;
 
 import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentLoginBinding;
+import com.example.arcane.model.Users;
+import com.example.arcane.service.UserService;
+import com.example.arcane.util.LocationPermissionHelper;
+import com.example.arcane.util.LocationService;
+import com.example.arcane.util.SessionLocationManager;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -129,38 +134,134 @@ public class LoginFragment extends Fragment {
 
     /**
      * Routes the user to the appropriate screen based on their role.
+     * Also automatically captures and stores location for the session.
      *
      * @param user the authenticated Firebase user
      */
     private void routeByRole(@NonNull FirebaseUser user) {
-        com.example.arcane.service.UserService userService = new com.example.arcane.service.UserService();
+        UserService userService = new UserService();
         userService.getUserById(user.getUid())
                 .addOnSuccessListener(snapshot -> {
                     String role = null;
                     if (snapshot.exists()) {
-                        com.example.arcane.model.Users u = snapshot.toObject(com.example.arcane.model.Users.class);
-                        if (u != null) role = u.getRole();
+                        Users userModel = snapshot.toObject(Users.class);
+                        if (userModel != null) role = userModel.getRole();
                     }
                     
                     // Cache role in SharedPreferences for bottom nav routing
                     cacheUserRole(role);
                     
-                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                    if (role != null) {
-                        String r = role.toUpperCase();
-                        if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
-                            navController.navigate(R.id.navigation_home);
-                            return;
-                        }
-                    }
-                    navController.navigate(R.id.navigation_home);
+                    // Automatically capture location for session (no user dialog)
+                    captureAndStoreSessionLocation(role);
                 })
                 .addOnFailureListener(e -> {
                     // Default to user events on failure, cache null role
                     cacheUserRole(null);
-                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
-                    navController.navigate(R.id.navigation_home);
+                    // Still try to capture location even if user fetch fails
+                    captureAndStoreSessionLocation(null);
                 });
+    }
+
+    /**
+     * Automatically captures and stores the user's location for the session.
+     *
+     * <p>Checks if location permission is granted. If yes, captures location immediately.
+     * If no, requests permission and captures after permission is granted.</p>
+     *
+     * @param role the user's role (for navigation after location capture)
+     */
+    private void captureAndStoreSessionLocation(@Nullable String role) {
+        boolean hasPermission = LocationPermissionHelper.hasLocationPermission(requireContext());
+        Log.d("LoginFragment", "DEBUG: Location permission status: " + (hasPermission ? "GRANTED" : "DENIED"));
+        
+        if (hasPermission) {
+            // Permission already granted - capture location immediately
+            Log.d("LoginFragment", "DEBUG: Attempting to capture location...");
+            captureLocation(role);
+        } else {
+            // Request permission - will capture location after permission is granted
+            Log.d("LoginFragment", "DEBUG: Requesting location permission...");
+            LocationPermissionHelper.requestLocationPermission(this);
+            // Store role temporarily to navigate after permission result
+            pendingRoleForLocation = role;
+        }
+    }
+
+    private String pendingRoleForLocation;
+
+    /**
+     * Captures the current location and stores it in session.
+     *
+     * @param role the user's role (for navigation after location capture)
+     */
+    private void captureLocation(@Nullable String role) {
+        LocationService.getCurrentLocation(requireContext(), new LocationService.LocationCallback() {
+            @Override
+            public void onLocationSuccess(@NonNull com.google.firebase.firestore.GeoPoint geoPoint) {
+                // Store location in session
+                SessionLocationManager.saveSessionLocation(requireContext(), geoPoint);
+                Log.d("LoginFragment", "DEBUG: SUCCESS: Location = " + 
+                      geoPoint.getLatitude() + ", " + geoPoint.getLongitude());
+                Log.d("LoginFragment", "DEBUG: Session location saved: " + 
+                      geoPoint.getLatitude() + ", " + geoPoint.getLongitude());
+                // Navigate to home
+                navigateToHome(role);
+            }
+
+            @Override
+            public void onLocationFailure(@NonNull Exception exception) {
+                // Location capture failed - log but continue (location is optional)
+                Log.e("LoginFragment", "DEBUG: FAILURE: " + exception.getMessage());
+                Log.w("LoginFragment", "Failed to capture location: " + exception.getMessage());
+                // Navigate anyway - location is optional for session
+                navigateToHome(role);
+            }
+        });
+    }
+
+    /**
+     * Navigates to the home screen based on user role.
+     *
+     * @param role the user's role
+     */
+    private void navigateToHome(@Nullable String role) {
+        NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_activity_main);
+        if (role != null) {
+            String r = role.toUpperCase();
+            if ("ORGANISER".equals(r) || "ORGANIZER".equals(r)) {
+                navController.navigate(R.id.navigation_home);
+                return;
+            }
+        }
+        navController.navigate(R.id.navigation_home);
+    }
+
+    /**
+     * Handles the result of location permission request.
+     *
+     * <p>If permission is granted, captures location and stores it in session.
+     * If denied, continues without location (location is optional).</p>
+     *
+     * @param requestCode the request code
+     * @param permissions the permissions array
+     * @param grantResults the grant results array
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (LocationPermissionHelper.isLocationPermissionRequest(requestCode)) {
+            if (LocationPermissionHelper.isLocationPermissionGranted(grantResults)) {
+                // Permission granted - capture location now
+                captureLocation(pendingRoleForLocation);
+            } else {
+                // Permission denied - continue without location (location is optional)
+                Log.d("LoginFragment", "Location permission denied - continuing without location");
+                navigateToHome(pendingRoleForLocation);
+            }
+            // Clear pending role
+            pendingRoleForLocation = null;
+        }
     }
 
     private void cacheUserRole(String role) {

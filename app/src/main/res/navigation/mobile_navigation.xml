@@ -94,6 +94,16 @@
     </fragment>
 
     <fragment
+        android:id="@+id/navigation_entrants_map"
+        android:name="com.example.arcane.ui.events.EntrantsMapFragment"
+        android:label="Entrants Map"
+        tools:layout="@layout/fragment_entrants_map">
+        <argument
+            android:name="eventId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
         android:id="@+id/navigation_browse_images"
         android:name="com.example.arcane.ui.gallery.BrowseImagesFragment"
         android:label="Gallery"
