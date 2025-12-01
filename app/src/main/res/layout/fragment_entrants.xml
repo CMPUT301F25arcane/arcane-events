@@ -26,6 +26,7 @@
         app:titleTextColor="?attr/colorOnPrimary"
         app:navigationIcon="?attr/homeAsUpIndicator"
         app:navigationIconTint="?attr/colorOnPrimary"
+        app:menu="@menu/entrants_menu"
         app:layout_constraintTop_toBottomOf="@id/statusSpacerEntrants"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

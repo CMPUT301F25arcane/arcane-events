@@ -28,6 +28,8 @@ import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.arcane.R;
@@ -105,15 +107,19 @@ public class EntrantsFragment extends Fragment {
 
         // Setup toolbar back button
         binding.entrantsToolbar.setNavigationOnClickListener(v -> navigateBack());
-
-        // Hide view map button for now (can be implemented later)
-        binding.viewMapButton.setVisibility(View.GONE);
+        
+        // Setup menu item click listener directly on toolbar
+        // Menu is already inflated from XML (app:menu="@menu/entrants_menu")
+        binding.entrantsToolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_view_map) {
+                navigateToMap();
+                return true;
+            }
+            return false;
+        });
 
         // Configure window insets to separate notification panel from app content
         setupWindowInsets();
-
-        // Setup export CSV button
-        binding.exportCsvButton.setOnClickListener(v -> exportEnrolledEntrantsToCSV());
 
         // Load entrants
         loadEntrants();
@@ -395,8 +401,23 @@ public class EntrantsFragment extends Fragment {
     }
 
     private void navigateBack() {
-        androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireView());
+        NavController navController = Navigation.findNavController(requireView());
         navController.navigateUp();
+    }
+
+    /**
+     * Navigates to the entrants map fragment.
+     */
+    private void navigateToMap() {
+        if (eventId == null) {
+            Toast.makeText(requireContext(), "Event ID is required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        NavController navController = Navigation.findNavController(requireView());
+        Bundle args = new Bundle();
+        args.putString("eventId", eventId);
+        navController.navigate(R.id.navigation_entrants_map, args);
     }
 
     @Override
