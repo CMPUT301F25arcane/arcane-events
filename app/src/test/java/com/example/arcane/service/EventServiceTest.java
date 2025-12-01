@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.arcane.model.Decision;
 import com.example.arcane.model.Event;
 import com.example.arcane.model.UserProfile;
 import com.example.arcane.model.WaitingListEntry;
@@ -23,6 +24,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import android.os.Looper;
 
@@ -212,6 +214,102 @@ public class EventServiceTest {
         assertNotNull(updatedEvents);
         assertEquals(1, updatedEvents.size());
         assertEquals("other", updatedEvents.get(0));
+    }
+
+    @Test
+    public void drawLottery_noWinnersConfigured() throws Exception {
+        // Mock event with null numberOfWinners
+        Event testEvent = new Event();
+        testEvent.setEventName("Test Event");
+        testEvent.setNumberOfWinners(null); // No winners configured
+
+        DocumentSnapshot eventSnapshot = org.mockito.Mockito.mock(DocumentSnapshot.class);
+        when(eventSnapshot.exists()).thenReturn(true);
+        when(eventSnapshot.toObject(Event.class)).thenReturn(testEvent);
+        when(eventRepository.getEventById(EVENT_ID)).thenReturn(Tasks.forResult(eventSnapshot));
+
+        com.google.android.gms.tasks.Task<Map<String, Object>> task = subject.drawLottery(EVENT_ID);
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+
+        assertTrue(task.isComplete());
+        assertTrue(task.isSuccessful());
+        Map<String, Object> result = task.getResult();
+
+        assertNotNull(result);
+        assertEquals("error", result.get("status"));
+        assertEquals("Event does not have valid numberOfWinners", result.get("message"));
+    }
+
+    @Test
+    public void acceptWin_updatesDecisionToAccepted() throws Exception {
+        // Mock decision with INVITED status
+        Decision invitedDecision = new Decision();
+        invitedDecision.setEntrantId(ENTRANT_ID);
+        invitedDecision.setStatus("INVITED");
+
+        DocumentSnapshot decisionSnapshot = org.mockito.Mockito.mock(DocumentSnapshot.class);
+        when(decisionSnapshot.exists()).thenReturn(true);
+        when(decisionSnapshot.toObject(Decision.class)).thenReturn(invitedDecision);
+        when(decisionRepository.getDecisionById(EVENT_ID, DECISION_ID))
+                .thenReturn(Tasks.forResult(decisionSnapshot));
+
+        when(decisionRepository.updateDecision(anyString(), anyString(), any(Decision.class)))
+                .thenReturn(Tasks.forResult(null));
+
+        com.google.android.gms.tasks.Task<Void> task = subject.acceptWin(EVENT_ID, ENTRANT_ID, DECISION_ID);
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+
+        assertTrue(task.isComplete());
+        assertTrue(task.isSuccessful());
+
+        // Verify decision was updated to ACCEPTED
+        ArgumentCaptor<Decision> decisionCaptor = ArgumentCaptor.forClass(Decision.class);
+        verify(decisionRepository).updateDecision(
+                org.mockito.Mockito.eq(EVENT_ID),
+                org.mockito.Mockito.eq(DECISION_ID),
+                decisionCaptor.capture()
+        );
+
+        Decision updatedDecision = decisionCaptor.getValue();
+        assertEquals("ACCEPTED", updatedDecision.getStatus());
+        assertNotNull(updatedDecision.getUpdatedAt());
+        assertNotNull(updatedDecision.getRespondedAt());
+    }
+
+    @Test
+    public void declineWin_updatesDecisionToDeclined() throws Exception {
+        // Mock decision with INVITED status
+        Decision invitedDecision = new Decision();
+        invitedDecision.setEntrantId(ENTRANT_ID);
+        invitedDecision.setStatus("INVITED");
+
+        DocumentSnapshot decisionSnapshot = org.mockito.Mockito.mock(DocumentSnapshot.class);
+        when(decisionSnapshot.exists()).thenReturn(true);
+        when(decisionSnapshot.toObject(Decision.class)).thenReturn(invitedDecision);
+        when(decisionRepository.getDecisionById(EVENT_ID, DECISION_ID))
+                .thenReturn(Tasks.forResult(decisionSnapshot));
+
+        when(decisionRepository.updateDecision(anyString(), anyString(), any(Decision.class)))
+                .thenReturn(Tasks.forResult(null));
+
+        com.google.android.gms.tasks.Task<Void> task = subject.declineWin(EVENT_ID, ENTRANT_ID, DECISION_ID);
+        Shadows.shadowOf(Looper.getMainLooper()).idle();
+
+        assertTrue(task.isComplete());
+        assertTrue(task.isSuccessful());
+
+        // Verify decision was updated to DECLINED
+        ArgumentCaptor<Decision> decisionCaptor = ArgumentCaptor.forClass(Decision.class);
+        verify(decisionRepository).updateDecision(
+                org.mockito.Mockito.eq(EVENT_ID),
+                org.mockito.Mockito.eq(DECISION_ID),
+                decisionCaptor.capture()
+        );
+
+        Decision updatedDecision = decisionCaptor.getValue();
+        assertEquals("DECLINED", updatedDecision.getStatus());
+        assertNotNull(updatedDecision.getUpdatedAt());
+        assertNotNull(updatedDecision.getRespondedAt());
     }
 
     private static QuerySnapshot mockQuerySnapshot(boolean empty) {
