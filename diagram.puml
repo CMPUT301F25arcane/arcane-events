@@ -36,6 +36,7 @@ class WaitingListEntry {
   - entrantId : String
   - joinTimestamp : Timestamp
   - invitedAt : Timestamp
+  - joinLocation : GeoPoint
 }
 
 class Decision {
@@ -67,6 +68,17 @@ class Users {
   - createdAt : Timestamp
   - role : String
   - registeredEventIds : List<String>
+}
+
+class Notification {
+  - notificationId : String
+  - userId : String
+  - eventId : String
+  - type : String
+  - title : String
+  - message : String
+  - timestamp : Timestamp
+  - read : Boolean
 }
 }
 
@@ -113,6 +125,15 @@ class DecisionRepository {
   + getDecisionsByUser(entrantId: String) : Task<QuerySnapshot>
   + getDecisionsByStatus(eventId: String, status: String) : Task<QuerySnapshot>
 }
+
+class NotificationRepository {
+  - db : FirebaseFirestore
+  + createNotification(userId: String, notification: Notification) : Task<DocumentReference>
+  + getNotificationsForUser(userId: String) : Task<QuerySnapshot>
+  + getUnreadNotificationsForUser(userId: String) : Task<QuerySnapshot>
+  + markAsRead(userId: String, notificationId: String) : Task<Void>
+  + getNotificationById(userId: String, notificationId: String) : Task<DocumentSnapshot>
+}
 }
 
 package "Service" {
@@ -121,6 +142,7 @@ class EventService {
   - waitingListRepository : WaitingListRepository
   - decisionRepository : DecisionRepository
   - userRepository : UserRepository
+  - notificationService : NotificationService
   + createEvent(event: Event) : Task<DocumentReference>
   + getEventWithDetails(eventId: String) : Task<Event>
   + joinWaitingList(eventId: String, entrantId: String) : Task<Map<String,String>>
@@ -135,6 +157,17 @@ class UserService {
   - db : FirebaseFirestore
   + createUser(user: Users) : Task<Void>
   + getUserById(userId: String) : Task<DocumentSnapshot>
+}
+
+class NotificationService {
+  - notificationRepository : NotificationRepository
+  - userRepository : UserRepository
+  - decisionRepository : DecisionRepository
+  + sendNotification(userId: String, eventId: String, type: String, title: String, message: String) : Task<DocumentReference>
+  + sendNotificationsToEntrantsByStatus(eventId: String, status: String, title: String, message: String) : Task<Map<String,Object>>
+  + getUserNotifications(userId: String) : Task<QuerySnapshot>
+  + getUnreadNotifications(userId: String) : Task<QuerySnapshot>
+  + markNotificationRead(userId: String, notificationId: String) : Task<Void>
 }
 }
 
@@ -258,6 +291,21 @@ interface OnEventClickListener {
   + onEventClick(event: Event) : void
 }
 }
+
+package "Utility" {
+class LocationService {
+  + {static} getCurrentLocation(context: Context, callback: LocationCallback) : void
+  + {static} getCurrentLocationBalanced(context: Context, callback: LocationCallback) : void
+  + {static} locationToGeoPoint(location: Location) : GeoPoint
+  + {static} geoPointToString(geoPoint: GeoPoint) : String
+}
+
+class QrCodeGenerator {
+  + {static} generateBitmap(data: String, size: int) : Bitmap
+  + {static} generateBase64(data: String, size: int) : String
+}
+}
+
 class Fragment <<AndroidX>>
 class AppCompatActivity <<AndroidX>>
 class ViewModel <<AndroidX>>
@@ -296,20 +344,29 @@ Decision ..> WaitingListEntry : entryId
 Decision ..> UserProfile : entrantId
 UserProfile ..> Event : registeredEventIds
 Users ..> Event : registeredEventIds
+Notification ..> Users : userId
+Notification ..> Event : eventId
 
 EventRepository *-- FirebaseFirestore
 UserRepository *-- FirebaseFirestore
 WaitingListRepository *-- FirebaseFirestore
 DecisionRepository *-- FirebaseFirestore
+NotificationRepository *-- FirebaseFirestore
 UserService *-- FirebaseFirestore
 EventService *-- EventRepository
 EventService *-- WaitingListRepository
 EventService *-- DecisionRepository
 EventService *-- UserRepository
+EventService *-- NotificationService
+NotificationService *-- NotificationRepository
+NotificationService *-- UserRepository
+NotificationService *-- DecisionRepository
 EventService ..> Event
 EventService ..> WaitingListEntry
 EventService ..> Decision
 EventService ..> UserProfile
+EventService ..> LocationService
+NotificationService ..> Notification
 
 CreateEventFragment *-- EventService
 CreateEventFragment ..> Event
