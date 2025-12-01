@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.arcane.R;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 
 import java.util.ArrayList;
@@ -38,10 +39,19 @@ import java.util.List;
 public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.EntrantViewHolder> {
 
     private List<EntrantsFragment.EntrantItem> items = new ArrayList<>();
+    private OnCancelClickListener cancelClickListener;
+
+    public interface OnCancelClickListener {
+        void onCancelClick(String entrantId, String decisionId);
+    }
 
     public void setItems(@NonNull List<EntrantsFragment.EntrantItem> items) {
         this.items = items;
         notifyDataSetChanged();
+    }
+
+    public void setOnCancelClickListener(OnCancelClickListener listener) {
+        this.cancelClickListener = listener;
     }
 
     @NonNull
@@ -66,6 +76,20 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.EntrantV
             setStatusChip(holder.statusChip, item.status);
         } else {
             holder.statusChip.setVisibility(View.GONE);
+        }
+
+        // Show/hide cancel button based on status
+        // Only show for INVITED status (won lottery but not yet accepted/declined)
+        if ("INVITED".equals(item.status)) {
+            holder.cancelButton.setVisibility(View.VISIBLE);
+            holder.cancelButton.setOnClickListener(v -> {
+                if (cancelClickListener != null && item.entrantId != null && item.decisionId != null) {
+                    cancelClickListener.onCancelClick(item.entrantId, item.decisionId);
+                }
+            });
+        } else {
+            holder.cancelButton.setVisibility(View.GONE);
+            holder.cancelButton.setOnClickListener(null);
         }
     }
 
@@ -123,6 +147,7 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.EntrantV
         TextView phoneView;
         TextView locationView;
         Chip statusChip;
+        MaterialButton cancelButton;
 
         EntrantViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -130,8 +155,8 @@ public class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.EntrantV
             emailView = itemView.findViewById(R.id.entrant_email);
             phoneView = itemView.findViewById(R.id.entrant_phone);
             locationView = itemView.findViewById(R.id.entrant_location);
-            // Status chip - need to add to layout or use existing view
             statusChip = itemView.findViewById(R.id.entrant_status);
+            cancelButton = itemView.findViewById(R.id.cancel_button);
         }
     }
 }
