@@ -1009,6 +1009,9 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                     waitingListEntryId = null;
                     decisionId = null;
                     
+                    // Immediately hide status chip (status is now "pending" = no chip)
+                    showUserStatus();
+                    
                     // Update UI to show join button (this will also refresh total entrants count)
                     setupUserView();
                 })
