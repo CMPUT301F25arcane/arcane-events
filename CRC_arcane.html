@@ -52,7 +52,7 @@
         .card-body {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            height: 340px;
+            height: 360px;
         }
         
         .responsibilities, .collaborators {
@@ -70,6 +70,19 @@
             margin-bottom: 12px;
             font-size: 1em;
             text-transform: uppercase;
+        }
+        
+        .section-header {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: black;
+            margin-top: 50px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .section-header:first-of-type {
+            margin-top: 20px;
         }
         
         .card-body ul {
@@ -114,6 +127,8 @@
     <div class="container">
         <h1>CRC Cards</h1>
         
+        <!-- MODEL CLASSES -->
+        <div class="section-header">MODEL CLASSES</div>
         <div class="cards-grid">
             <!-- Event Card -->
             <div class="crc-card">
@@ -122,312 +137,669 @@
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Store event details</li>
-                            <li>Manage registration periods (start/end times)</li>
-                            <li>Track event status (open/closed/completed)</li>
-                            <li>Generate unique event ID</li>
-                            <li>Track current attendee count</li>
+                            <li>Store event data (name, description, date, location, cost)</li>
+                            <li>Manage registration dates (start/end times)</li>
+                            <li>Track event status (DRAFT, OPEN, CLOSED, DRAWN, COMPLETED)</li>
+                            <li>Track registration/attendee count</li>
+                            <li>Manage registration data</li>
+                            <li>Store geolocation and poster image URL</li>
+                            <li>Maintain min/max entrants</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
-                            <li>Organizer</li>
-                            <li>WaitingList</li>
-                            <li>QRCodeManager</li>
-                            <li>NotificationService</li>
-                            <li>EventRegistration</li>
-                            <li>LotterySystem</li>
-                            <li>FirebaseManager</li>
+                            <li>EventRepository</li>
+                            <li>EventService</li>
+                            <li>WaitingListEntry</li>
+                            <li>Decision</li>
+                            <li>Users</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Entrant Card -->
+            <!-- Users Card -->
             <div class="crc-card">
-                <div class="card-header">Entrant</div>
+                <div class="card-header">Users</div>
                 <div class="card-body">
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Store entrant profile information</li>
-                            <li>Join waiting lists for events</li>
-                            <li>Accept/decline event invitations</li>
-                            <li>View event history</li>
-                            <li>Scan QR codes</li>
-                            <li>Update profile</li>
+                            <li>Store user data (ID, name, email, phone)</li>
+                            <li>Maintain unique ID for authentication</li>
+                            <li>Track user role (ENTRANT, ORGANIZER, ADMIN)</li>
+                            <li>Store geolocation (optional)</li>
+                            <li>Manage notification preferences</li>
+                            <li>Maintain device ID</li>
+                            <li>Maintain registered event IDs</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
-                            <li>Profile</li>
-                            <li>WaitingList</li>
-                            <li>EventRegistration</li>
-                            <li>NotificationService</li>
-                            <li>QRCodeManager</li>
+                            <li>UserRepository</li>
+                            <li>UserService</li>
+                            <li>EventService</li>
+                            <li>WaitingListEntry</li>
+                            <li>Decision</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Card -->
+            <div class="crc-card">
+                <div class="card-header">Decision</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Track decision status (PENDING, INVITED, ACCEPTED, DECLINED, CANCELLED)</li>
+                            <li>Manage decision metadata (timestamp, user ID, event ID)</li>
+                            <li>Reference waiting list entry</li>
+                            <li>Reference user</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>DecisionRepository</li>
+                            <li>EventService</li>
                             <li>Event</li>
-                            <li>Administrator</li>
-                            <li>FirebaseManager</li>
+                            <li>WaitingListEntry</li>
+                            <li>Users</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Organizer Card -->
+            <!-- WaitingListEntry Card -->
             <div class="crc-card">
-                <div class="card-header">Organizer</div>
+                <div class="card-header">WaitingListEntry</div>
                 <div class="card-body">
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Create and publish events</li>
-                            <li>Set event parameters</li>
-                            <li>Trigger lottery draws</li>
-                            <li>View final attendee lists</li>
-                            <li>Cancel attendee registrations</li>
-                            <li>Upload event posters</li>
-                            <li>Monitor registration progress</li>
+                            <li>Store waiting list entry data</li>
+                            <li>Track entrant ID reference</li>
+                            <li>Track join timestamp</li>
+                            <li>Store join location (optional)</li>
+                            <li>Track invitation timestamp (optional)</li>
+                            <li>Link to event via subcollection</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
+                            <li>WaitingListRepository</li>
+                            <li>EventService</li>
                             <li>Event</li>
-                            <li>LotterySystem</li>
-                            <li>WaitingList</li>
-                            <li>NotificationService</li>
-                            <li>Profile</li>
-                            <li>Administrator</li>
-                            <li>EventRegistration</li>
-                            <li>QRCodeManager</li>
-                            <li>FirebaseManager</li>
+                            <li>Decision</li>
+                            <li>Users</li>
                         </ul>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- WaitingList Card -->
+        <!-- REPOSITORY CLASSES (Data Access Layer) -->
+        <div class="section-header">REPOSITORY CLASSES (Data Access Layer)</div>
+        <div class="cards-grid">
+            <!-- EventRepository Card -->
             <div class="crc-card">
-                <div class="card-header">WaitingList</div>
+                <div class="card-header">EventRepository</div>
                 <div class="card-body">
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Add and Remove entrants to list</li>
-                            <li>Track entrant join timestamps</li>
-                            <li>Provide list of entrants for lottery</li>
-                            <li>Track list status (open/closed)</li>
-                        </ul>
-                    </div>
-                    <div class="collaborators">
-                        <div class="section-title">Collaborators</div>
-                        <ul>
-                            <li>Event</li>
-                            <li>Entrant</li>
-                            <li>LotterySystem</li>
-                            <li>FirebaseManager</li>
-                            <li>NotificationService</li>
-                            <li>Organizer</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- LotterySystem Card -->
-            <div class="crc-card">
-                <div class="card-header">LotterySystem</div>
-                <div class="card-body">
-                    <div class="responsibilities">
-                        <div class="section-title">Responsibilities</div>
-                        <ul>
-                            <li>Randomly select entrants from waiting list</li>
-                            <li>Manage selection rounds</li>
-                            <li>Track selected and declined entrants</li>
-                            <li>Handle replacement draws</li>
-                        </ul>
-                    </div>
-                    <div class="collaborators">
-                        <div class="section-title">Collaborators</div>
-                        <ul>
-                            <li>WaitingList</li>
-                            <li>Event</li>
-                            <li>NotificationService</li>
-                            <li>EventRegistration</li>
-                            <li>Organizer</li>
-                            <li>Entrant</li>
-                            <li>FirebaseManager</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- EventRegistration Card -->
-            <div class="crc-card">
-                <div class="card-header">EventRegistration</div>
-                <div class="card-body">
-                    <div class="responsibilities">
-                        <div class="section-title">Responsibilities</div>
-                        <ul>
-                            <li>Process invitation acceptances and declines</li>
-                            <li>Track registration status</li>
-                            <li>Manage cancellations</li>
-                            <li>Confirm final attendance</li>
+                            <li>Create new event documents</li>
+                            <li>Retrieve event by ID</li>
+                            <li>Update existing events</li>
+                            <li>Delete events</li>
+                            <li>Query events</li>
+                            <li>Get events by organizer ID</li>
+                            <li>Get events for registration</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
                             <li>Event</li>
-                            <li>Entrant</li>
-                            <li>LotterySystem</li>
-                            <li>NotificationService</li>
-                            <li>Organizer</li>
-                            <li>FirebaseManager</li>
+                            <li>EventService</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Profile Card -->
+            <!-- UserRepository Card -->
             <div class="crc-card">
-                <div class="card-header">Profile</div>
+                <div class="card-header">UserRepository</div>
                 <div class="card-body">
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Store user contact information</li>
-                            <li>Store user preferences</li>
-                            <li>Track user type (entrant/organizer/admin)</li>
-                            <li>Manage authentication credentials</li>
-                            <li>Store notification preferences</li>
+                            <li>Create user profile documents</li>
+                            <li>Retrieve user by ID</li>
+                            <li>Update user profiles</li>
+                            <li>Delete user profiles</li>
+                            <li>Query users</li>
+                            <li>Get user by device ID</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
-                            <li>Entrant</li>
-                            <li>Organizer</li>
-                            <li>Administrator</li>
-                            <li>NotificationService</li>
-                            <li>FirebaseManager</li>
+                            <li>Users</li>
+                            <li>UserService</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- QRCodeManager Card -->
+            <!-- DecisionRepository Card -->
             <div class="crc-card">
-                <div class="card-header">QRCodeManager</div>
+                <div class="card-header">DecisionRepository</div>
                 <div class="card-body">
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Generate QR codes for events</li>
-                            <li>Process QR code scans</li>
-                            <li>Link QR codes to event pages</li>
-                            <li>Validate QR codes</li>
+                            <li>Create decision documents</li>
+                            <li>Retrieve decisions for an event</li>
+                            <li>Get decisions for a specific user/event</li>
+                            <li>Get decision by ID</li>
+                            <li>Update decision status</li>
+                            <li>Delete decisions</li>
+                            <li>Get decisions by user</li>
+                            <li>Get decisions by event</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>Decision</li>
+                            <li>EventService</li>
+                            <li>Event</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WaitingListRepository Card -->
+            <div class="crc-card">
+                <div class="card-header">WaitingListRepository</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Add user to event waiting list</li>
+                            <li>Get all waiting list entries for event</li>
+                            <li>Get waiting list entry by ID</li>
+                            <li>Check if user is in waiting list</li>
+                            <li>Remove user from waiting list</li>
+                            <li>Update waiting list entry</li>
+                            <li>Get waiting list entries by user</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>WaitingListEntry</li>
+                            <li>EventService</li>
+                            <li>Event</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SERVICE CLASSES (Business Logic Layer) -->
+        <div class="section-header">SERVICE CLASSES (Business Logic Layer)</div>
+        <div class="cards-grid">
+            <!-- EventService Card -->
+            <div class="crc-card">
+                <div class="card-header">EventService</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Orchestrate event creation</li>
+                            <li>Load event with waiting list</li>
+                            <li>Handle user joining waiting list</li>
+                            <li>Handle user leaving waiting list</li>
+                            <li>Get event registrations with decisions</li>
+                            <li>Coordinate multiple repository operations</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>EventRepository</li>
+                            <li>WaitingListRepository</li>
+                            <li>DecisionRepository</li>
+                            <li>UserRepository</li>
+                            <li>Event</li>
+                            <li>WaitingListEntry</li>
+                            <li>Decision</li>
+                            <li>Users</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UserService Card -->
+            <div class="crc-card">
+                <div class="card-header">UserService</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Create new user profiles</li>
+                            <li>Retrieve user by ID</li>
+                            <li>Validate user data before creation</li>
+                            <li>Handle Firebase user authentication</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>Users</li>
+                            <li>UserRepository</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW CLASSES (UI Layer) -->
+        <div class="section-header">VIEW CLASSES (UI Layer)</div>
+        <div class="cards-grid">
+            <!-- MainActivity Card -->
+            <div class="crc-card">
+                <div class="card-header">MainActivity</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Handle app launch and navigation</li>
+                            <li>Setup bottom navigation bar</li>
+                            <li>Configure navigation controller</li>
+                            <li>Manage activity lifecycle</li>
+                            <li>Handle back button presses</li>
+                            <li>Show/hide bottom navigation</li>
+                            <li>Manage container padding for different fragments</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>BottomNavigationView</li>
+                            <li>NavController</li>
+                            <li>AppBarConfiguration</li>
+                            <li>All Fragments</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HomeFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">HomeFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display home screen UI</li>
+                            <li>Observe HomeViewModel</li>
+                            <li>Navigate to create event screen</li>
+                            <li>Handle "all events" clicks</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>HomeViewModel</li>
+                            <li>NavController</li>
+                            <li>CreateEventFragment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DashboardFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">DashboardFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display dashboard UI</li>
+                            <li>Observe DashboardViewModel</li>
+                            <li>Handle event clicks</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>DashboardViewModel</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CreateEventFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">CreateEventFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display event creation form</li>
+                            <li>Handle user input validation</li>
+                            <li>Setup date/time pickers</li>
+                            <li>Collect event data from form</li>
+                            <li>Validate required fields</li>
+                            <li>Create Event object</li>
+                            <li>Call EventService to save event</li>
+                            <li>Navigate back on success</li>
+                            <li>Show error messages</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>EventService</li>
+                            <li>Event</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LoginFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">LoginFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display login form</li>
+                            <li>Handle email/password input</li>
+                            <li>Validate input fields</li>
+                            <li>Authenticate user with Firebase</li>
+                            <li>Route user by role after login</li>
+                            <li>Navigate to create account screen</li>
+                            <li>Check if user already logged in</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>UserService</li>
+                            <li>Users</li>
+                            <li>CreateAccountFragment</li>
+                            <li>HomeFragment</li>
+                            <li>UserEventsFragment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CreateAccountFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">CreateAccountFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display account creation form</li>
+                            <li>Handle user input (email, password, name, phone)</li>
+                            <li>Handle role selection (USER/ORGANIZER)</li>
+                            <li>Validate input fields</li>
+                            <li>Create User profile in Firestore</li>
+                            <li>Navigate to home on success</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>UserService</li>
+                            <li>Users</li>
+                            <li>NavController</li>
+                            <li>HomeFragment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WelcomeFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">WelcomeFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display welcome screen</li>
+                            <li>Check if user already logged in</li>
+                            <li>Navigate to home screen</li>
+                            <li>Navigate to login screen</li>
+                            <li>Navigate to create account screen</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>LoginFragment</li>
+                            <li>CreateAccountFragment</li>
+                            <li>HomeFragment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GlobalEventsFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">GlobalEventsFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display all global events</li>
+                            <li>Load all events from repository</li>
+                            <li>Setup search functionality</li>
+                            <li>Filter events by search query</li>
+                            <li>Display events in RecyclerView</li>
+                            <li>Navigate back to user events</li>
+                            <li>Handle event card clicks</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>EventRepository</li>
+                            <li>EventCardAdapter</li>
+                            <li>Event</li>
+                            <li>UserEventFragment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OrganizerEventsFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">OrganizerEventsFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display organizer's events</li>
+                            <li>Load events by organizer ID</li>
+                            <li>Setup search functionality</li>
+                            <li>Filter events by search query</li>
+                            <li>Display events in RecyclerView</li>
+                            <li>Navigate to create event screen</li>
+                            <li>Handle event card clicks</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>EventRepository</li>
+                            <li>EventCardAdapter</li>
+                            <li>Event</li>
+                            <li>CreateEventFragment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UserEventsFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">UserEventsFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display user's registered events</li>
+                            <li>Load user profile to get registered event IDs</li>
+                            <li>Load each event by ID</li>
+                            <li>Setup search functionality</li>
+                            <li>Filter events by search query</li>
+                            <li>Display events in RecyclerView</li>
+                            <li>Navigate to global events screen</li>
+                            <li>Handle event card clicks</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>UserRepository</li>
+                            <li>EventRepository</li>
+                            <li>EventCardAdapter</li>
+                            <li>Users</li>
+                            <li>Event</li>
+                            <li>GlobalEventsFragment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NotificationsFragment Card -->
+            <div class="crc-card">
+                <div class="card-header">NotificationsFragment</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Display user notifications screen</li>
+                            <li>Load user profile data</li>
+                            <li>Process profile data</li>
+                            <li>Handle logout functionality</li>
+                            <li>Navigate to welcome on logout</li>
+                            <li>Observe NotificationViewModel data</li>
+                        </ul>
+                    </div>
+                    <div class="collaborators">
+                        <div class="section-title">Collaborators</div>
+                        <ul>
+                            <li>UserService</li>
+                            <li>NotificationViewModel</li>
+                            <li>Users</li>
+                            <li>WelcomeFragment</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EventCardAdapter Card -->
+            <div class="crc-card">
+                <div class="card-header">EventCardAdapter</div>
+                <div class="card-body">
+                    <div class="responsibilities">
+                        <div class="section-title">Responsibilities</div>
+                        <ul>
+                            <li>Bind Event data to card views</li>
+                            <li>Display event name, date, location</li>
+                            <li>Show/hide status chip based on flag</li>
+                            <li>Set status chip colors by status</li>
+                            <li>Handle event card click</li>
+                            <li>Update adapter items for list</li>
+                            <li>Create and manage ViewHolders</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
                             <li>Event</li>
-                            <li>Entrant</li>
-                            <li>Organizer</li>
-                            <li>WaitingList</li>
-                            <li>FirebaseManager</li>
+                            <li>GlobalEventsFragment</li>
+                            <li>OrganizerEventsFragment</li>
+                            <li>UserEventsFragment</li>
                         </ul>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- NotificationService Card -->
+        <!-- VIEWMODEL CLASSES -->
+        <div class="section-header">VIEWMODEL CLASSES</div>
+        <div class="cards-grid">
+            <!-- HomeViewModel Card -->
             <div class="crc-card">
-                <div class="card-header">NotificationService</div>
+                <div class="card-header">HomeViewModel</div>
                 <div class="card-body">
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Send lottery selection and rejection notifications</li>
-                            <li>Send waitlist notifications</li>
-                            <li>Queue and deliver messages</li>
-                            <li>Track notification history</li>
+                            <li>Hold home screen live data</li>
+                            <li>Provide LiveData for UI observation</li>
+                            <li>Manage home screen state</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
-                            <li>Entrant</li>
-                            <li>LotterySystem</li>
-                            <li>EventRegistration</li>
-                            <li>Event</li>
-                            <li>Organizer</li>
-                            <li>Profile</li>
-                            <li>WaitingList</li>
-                            <li>FirebaseManager</li>
+                            <li>HomeFragment</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Administrator Card -->
+            <!-- DashboardViewModel Card -->
             <div class="crc-card">
-                <div class="card-header">Administrator</div>
+                <div class="card-header">DashboardViewModel</div>
                 <div class="card-body">
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Manage user accounts</li>
-                            <li>Override system decisions</li>
-                            <li>Access system analytics</li>
-                            <li>Configure system settings</li>
+                            <li>Hold dashboard screen live data</li>
+                            <li>Provide LiveData for UI observation</li>
+                            <li>Manage dashboard screen state</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
-                            <li>Event</li>
-                            <li>Organizer</li>
-                            <li>Entrant</li>
-                            <li>Profile</li>
-                            <li>WaitingList</li>
-                            <li>LotterySystem</li>
-                            <li>EventRegistration</li>
-                            <li>NotificationService</li>
-                            <li>FirebaseManager</li>
+                            <li>DashboardFragment</li>
                         </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- FirebaseManager Card -->
+            <!-- NotificationsViewModel Card -->
             <div class="crc-card">
-                <div class="card-header">FirebaseManager</div>
+                <div class="card-header">NotificationsViewModel</div>
                 <div class="card-body">
                     <div class="responsibilities">
                         <div class="section-title">Responsibilities</div>
                         <ul>
-                            <li>Handle database operations</li>
-                            <li>Manage real-time updates</li>
-                            <li>Store/retrieve event data</li>
-                            <li>Manage user authentication</li>
+                            <li>Hold notifications live data</li>
+                            <li>Provide LiveData for UI observation</li>
+                            <li>Manage notifications screen state</li>
                         </ul>
                     </div>
                     <div class="collaborators">
                         <div class="section-title">Collaborators</div>
                         <ul>
-                            <li>Event</li>
-                            <li>Profile</li>
-                            <li>WaitingList</li>
-                            <li>NotificationService</li>
-                            <li>Entrant</li>
-                            <li>Organizer</li>
-                            <li>Administrator</li>
-                            <li>LotterySystem</li>
-                            <li>EventRegistration</li>
-                            <li>QRCodeManager</li>
+                            <li>NotificationsFragment</li>
                         </ul>
                     </div>
                 </div>
