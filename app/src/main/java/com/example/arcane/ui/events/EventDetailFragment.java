@@ -851,11 +851,8 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                         waitingListEntryId = result.get("entryId");
                         decisionId = result.get("decisionId");
                         
-                        // Notify GlobalEventsFragment to refresh status
-                        android.os.Bundle resultBundle = new android.os.Bundle();
-                        resultBundle.putString("action", "waitlist_changed");
-                        resultBundle.putString("eventId", eventId);
-                        requireActivity().getSupportFragmentManager().setFragmentResult("waitlist_status_changed", resultBundle);
+                        // Immediately update status in GlobalEventsFragment (PENDING = "WAITING" status)
+                        com.example.arcane.ui.events.GlobalEventsFragment.updateEventStatusImmediate(eventId, "PENDING");
                         
                         // Reload user status to update UI (this will also refresh total entrants count)
                         loadUserStatus();
@@ -924,11 +921,8 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                     waitingListEntryId = null;
                     decisionId = null;
                     
-                    // Notify GlobalEventsFragment to refresh status
-                    android.os.Bundle result = new android.os.Bundle();
-                    result.putString("action", "waitlist_changed");
-                    result.putString("eventId", eventId);
-                    requireActivity().getSupportFragmentManager().setFragmentResult("waitlist_status_changed", result);
+                    // Immediately update status in GlobalEventsFragment (remove status = show "pending")
+                    com.example.arcane.ui.events.GlobalEventsFragment.updateEventStatusImmediate(eventId, null);
                     
                     // Update UI to show join button (this will also refresh total entrants count)
                     setupUserView();

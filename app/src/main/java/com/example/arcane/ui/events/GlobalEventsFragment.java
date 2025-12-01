@@ -58,6 +58,9 @@ public class GlobalEventsFragment extends Fragment {
     private DecisionRepository decisionRepository;
     private List<Event> allEvents = new ArrayList<>();
     
+    // Static reference to allow EventDetailFragment to update status immediately
+    private static GlobalEventsFragment instance;
+    
     // Filter state
     private List<String> filterCategories = new ArrayList<>();
     private Date filterDateFrom = null;
@@ -130,14 +133,23 @@ public class GlobalEventsFragment extends Fragment {
         setupSearch();
         binding.filterButton.setOnClickListener(v -> showFilterDialog());
         
-        // Listen for waitlist status changes from EventDetailFragment
-        requireActivity().getSupportFragmentManager().setFragmentResultListener("waitlist_status_changed", this, (requestKey, result) -> {
-            if (allEvents != null && !allEvents.isEmpty()) {
-                loadUserDecisions();
-            }
-        });
+        // Set instance for immediate status updates from EventDetailFragment
+        instance = this;
         
         loadAllEvents();
+    }
+    
+    /**
+     * Updates the status for a specific event immediately (without Firestore query).
+     * Called from EventDetailFragment when user joins/abandons waitlist.
+     *
+     * @param eventId the event ID
+     * @param status the new status (null to remove status, showing "pending")
+     */
+    public static void updateEventStatusImmediate(String eventId, @Nullable String status) {
+        if (instance != null && instance.adapter != null && instance.isAdded()) {
+            instance.adapter.updateEventStatus(eventId, status);
+        }
     }
 
     /**
@@ -362,6 +374,10 @@ public class GlobalEventsFragment extends Fragment {
     private void loadUserDecisions() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
+            // Clear status map if no user
+            if (adapter != null) {
+                adapter.setEventStatusMap(new HashMap<>());
+            }
             performSearch();
             return;
         }
@@ -370,6 +386,8 @@ public class GlobalEventsFragment extends Fragment {
         // Get all decisions for this user (collection group query)
         decisionRepository.getDecisionsByUser(userId)
                 .addOnSuccessListener(querySnapshot -> {
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    
                     Map<String, String> statusMap = new HashMap<>();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         Decision decision = doc.toObject(Decision.class);
@@ -383,13 +401,30 @@ public class GlobalEventsFragment extends Fragment {
                             }
                         }
                     }
+                    // Update adapter with new status map (empty map if no decisions = no status chips)
                     adapter.setEventStatusMap(statusMap);
                     performSearch();
                 })
                 .addOnFailureListener(e -> {
-                    // On failure, just show events without status
+                    if (!isAdded() || binding == null || adapter == null) return;
+                    // On failure, clear status map
+                    adapter.setEventStatusMap(new HashMap<>());
                     performSearch();
                 });
+    }
+
+    /**
+     * Called when the fragment becomes visible to the user.
+     * Refreshes user decisions to update status chips when returning from EventDetailFragment.
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh status when fragment becomes visible (e.g., after navigating back from event detail)
+        // This ensures status chips update immediately when user returns from EventDetailFragment
+        if (allEvents != null && !allEvents.isEmpty() && binding != null && adapter != null) {
+            loadUserDecisions();
+        }
     }
 
     /**
@@ -398,8 +433,10 @@ public class GlobalEventsFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Clear fragment result listener
-        requireActivity().getSupportFragmentManager().clearFragmentResultListener("waitlist_status_changed");
+        // Clear static reference when fragment is destroyed
+        if (instance == this) {
+            instance = null;
+        }
         binding = null;
     }
 }

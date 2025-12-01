@@ -23,6 +23,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -77,6 +78,21 @@ public class EventCardAdapter extends RecyclerView.Adapter<EventCardAdapter.Even
     public void setEventStatusMap(@NonNull Map<String, String> statusMap) {
         eventStatusMap.clear();
         eventStatusMap.putAll(statusMap);
+        notifyDataSetChanged();
+    }
+
+    /**
+     * Updates the status for a single event. Used for immediate updates when joining/abandoning waitlist.
+     *
+     * @param eventId the event ID
+     * @param status the new status (null to remove status)
+     */
+    public void updateEventStatus(String eventId, @Nullable String status) {
+        if (status != null && !status.isEmpty()) {
+            eventStatusMap.put(eventId, status);
+        } else {
+            eventStatusMap.remove(eventId);
+        }
         notifyDataSetChanged();
     }
 
