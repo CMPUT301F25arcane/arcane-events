@@ -50,6 +50,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    testImplementation("org.robolectric:robolectric:4.11.1")
     androidTestImplementation(libs.espresso.contrib)
     androidTestImplementation(libs.navigation.testing)
     implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
