@@ -784,5 +784,18 @@ public class EventService {
     public Task<Map<String, Object>> sendNotificationsToEntrantsByStatus(String eventId, String status, String title, String message) {
         return notificationService.sendNotificationsToEntrantsByStatus(eventId, status, title, message);
     }
+
+    /**
+     * Sends notifications to all entrants on the waiting list for an event.
+     * This is used for "Enrolled" entrants who are on the waiting list but haven't been selected yet.
+     *
+     * @param eventId the event ID
+     * @param title the notification title
+     * @param message the notification message
+     * @return a Task that completes with a map containing notification results
+     */
+    public Task<Map<String, Object>> sendNotificationsToWaitingListEntrants(String eventId, String title, String message) {
+        return notificationService.sendNotificationsToWaitingListEntrants(eventId, title, message);
+    }
 }
 

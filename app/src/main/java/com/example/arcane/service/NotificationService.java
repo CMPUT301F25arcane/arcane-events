@@ -16,6 +16,7 @@ import com.example.arcane.model.Notification;
 import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.NotificationRepository;
 import com.example.arcane.repository.UserRepository;
+import com.example.arcane.repository.WaitingListRepository;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
@@ -39,12 +40,13 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final DecisionRepository decisionRepository;
+    private final WaitingListRepository waitingListRepository;
 
     /**
      * Constructs a new NotificationService instance.
      */
     public NotificationService() {
-        this(new NotificationRepository(), new UserRepository(), new DecisionRepository());
+        this(new NotificationRepository(), new UserRepository(), new DecisionRepository(), new WaitingListRepository());
     }
 
     /**
@@ -53,11 +55,13 @@ public class NotificationService {
      * @param notificationRepository the notification repository
      * @param userRepository the user repository
      * @param decisionRepository the decision repository
+     * @param waitingListRepository the waiting list repository
      */
-    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository, DecisionRepository decisionRepository) {
+    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository, DecisionRepository decisionRepository, WaitingListRepository waitingListRepository) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.decisionRepository = decisionRepository;
+        this.waitingListRepository = waitingListRepository;
     }
 
     /**
@@ -181,6 +185,62 @@ public class NotificationService {
         // Get all notifications ordered by timestamp - caller will filter for unread
         // This avoids requiring a composite index for whereEqualTo + orderBy
         return notificationRepository.getUnreadNotificationsForUser(userId);
+    }
+
+    /**
+     * Sends notifications to all entrants on the waiting list for an event.
+     * This is used for "Enrolled" entrants who are on the waiting list but haven't been selected yet.
+     *
+     * @param eventId the event ID
+     * @param title the notification title
+     * @param message the notification message
+     * @return a Task that completes with a map containing the count of notifications sent
+     */
+    public Task<Map<String, Object>> sendNotificationsToWaitingListEntrants(String eventId, String title, String message) {
+        return waitingListRepository.getWaitingListForEvent(eventId)
+                .continueWithTask(waitingListTask -> {
+                    if (!waitingListTask.isSuccessful()) {
+                        Map<String, Object> errorResult = new HashMap<>();
+                        errorResult.put("status", "error");
+                        errorResult.put("count", 0);
+                        errorResult.put("message", "Failed to get waiting list");
+                        return com.google.android.gms.tasks.Tasks.forResult(errorResult);
+                    }
+
+                    QuerySnapshot waitingListSnapshot = waitingListTask.getResult();
+                    if (waitingListSnapshot == null || waitingListSnapshot.isEmpty()) {
+                        Map<String, Object> result = new HashMap<>();
+                        result.put("status", "success");
+                        result.put("count", 0);
+                        result.put("message", "No entrants found on waiting list");
+                        return com.google.android.gms.tasks.Tasks.forResult(result);
+                    }
+
+                    List<Task<DocumentReference>> notificationTasks = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : waitingListSnapshot) {
+                        String entrantId = doc.getString("entrantId");
+                        if (entrantId != null) {
+                            Task<DocumentReference> notificationTask = sendNotification(entrantId, eventId, "ENROLLED", title, message);
+                            notificationTasks.add(notificationTask);
+                        }
+                    }
+
+                    return com.google.android.gms.tasks.Tasks.whenAll(notificationTasks)
+                            .continueWith(allTasks -> {
+                                int sentCount = 0;
+                                for (Task<DocumentReference> task : notificationTasks) {
+                                    if (task.isSuccessful() && task.getResult() != null) {
+                                        sentCount++;
+                                    }
+                                }
+
+                                Map<String, Object> result = new HashMap<>();
+                                result.put("status", "success");
+                                result.put("count", sentCount);
+                                result.put("message", "Sent " + sentCount + " notifications");
+                                return result;
+                            });
+                });
     }
 
     /**
