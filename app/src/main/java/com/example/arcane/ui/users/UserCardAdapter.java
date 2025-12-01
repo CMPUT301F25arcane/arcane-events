@@ -1,8 +1,21 @@
+/**
+ * UserCardAdapter.java
+ * 
+ * Purpose: RecyclerView adapter for displaying user cards in a list.
+ * 
+ * Design Pattern: Adapter pattern for RecyclerView. Implements the standard
+ * RecyclerView.Adapter interface to bind user profile data to view holders.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.users;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -18,10 +31,17 @@ import java.util.List;
 
 /**
  * RecyclerView adapter for displaying user cards.
+ *
+ * <p>Manages the display of user information in a RecyclerView,
+ * including name, email, role, and profile image. Supports delete functionality
+ * for admin users.</p>
+ *
+ * @version 1.0
  */
 public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserViewHolder> {
 
     private final List<UserProfile> users = new ArrayList<>();
+    private OnDeleteClickListener onDeleteClickListener;
 
     /**
      * Sets the list of users to display.
@@ -30,6 +50,13 @@ public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserVi
         users.clear();
         users.addAll(items);
         notifyDataSetChanged();
+    }
+
+    /**
+     * Sets the delete click listener.
+     */
+    public void setOnDeleteClickListener(OnDeleteClickListener listener) {
+        this.onDeleteClickListener = listener;
     }
 
     @NonNull
@@ -56,6 +83,13 @@ public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserVi
 
         // Set placeholder image
         holder.imageView.setImageResource(android.R.drawable.ic_menu_myplaces);
+
+        // Set delete button click listener
+        holder.deleteButton.setOnClickListener(v -> {
+            if (onDeleteClickListener != null) {
+                onDeleteClickListener.onDeleteClick(user);
+            }
+        });
     }
 
     @Override
@@ -69,6 +103,7 @@ public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserVi
         TextView emailView;
         TextView roleView;
         Chip roleChip;
+        ImageButton deleteButton;
 
         UserViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -77,7 +112,15 @@ public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserVi
             emailView = itemView.findViewById(R.id.user_email);
             roleView = itemView.findViewById(R.id.user_role);
             roleChip = itemView.findViewById(R.id.role_status);
+            deleteButton = itemView.findViewById(R.id.delete_button);
         }
+    }
+
+    /**
+     * Interface for delete click events.
+     */
+    public interface OnDeleteClickListener {
+        void onDeleteClick(UserProfile user);
     }
 }
 

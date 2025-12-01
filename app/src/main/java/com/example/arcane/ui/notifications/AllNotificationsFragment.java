@@ -1,3 +1,15 @@
+/**
+ * AllNotificationsFragment.java
+ * 
+ * Purpose: Fragment to display all notifications from all users in the database (admin only).
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Repository pattern for data access.
+ * Uses ViewBinding for type-safe view access and RecyclerView with adapter pattern for list display.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.notifications;
 
 import android.os.Bundle;
@@ -21,6 +33,11 @@ import java.util.Map;
 
 /**
  * Fragment to display all notifications from all users in the database (admin only).
+ *
+ * <p>Displays a comprehensive list of all notifications sent to all users in the system.
+ * Admin users can view notifications across all users for monitoring and management purposes.</p>
+ *
+ * @version 1.0
  */
 public class AllNotificationsFragment extends Fragment {
 

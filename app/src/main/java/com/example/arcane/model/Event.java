@@ -422,18 +422,38 @@ public class Event {
         this.geolocationRequired = geolocationRequired;
     }
 
+    /**
+     * Gets the QR code image as a base64-encoded string.
+     *
+     * @return the QR code image base64 string, or null if not set
+     */
     public String getQrCodeImageBase64() {
         return qrCodeImageBase64;
     }
 
+    /**
+     * Sets the QR code image as a base64-encoded string.
+     *
+     * @param qrCodeImageBase64 the QR code image base64 string to set (nullable)
+     */
     public void setQrCodeImageBase64(String qrCodeImageBase64) {
         this.qrCodeImageBase64 = qrCodeImageBase64;
     }
 
+    /**
+     * Gets the QR code style version.
+     *
+     * @return the QR code style version, or null if not set
+     */
     public Integer getQrStyleVersion() {
         return qrStyleVersion;
     }
 
+    /**
+     * Sets the QR code style version.
+     *
+     * @param qrStyleVersion the QR code style version to set (nullable)
+     */
     public void setQrStyleVersion(Integer qrStyleVersion) {
         this.qrStyleVersion = qrStyleVersion;
     }

@@ -107,15 +107,9 @@ public class EntrantsFragment extends Fragment {
         // Setup toolbar back button
         binding.entrantsToolbar.setNavigationOnClickListener(v -> navigateBack());
         
-        // Setup menu item click listener directly on toolbar
-        // Menu is already inflated from XML (app:menu="@menu/entrants_menu")
-        binding.entrantsToolbar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_view_map) {
-                navigateToMap();
-                return true;
-            }
-            return false;
-        });
+        // Setup action buttons
+        binding.exportCsvButton.setOnClickListener(v -> exportEnrolledEntrantsToCSV());
+        binding.viewMapButton.setOnClickListener(v -> navigateToMap());
 
         // Configure window insets to separate notification panel from app content
         setupWindowInsets();
@@ -201,8 +195,11 @@ public class EntrantsFragment extends Fragment {
             return;
         }
 
-        binding.exportCsvButton.setEnabled(false);
-        binding.exportCsvButton.setText("Exporting...");
+        // Disable button during export
+        if (binding.exportCsvButton != null) {
+            binding.exportCsvButton.setEnabled(false);
+        }
+        Toast.makeText(requireContext(), "Exporting CSV...", Toast.LENGTH_SHORT).show();
 
         decisionRepository.getDecisionsForEvent(eventId)
                 .addOnSuccessListener(decisionsSnapshot -> {
@@ -210,8 +207,9 @@ public class EntrantsFragment extends Fragment {
 
                     if (decisionsSnapshot == null || decisionsSnapshot.isEmpty()) {
                         Toast.makeText(requireContext(), "No entrants found", Toast.LENGTH_SHORT).show();
-                        binding.exportCsvButton.setEnabled(true);
-                        binding.exportCsvButton.setText("Export CSV");
+                        if (binding.exportCsvButton != null) {
+                            binding.exportCsvButton.setEnabled(true);
+                        }
                         return;
                     }
 
@@ -225,8 +223,9 @@ public class EntrantsFragment extends Fragment {
 
                     if (entrantStatusMap.isEmpty()) {
                         Toast.makeText(requireContext(), "No entrants found", Toast.LENGTH_SHORT).show();
-                        binding.exportCsvButton.setEnabled(true);
-                        binding.exportCsvButton.setText("Export CSV");
+                        if (binding.exportCsvButton != null) {
+                            binding.exportCsvButton.setEnabled(true);
+                        }
                         return;
                     }
 
@@ -235,8 +234,9 @@ public class EntrantsFragment extends Fragment {
                 .addOnFailureListener(e -> {
                     if (!isAdded() || binding == null) return;
                     Toast.makeText(requireContext(), "Failed to load entrants: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    binding.exportCsvButton.setEnabled(true);
-                    binding.exportCsvButton.setText("Export CSV");
+                    if (binding.exportCsvButton != null) {
+                        binding.exportCsvButton.setEnabled(true);
+                    }
                 });
     }
 
@@ -246,8 +246,9 @@ public class EntrantsFragment extends Fragment {
 
         if (entrantIds.isEmpty()) {
             Toast.makeText(requireContext(), "No entrants found", Toast.LENGTH_SHORT).show();
-            binding.exportCsvButton.setEnabled(true);
-            binding.exportCsvButton.setText("Export CSV");
+            if (binding.exportCsvButton != null) {
+                binding.exportCsvButton.setEnabled(true);
+            }
             return;
         }
 
@@ -320,8 +321,9 @@ public class EntrantsFragment extends Fragment {
         } catch (Exception e) {
             Toast.makeText(requireContext(), "Error generating CSV: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         } finally {
-            binding.exportCsvButton.setEnabled(true);
-            binding.exportCsvButton.setText("Export CSV");
+            if (binding.exportCsvButton != null) {
+                binding.exportCsvButton.setEnabled(true);
+            }
         }
     }
 
