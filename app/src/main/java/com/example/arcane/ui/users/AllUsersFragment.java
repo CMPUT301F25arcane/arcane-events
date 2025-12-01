@@ -1,3 +1,15 @@
+/**
+ * AllUsersFragment.java
+ * 
+ * Purpose: Fragment to display all users in the database (admin only).
+ * 
+ * Design Pattern: Follows MVVM architecture pattern with Repository pattern for data access.
+ * Uses ViewBinding for type-safe view access and RecyclerView with adapter pattern for list display.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.users;
 
 import android.os.Bundle;
@@ -27,6 +39,11 @@ import java.util.List;
 
 /**
  * Fragment to display all users in the database (admin only).
+ *
+ * <p>Displays a list of all registered users with their profile information.
+ * Admin users can view and delete users from this screen.</p>
+ *
+ * @version 1.0
  */
 public class AllUsersFragment extends Fragment {
 
