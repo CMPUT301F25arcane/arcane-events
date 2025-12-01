@@ -780,7 +780,7 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
         } else if ("WON".equals(userStatus) && ("none".equals(userDecision) || userDecision == null)) {
             // Show Accept/Decline buttons (actions to be implemented later)
             binding.acceptDeclineButtonsContainer.setVisibility(View.VISIBLE);
-            binding.acceptButton.setOnClickListener(v -> handleAcceptWin());
+            binding.acceptButton.setOnClickListener(v -> showAcceptInvitationDialog());
             binding.declineButton.setOnClickListener(v -> handleDeclineWin());
         }
         // For LOST, ACCEPTED, DECLINED, ABANDONED - no buttons shown
@@ -929,6 +929,40 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                     binding.abandonButton.setEnabled(true);
                     binding.abandonButton.setText("Abandon Waitlist");
                 });
+    }
+
+    private void showAcceptInvitationDialog() {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_accept_invitation, null);
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        com.google.android.material.textfield.TextInputEditText nameInput = dialogView.findViewById(R.id.etEntrantName);
+        CheckBox termsCheckbox = dialogView.findViewById(R.id.checkboxTermsConditions);
+        com.google.android.material.button.MaterialButton submitButton = dialogView.findViewById(R.id.btnAcceptAndSubmit);
+
+        submitButton.setOnClickListener(v -> {
+            String entrantName = nameInput.getText() != null ? nameInput.getText().toString().trim() : "";
+            boolean termsAccepted = termsCheckbox.isChecked();
+
+            // Validate form
+            if (entrantName.isEmpty()) {
+                Toast.makeText(requireContext(), "Please enter the entrant name", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!termsAccepted) {
+                Toast.makeText(requireContext(), "Please accept the terms and conditions", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Close dialog and proceed with acceptance
+            dialog.dismiss();
+            handleAcceptWin();
+        });
+
+        dialog.show();
     }
 
     private void handleAcceptWin() {
