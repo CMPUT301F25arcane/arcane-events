@@ -14,7 +14,8 @@ navigationUi = "2.9.4"
 zxing = "3.5.2"
 zxingEmbedded = "4.3.0"
 fragmentTesting = "1.6.2"
-mockito = "5.2.0"
+mockito = "5.14.2"
+robolectric = "4.13"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -31,6 +32,7 @@ navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version
 fragment-testing = { group = "androidx.fragment", name = "fragment-testing", version.ref = "fragmentTesting" }
 navigation-testing = { group = "androidx.navigation", name = "navigation-testing", version.ref = "navigationFragment" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingEmbedded" }
 

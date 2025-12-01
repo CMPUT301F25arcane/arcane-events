@@ -48,6 +48,7 @@ dependencies {
     androidTestImplementation(libs.fragment.testing)
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     testImplementation("org.robolectric:robolectric:4.11.1")
