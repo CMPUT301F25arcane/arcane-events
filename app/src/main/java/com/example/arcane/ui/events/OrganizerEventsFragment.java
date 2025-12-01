@@ -76,6 +76,15 @@ public class OrganizerEventsFragment extends Fragment {
     }};
 
     /**
+     * Gets the event adapter (for testing purposes).
+     *
+     * @return the event card adapter
+     */
+    public EventCardAdapter getAdapter() {
+        return adapter;
+    }
+
+    /**
      * Creates and returns the view hierarchy for this fragment.
      *
      * @param inflater the layout inflater
