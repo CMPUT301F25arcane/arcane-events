@@ -846,6 +846,7 @@ public class EventService {
                             
                             Map<String, Object> registration = new HashMap<>();
                             registration.put("entrantId", decision.getEntrantId());
+                            registration.put("decisionId", decision.getDecisionId());
                             registration.put("status", decision.getStatus());
                             registration.put("updatedAt", decision.getUpdatedAt());
                             registration.put("respondedAt", decision.getRespondedAt());
@@ -940,6 +941,57 @@ public class EventService {
      */
     public Task<Map<String, Object>> sendNotificationsToWaitingListEntrants(String eventId, String title, String message) {
         return notificationService.sendNotificationsToWaitingListEntrants(eventId, title, message);
+    }
+
+    /**
+     * Cancels an entrant's invitation (organizer cancels an INVITED entrant).
+     * Updates the decision status to CANCELLED and promotes the next winner.
+     *
+     * @param eventId the event ID
+     * @param entrantId the entrant's user ID
+     * @param decisionId the decision ID
+     * @return a Task that completes when the cancellation is done
+     */
+    public Task<Void> cancelEntrantInvitation(String eventId, String entrantId, String decisionId) {
+        return decisionRepository.getDecisionById(eventId, decisionId)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Decision not found"));
+                    }
+
+                    Decision decision = task.getResult().toObject(Decision.class);
+                    if (decision == null || !entrantId.equals(decision.getEntrantId())) {
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Invalid decision for entrant"));
+                    }
+
+                    // Only allow cancellation if status is INVITED
+                    if (!"INVITED".equals(decision.getStatus())) {
+                        return com.google.android.gms.tasks.Tasks.forException(new Exception("Can only cancel INVITED entrants"));
+                    }
+
+                    // Update decision status to CANCELLED
+                    decision.setStatus("CANCELLED");
+                    decision.setUpdatedAt(Timestamp.now());
+                    decision.setRespondedAt(Timestamp.now());
+
+                    return decisionRepository.updateDecision(eventId, decisionId, decision)
+                            .continueWithTask(updateTask -> {
+                                if (!updateTask.isSuccessful()) {
+                                    return com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to update decision"));
+                                }
+
+                                Log.d("EventService", "Cancelled invitation for entrant " + entrantId);
+
+                                // Promote next winner from waiting list
+                                promoteNextWinner(eventId)
+                                        .addOnFailureListener(e -> {
+                                            Log.w("EventService", "Failed to promote replacement winner after cancellation", e);
+                                        });
+
+                                // Return success even if promotion fails (non-blocking)
+                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                            });
+                });
     }
 }
 
