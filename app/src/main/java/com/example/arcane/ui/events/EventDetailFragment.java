@@ -1186,14 +1186,13 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
 
         dialogBinding.buttonOk.setOnClickListener(v -> {
             List<String> selectedStatuses = new ArrayList<>();
-            boolean sendToWaitingList = false;
             
             if (dialogBinding.checkboxInvited.isChecked()) {
                 selectedStatuses.add("INVITED");
             }
             if (dialogBinding.checkboxEnrolled.isChecked()) {
-                // "Enrolled" means waiting list entrants, not ACCEPTED status
-                sendToWaitingList = true;
+                // "Enrolled" means entrants with PENDING status (waiting state)
+                selectedStatuses.add("PENDING");
             }
             if (dialogBinding.checkboxLost.isChecked()) {
                 selectedStatuses.add("LOST");
@@ -1202,19 +1201,19 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                 selectedStatuses.add("CANCELLED");
             }
 
-            if (selectedStatuses.isEmpty() && !sendToWaitingList) {
+            if (selectedStatuses.isEmpty()) {
                 Toast.makeText(requireContext(), "Please select at least one group", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             dialog.dismiss();
-            sendNotificationsToSelectedGroups(selectedStatuses, sendToWaitingList);
+            sendNotificationsToSelectedGroups(selectedStatuses);
         });
 
         dialog.show();
     }
 
-    private void sendNotificationsToSelectedGroups(List<String> statuses, boolean sendToWaitingList) {
+    private void sendNotificationsToSelectedGroups(List<String> statuses) {
         if (eventId == null || currentEvent == null) {
             return;
         }
@@ -1223,14 +1222,6 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
         
         // Send notifications with status-specific messages
         List<com.google.android.gms.tasks.Task<Map<String, Object>>> statusTasks = new ArrayList<>();
-        
-        // Handle waiting list entrants (Enrolled)
-        if (sendToWaitingList) {
-            String title = "Event update";
-            String message = "You have an update regarding " + eventName + ".";
-            com.google.android.gms.tasks.Task<Map<String, Object>> waitingListTask = eventService.sendNotificationsToWaitingListEntrants(eventId, title, message);
-            statusTasks.add(waitingListTask);
-        }
         
         // Handle status-based notifications
         for (String status : statuses) {
@@ -1241,12 +1232,13 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
             if ("INVITED".equals(status)) {
                 title = "You won the lottery!";
                 message = "Congratulations! You have been selected for " + eventName + ". Please accept or decline your invitation.";
+            } else if ("PENDING".equals(status)) {
+                // Enrolled: entrants with PENDING status (waiting state)
+                title = "Event update";
+                message = "You have an update regarding " + eventName + ".";
             } else if ("LOST".equals(status)) {
                 title = "Lottery results";
                 message = "Unfortunately, you were not selected for " + eventName + ". You may still have a chance if someone declines.";
-            } else if ("ACCEPTED".equals(status)) {
-                title = "Registration confirmed";
-                message = "Your registration for " + eventName + " has been confirmed. We look forward to seeing you!";
             } else if ("CANCELLED".equals(status)) {
                 title = "Event update";
                 message = "Your participation in " + eventName + " has been cancelled.";
