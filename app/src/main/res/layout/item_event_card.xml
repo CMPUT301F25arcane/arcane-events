@@ -109,8 +109,7 @@
             style="@style/Widget.MaterialComponents.Chip.Entry"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="-20dp"
             android:text="📍 Location"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -118,9 +117,8 @@
             app:chipStrokeWidth="0dp"
             app:chipMinHeight="24dp"
             app:closeIconEnabled="false"
-            app:layout_constraintTop_toBottomOf="@id/event_location"
-            app:layout_constraintStart_toEndOf="@id/image_container"
-            app:layout_constraintEnd_toStartOf="@id/waitlist_status"
+            app:layout_constraintTop_toBottomOf="@id/category_tag"
+            app:layout_constraintEnd_toEndOf="parent"
             tools:text="📍 Location" />
 
         <!-- Waitlist Status Bubble -->
@@ -140,7 +138,7 @@
             app:chipMinHeight="28dp"
             app:closeIconEnabled="false"
             app:layout_constraintTop_toBottomOf="@id/event_location"
-            app:layout_constraintStart_toEndOf="@id/location_chip"
+            app:layout_constraintStart_toEndOf="@id/image_container"
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="PENDING" />
 
