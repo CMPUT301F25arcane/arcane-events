@@ -16,7 +16,6 @@
         app:titleTextColor="?attr/colorOnPrimary"
         app:navigationIcon="?attr/homeAsUpIndicator"
         app:navigationIconTint="?attr/colorOnPrimary"
-        app:menu="@menu/entrants_menu"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -37,6 +36,47 @@
             android:layout_height="wrap_content"
             android:paddingBottom="16dp">
 
+            <!-- Action Buttons Container -->
+            <LinearLayout
+                android:id="@+id/action_buttons_container"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:background="@color/surface"
+                android:gravity="end"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/export_csv_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Export CSV"
+                    android:textSize="16sp"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:backgroundTint="?attr/colorPrimary"
+                    app:icon="@android:drawable/ic_menu_share"
+                    app:iconTint="?attr/colorOnPrimary"
+                    app:cornerRadius="8dp"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.Material3.Button" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/view_map_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="View Map"
+                    android:textSize="16sp"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:backgroundTint="?attr/colorPrimary"
+                    app:icon="@drawable/ic_map_white"
+                    app:iconTint="?attr/colorOnPrimary"
+                    app:cornerRadius="8dp"
+                    style="@style/Widget.Material3.Button" />
+            </LinearLayout>
+
             <!-- Search Bar Container -->
             <LinearLayout
                 android:id="@+id/search_container"
@@ -46,7 +86,7 @@
                 android:padding="16dp"
                 android:background="@color/surface"
                 android:elevation="2dp"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/action_buttons_container"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent">
 
@@ -94,40 +134,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 tools:listitem="@layout/item_entrant_card" />
 
-            <!-- Hidden Action Buttons Container (kept for backward compatibility but not visible) -->
-            <LinearLayout
-                android:id="@+id/action_buttons_container"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@id/entrants_recycler_view"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/export_csv_button"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:text="Export CSV"
-                    android:textColor="?attr/colorOnPrimary"
-                    android:backgroundTint="?attr/colorPrimary"
-                    app:cornerRadius="8dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/view_map_button"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="View Map"
-                    android:textColor="@color/text_primary"
-                    android:backgroundTint="@color/surface_alt"
-                    app:cornerRadius="8dp" />
-
-            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
