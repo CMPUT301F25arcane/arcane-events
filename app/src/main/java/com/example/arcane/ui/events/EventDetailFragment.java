@@ -623,22 +623,76 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
             binding.acceptDeclineButtonsContainer.setVisibility(View.GONE);
             binding.joinButtonContainer.setVisibility(View.VISIBLE);
 
-            if (isWaitlistFull) {
-                // Waitlist is full - show orange disabled button
-                binding.joinButton.setText("Waitlist Full");
-                binding.joinButton.setEnabled(false);
-                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                    getResources().getColor(R.color.status_declined, null)));
-                binding.joinButton.setOnClickListener(null);
-            } else {
-                // Waitlist has space - show blue Join button
-                binding.joinButton.setText("Join Waitlist");
-                binding.joinButton.setEnabled(true);
-                binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                    getResources().getColor(R.color.brand_primary, null)));
-                binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
-            }
+            // Check if lottery has been drawn
+            checkIfLotteryDrawnAndUpdateUI();
         }
+    }
+
+    private void checkIfLotteryDrawnAndUpdateUI() {
+        if (binding == null || !isAdded()) return;
+        
+        // Check if lottery has been drawn by checking for INVITED or LOST decisions
+        decisionRepository.getDecisionsByStatus(eventId, "INVITED")
+                .continueWithTask(invitedTask -> {
+                    boolean hasInvited = invitedTask.isSuccessful() && !invitedTask.getResult().isEmpty();
+                    if (hasInvited) {
+                        // Lottery has been drawn
+                        return com.google.android.gms.tasks.Tasks.forResult(true);
+                    }
+                    // Check for LOST status as well
+                    return decisionRepository.getDecisionsByStatus(eventId, "LOST")
+                            .continueWith(lostTask -> {
+                                boolean hasLost = lostTask.isSuccessful() && !lostTask.getResult().isEmpty();
+                                return hasInvited || hasLost;
+                            });
+                })
+                .addOnSuccessListener(lotteryDrawn -> {
+                    if (binding == null || !isAdded()) return;
+                    
+                    if (lotteryDrawn != null && lotteryDrawn) {
+                        // Lottery has been drawn - disable join button
+                        binding.joinButton.setText("Lottery Drawn");
+                        binding.joinButton.setEnabled(false);
+                        binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                            getResources().getColor(R.color.lottery_status_closed, null)));
+                        binding.joinButton.setOnClickListener(null);
+                    } else {
+                        // Lottery not drawn - check waitlist full status
+                        if (isWaitlistFull) {
+                            // Waitlist is full - show orange disabled button
+                            binding.joinButton.setText("Waitlist Full");
+                            binding.joinButton.setEnabled(false);
+                            binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                                getResources().getColor(R.color.status_declined, null)));
+                            binding.joinButton.setOnClickListener(null);
+                        } else {
+                            // Waitlist has space - show blue Join button
+                            binding.joinButton.setText("Join Waitlist");
+                            binding.joinButton.setEnabled(true);
+                            binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                                getResources().getColor(R.color.brand_primary, null)));
+                            binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // On failure, fall back to waitlist full check
+                    if (binding == null || !isAdded()) return;
+                    
+                    if (isWaitlistFull) {
+                        binding.joinButton.setText("Waitlist Full");
+                        binding.joinButton.setEnabled(false);
+                        binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                            getResources().getColor(R.color.status_declined, null)));
+                        binding.joinButton.setOnClickListener(null);
+                    } else {
+                        binding.joinButton.setText("Join Waitlist");
+                        binding.joinButton.setEnabled(true);
+                        binding.joinButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                            getResources().getColor(R.color.brand_primary, null)));
+                        binding.joinButton.setOnClickListener(v -> handleJoinWaitlist());
+                    }
+                });
     }
 
     private void checkWaitlistFull() {
@@ -820,6 +874,43 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
 
         String userId = currentUser.getUid();
 
+        // Check if lottery has already been drawn
+        // If there are any decisions with status "INVITED" or "LOST", the lottery has been drawn
+        decisionRepository.getDecisionsByStatus(eventId, "INVITED")
+                .continueWithTask(invitedTask -> {
+                    boolean hasInvited = invitedTask.isSuccessful() && !invitedTask.getResult().isEmpty();
+                    if (hasInvited) {
+                        // Lottery has been drawn (winners exist)
+                        return com.google.android.gms.tasks.Tasks.forResult(true);
+                    }
+                    // Check for LOST status as well
+                    return decisionRepository.getDecisionsByStatus(eventId, "LOST")
+                            .continueWith(lostTask -> {
+                                boolean hasLost = lostTask.isSuccessful() && !lostTask.getResult().isEmpty();
+                                return hasInvited || hasLost;
+                            });
+                })
+                .addOnSuccessListener(lotteryDrawn -> {
+                    if (lotteryDrawn != null && lotteryDrawn) {
+                        // Lottery has been drawn, prevent joining
+                        Toast.makeText(requireContext(), "The lottery has already been drawn. You cannot join this event.", Toast.LENGTH_LONG).show();
+                        if (binding != null && isAdded()) {
+                            binding.joinButton.setEnabled(true);
+                            binding.joinButton.setText("Join Waitlist");
+                        }
+                        return;
+                    }
+                    
+                    // Lottery not drawn yet, proceed with joining
+                    proceedWithJoinWaitlistInternal(userId);
+                })
+                .addOnFailureListener(e -> {
+                    // If check fails, allow joining (fail open for better UX)
+                    proceedWithJoinWaitlistInternal(userId);
+                });
+    }
+
+    private void proceedWithJoinWaitlistInternal(String userId) {
         // Get session location (captured at login)
         com.google.firebase.firestore.GeoPoint sessionLocation = SessionLocationManager.getSessionLocation(requireContext());
         Log.d("EventDetailFragment", "DEBUG: Session location: " + (sessionLocation != null ? "EXISTS" : "NULL"));
