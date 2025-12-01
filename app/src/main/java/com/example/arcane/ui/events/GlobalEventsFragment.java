@@ -129,6 +129,14 @@ public class GlobalEventsFragment extends Fragment {
 
         setupSearch();
         binding.filterButton.setOnClickListener(v -> showFilterDialog());
+        
+        // Listen for waitlist status changes from EventDetailFragment
+        requireActivity().getSupportFragmentManager().setFragmentResultListener("waitlist_status_changed", this, (requestKey, result) -> {
+            if (allEvents != null && !allEvents.isEmpty()) {
+                loadUserDecisions();
+            }
+        });
+        
         loadAllEvents();
     }
 
@@ -385,24 +393,13 @@ public class GlobalEventsFragment extends Fragment {
     }
 
     /**
-     * Called when the fragment becomes visible to the user.
-     * Reloads user decisions to refresh status chips after navigation.
-     */
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Refresh user decisions to update status chips (e.g., after abandoning waitlist)
-        if (allEvents != null && !allEvents.isEmpty()) {
-            loadUserDecisions();
-        }
-    }
-
-    /**
      * Called when the view hierarchy is being removed.
      */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        // Clear fragment result listener
+        requireActivity().getSupportFragmentManager().clearFragmentResultListener("waitlist_status_changed");
         binding = null;
     }
 }

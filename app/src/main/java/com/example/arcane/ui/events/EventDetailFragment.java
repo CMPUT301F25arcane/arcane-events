@@ -851,6 +851,12 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                         waitingListEntryId = result.get("entryId");
                         decisionId = result.get("decisionId");
                         
+                        // Notify GlobalEventsFragment to refresh status
+                        android.os.Bundle resultBundle = new android.os.Bundle();
+                        resultBundle.putString("action", "waitlist_changed");
+                        resultBundle.putString("eventId", eventId);
+                        requireActivity().getSupportFragmentManager().setFragmentResult("waitlist_status_changed", resultBundle);
+                        
                         // Reload user status to update UI (this will also refresh total entrants count)
                         loadUserStatus();
                     } else if ("already_exists".equals(status)) {
@@ -917,6 +923,12 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                     userDecision = null;
                     waitingListEntryId = null;
                     decisionId = null;
+                    
+                    // Notify GlobalEventsFragment to refresh status
+                    android.os.Bundle result = new android.os.Bundle();
+                    result.putString("action", "waitlist_changed");
+                    result.putString("eventId", eventId);
+                    requireActivity().getSupportFragmentManager().setFragmentResult("waitlist_status_changed", result);
                     
                     // Update UI to show join button (this will also refresh total entrants count)
                     setupUserView();
