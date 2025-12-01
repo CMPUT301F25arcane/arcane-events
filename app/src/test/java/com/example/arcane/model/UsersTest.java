@@ -50,7 +50,10 @@ public class UsersTest {
         assertNull("DeviceId should be null", user.getDeviceId());
         assertNull("CreatedAt should be null", user.getCreatedAt());
         assertNull("Role should be null", user.getRole());
-        assertNull("RegisteredEventIds should be null", user.getRegisteredEventIds());
+        assertNotNull("RegisteredEventIds should be initialized", user.getRegisteredEventIds());
+        assertTrue("RegisteredEventIds should be empty ArrayList", user.getRegisteredEventIds().isEmpty());
+        assertEquals("NotificationOptOut should default to false", Boolean.FALSE, user.getNotificationOptOut());
+        assertEquals("LocationTrackingEnabled should default to false", Boolean.FALSE, user.getLocationTrackingEnabled());
     }
 
     /**
