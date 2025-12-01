@@ -629,6 +629,9 @@ public class NotificationsFragment extends Fragment {
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove("user_role");
         editor.apply();
+        
+        // Clear session location on logout
+        com.example.arcane.util.SessionLocationManager.clearSessionLocation(requireContext());
     }
 
     /**

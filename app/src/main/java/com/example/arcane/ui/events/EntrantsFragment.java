@@ -8,8 +8,7 @@
  * Uses ViewBinding for type-safe view access and RecyclerView with adapter pattern for list display.
  * 
  * Outstanding Issues:
- * - View map functionality is not yet implemented
- * - Location information is not available in the Users model
+ * - Location information is not available in the Users model (using WaitingListEntry.joinLocation instead)
  * 
  * @version 1.0
  */

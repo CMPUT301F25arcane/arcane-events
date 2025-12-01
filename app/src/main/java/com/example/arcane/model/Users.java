@@ -1,11 +1,8 @@
 /**
  * Users.java
- * 
  * Purpose: Represents a user in the system with authentication and profile information.
- * 
  * Design Pattern: Domain Model pattern. This class serves as the user data model
  * for Firestore persistence.
- * 
  * Outstanding Issues:
  * - The registeredEventIds field is a workaround for tracking user's registered events;
  *   ideally this should be managed through subcollections or queries
@@ -38,14 +35,23 @@ public class Users {
     private String role;       // e.g., "USER" or "ORGANISER"
     private List<String> registeredEventIds; // workaround array for My Events
     private Boolean notificationOptOut;  // whether user has opted out of notifications
+    private Boolean locationTrackingEnabled;  // whether user has enabled location tracking (default: false)
     private String pronouns;   // optional pronouns (e.g., "He/Him", "She/Her", "They/Them")
     private String profilePictureUrl;  // base64 encoded profile picture
 
     /**
      * Required no-arg constructor for Firestore deserialization.
+     * 
+     * <p>Initializes default values for fields that should never be null.
+     * This ensures backward compatibility with existing Firestore documents
+     * that may not have these fields.</p>
      */
     // Required public no-arg constructor (Firestore uses this)
-    public Users() {}
+    public Users() {
+        this.registeredEventIds = new ArrayList<>();
+        this.notificationOptOut = false;
+        this.locationTrackingEnabled = false;  // Default to false for privacy-first approach
+    }
 
     /**
      * Creates a new Users instance.
@@ -67,6 +73,7 @@ public class Users {
         this.role = null;
         this.registeredEventIds = new ArrayList<>();
         this.notificationOptOut = true;  // default to true (notifications OFF by default)
+        this.locationTrackingEnabled = false;  // default to false (privacy-first: user must opt-in)
     }
 
     // Getters & setters
@@ -185,10 +192,13 @@ public class Users {
     /**
      * Gets whether the user has opted out of notifications.
      *
+     * <p>Returns false if the field is null (for backward compatibility with
+     * existing Firestore documents that don't have this field).</p>
+     *
      * @return true if opted out, false otherwise
      */
     public Boolean getNotificationOptOut() {
-        return notificationOptOut;
+        return notificationOptOut != null ? notificationOptOut : false;
     }
 
     /**
@@ -198,6 +208,27 @@ public class Users {
      */
     public void setNotificationOptOut(Boolean notificationOptOut) {
         this.notificationOptOut = notificationOptOut;
+    }
+
+    /**
+     * Gets whether the user has enabled location tracking.
+     *
+     * <p>Returns false if the field is null (for backward compatibility with
+     * existing Firestore documents that don't have this field).</p>
+     *
+     * @return true if location tracking is enabled, false otherwise
+     */
+    public Boolean getLocationTrackingEnabled() {
+        return locationTrackingEnabled != null ? locationTrackingEnabled : false;
+    }
+
+    /**
+     * Sets whether the user has enabled location tracking.
+     *
+     * @param locationTrackingEnabled true to enable location tracking, false to disable
+     */
+    public void setLocationTrackingEnabled(Boolean locationTrackingEnabled) {
+        this.locationTrackingEnabled = locationTrackingEnabled != null ? locationTrackingEnabled : false;
     }
 
     /**

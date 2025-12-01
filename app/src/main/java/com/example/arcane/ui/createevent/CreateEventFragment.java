@@ -25,10 +25,17 @@ import com.example.arcane.R;
 import com.example.arcane.databinding.FragmentCreateEventBinding;
 import com.example.arcane.model.Event;
 import com.example.arcane.service.EventService;
+import com.google.android.gms.common.api.Status;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.widget.Autocomplete;
+import com.google.android.libraries.places.widget.AutocompleteActivity;
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.zxing.BarcodeFormat;
 import com.example.arcane.util.QrCodeGenerator;
 import com.google.zxing.WriterException;
@@ -74,6 +81,8 @@ public class CreateEventFragment extends Fragment {
     private SimpleDateFormat dateTimeFormat;
     private String selectedImageBase64;
     private ActivityResultLauncher<String> imagePickerLauncher;
+    private ActivityResultLauncher<android.content.Intent> placesAutocompleteLauncher;
+    private GeoPoint selectedLocationGeoPoint; // Store selected location coordinates
 
     /**
      * Called when the fragment is created.
@@ -94,6 +103,24 @@ public class CreateEventFragment extends Fragment {
         imagePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             this::handleImageSelection
+        );
+        
+        // Register Places Autocomplete launcher
+        placesAutocompleteLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == android.app.Activity.RESULT_OK) {
+                    android.content.Intent data = result.getData();
+                    if (data != null) {
+                        Place place = Autocomplete.getPlaceFromIntent(data);
+                        handlePlaceSelection(place);
+                    }
+                } else if (result.getResultCode() == AutocompleteActivity.RESULT_ERROR) {
+                    Status status = Autocomplete.getStatusFromIntent(result.getData());
+                    Log.e(TAG, "Places Autocomplete error: " + status.getStatusMessage());
+                    Toast.makeText(requireContext(), "Error selecting location: " + status.getStatusMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
         );
     }
 
@@ -135,12 +162,146 @@ public class CreateEventFragment extends Fragment {
 
         // Setup category dropdown
         setupCategoryDropdown();
+        
+        // Initialize Places SDK
+        initializePlaces();
+        
+        // Setup location autocomplete
+        setupLocationAutocomplete();
 
         // Setup image upload
         binding.imageUploadCard.setOnClickListener(v -> openImagePicker());
 
         // Setup create event button
         binding.createEventButton.setOnClickListener(v -> createEvent());
+    }
+    
+    /**
+     * Initializes Google Places SDK.
+     * 
+     * <p>Gets the API key from AndroidManifest.xml meta-data.
+     * Note: API key must be set in AndroidManifest before this will work.</p>
+     */
+    private void initializePlaces() {
+        if (!Places.isInitialized()) {
+            try {
+                android.content.pm.ApplicationInfo appInfo = requireContext().getPackageManager()
+                    .getApplicationInfo(requireContext().getPackageName(), android.content.pm.PackageManager.GET_META_DATA);
+                String apiKey = appInfo.metaData.getString("com.google.android.geo.API_KEY");
+                if (apiKey != null && !apiKey.equals("YOUR_API_KEY")) {
+                    Places.initialize(requireContext(), apiKey);
+                } else {
+                    Log.w(TAG, "Google Places API key not configured. Autocomplete will not work.");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error initializing Places SDK", e);
+            }
+        }
+    }
+    
+    /**
+     * Sets up location autocomplete functionality.
+     * When user clicks on location input, opens Places Autocomplete if available.
+     * If autocomplete is not available, allows manual typing.
+     */
+    private void setupLocationAutocomplete() {
+        // Only trigger autocomplete on click if Places is initialized
+        // Otherwise, allow manual typing
+        binding.locationInput.setOnClickListener(v -> {
+            if (Places.isInitialized()) {
+                openPlacesAutocomplete();
+            } else {
+                // Places not initialized - allow manual typing
+                // Just focus the field so user can type
+                binding.locationInput.requestFocus();
+            }
+        });
+        
+        // On focus, only open autocomplete if Places is initialized and field is empty
+        binding.locationInput.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && Places.isInitialized()) {
+                String currentText = binding.locationInput.getText() != null 
+                    ? binding.locationInput.getText().toString() 
+                    : "";
+                // Only open autocomplete if field is empty
+                if (currentText.isEmpty()) {
+                    openPlacesAutocomplete();
+                }
+            }
+        });
+    }
+    
+    /**
+     * Opens Google Places Autocomplete activity.
+     */
+    private void openPlacesAutocomplete() {
+        // Check if Places SDK is initialized
+        if (!Places.isInitialized()) {
+            Log.w(TAG, "Places SDK not initialized. Attempting to initialize...");
+            initializePlaces();
+            
+            // If still not initialized, show error and allow manual typing
+            if (!Places.isInitialized()) {
+                Toast.makeText(requireContext(), 
+                    "Places API not configured. You can type the location manually.", 
+                    Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Cannot open autocomplete: Places SDK not initialized");
+                return;
+            }
+        }
+        
+        try {
+            // Specify the fields to be returned
+            List<Place.Field> fields = java.util.Arrays.asList(
+                Place.Field.ID,
+                Place.Field.NAME,
+                Place.Field.ADDRESS,
+                Place.Field.LAT_LNG
+            );
+            
+            // Build the autocomplete intent
+            android.content.Intent intent = new Autocomplete.IntentBuilder(
+                AutocompleteActivityMode.FULLSCREEN,
+                fields
+            ).build(requireContext());
+            
+            // Launch the autocomplete activity
+            placesAutocompleteLauncher.launch(intent);
+        } catch (Exception e) {
+            // Catch any exceptions and allow manual typing
+            Log.e(TAG, "Error opening Places Autocomplete: " + e.getMessage(), e);
+            Toast.makeText(requireContext(), 
+                "Autocomplete unavailable. You can type the location manually.", 
+                Toast.LENGTH_LONG).show();
+            // Don't crash - allow user to type manually
+        }
+    }
+    
+    /**
+     * Handles the selected place from Places Autocomplete.
+     *
+     * @param place the selected Place object
+     */
+    private void handlePlaceSelection(Place place) {
+        // Set the address in the location input field
+        String address = place.getAddress();
+        if (address != null) {
+            binding.locationInput.setText(address);
+            binding.locationInputLayout.setError(null);
+        }
+        
+        // Store the coordinates for later use (Commit 13 will save this to event.geolocation)
+        if (place.getLatLng() != null) {
+            selectedLocationGeoPoint = new GeoPoint(
+                place.getLatLng().latitude,
+                place.getLatLng().longitude
+            );
+            Log.d(TAG, "Location selected: " + address + " at " + 
+                  selectedLocationGeoPoint.getLatitude() + ", " + 
+                  selectedLocationGeoPoint.getLongitude());
+        } else {
+            selectedLocationGeoPoint = null;
+        }
     }
 
     /**
@@ -345,8 +506,9 @@ public class CreateEventFragment extends Fragment {
         // Set status to "OPEN" for new events
         event.setStatus("OPEN");
         
-        // Optional fields
-        event.setGeolocation(null); // Can be set later if geolocation is enabled
+        // Set geolocation if address was selected via Places Autocomplete
+        // selectedLocationGeoPoint is set in handlePlaceSelection() when organizer selects address
+        event.setGeolocation(selectedLocationGeoPoint); // null if no address selected via autocomplete
         event.setPosterImageUrl(selectedImageBase64); // Set the base64 encoded image
 
         // Save to Firebase using EventService (per docs architecture)

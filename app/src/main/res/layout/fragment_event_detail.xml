@@ -443,6 +443,28 @@
                     android:gravity="center_vertical" />
             </LinearLayout>
 
+            <!-- Event Location Map -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/eventMapCard"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/surface_alt">
+
+                <fragment
+                    android:id="@+id/eventMapFragment"
+                    android:name="com.google.android.gms.maps.SupportMapFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    tools:context=".ui.events.EventDetailFragment" />
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Price row -->
             <LinearLayout
                 android:layout_width="match_parent"

@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
@@ -16,6 +18,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Arcane">
+        
+        <!-- Google Maps API Key -->
+        <!-- TODO: Replace YOUR_API_KEY with your actual Google Maps API key -->
+        <!-- Get your API key from: https://console.cloud.google.com/google/maps-apis -->
+        <!-- Add this meta-data inside the <application> tag -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAQv7BMoVWByWNS_nlEi2zjdOyL_tKowtU" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

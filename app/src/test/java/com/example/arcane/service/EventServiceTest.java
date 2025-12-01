@@ -10,12 +10,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.arcane.model.Event;
 import com.example.arcane.model.UserProfile;
 import com.example.arcane.model.WaitingListEntry;
 import com.example.arcane.repository.DecisionRepository;
 import com.example.arcane.repository.EventRepository;
 import com.example.arcane.repository.UserRepository;
 import com.example.arcane.repository.WaitingListRepository;
+import com.example.arcane.service.NotificationService;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -70,11 +72,14 @@ public class EventServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     private EventService subject;
 
     @Before
     public void setUp() {
-        subject = new EventService(eventRepository, waitingListRepository, decisionRepository, userRepository);
+        subject = new EventService(eventRepository, waitingListRepository, decisionRepository, userRepository, notificationService);
     }
 
     @Test
@@ -83,7 +88,8 @@ public class EventServiceTest {
         when(waitingListRepository.checkUserInWaitingList(EVENT_ID, ENTRANT_ID))
                 .thenReturn(Tasks.forResult(existingSnapshot));
 
-        com.google.android.gms.tasks.Task<Map<String, String>> task = subject.joinWaitingList(EVENT_ID, ENTRANT_ID);
+        // Call with null sessionLocation (tests don't require location)
+        com.google.android.gms.tasks.Task<Map<String, String>> task = subject.joinWaitingList(EVENT_ID, ENTRANT_ID, null);
         Shadows.shadowOf(Looper.getMainLooper()).idle();
 
         assertTrue(task.isComplete());
@@ -102,6 +108,15 @@ public class EventServiceTest {
         when(waitingListRepository.checkUserInWaitingList(EVENT_ID, ENTRANT_ID))
                 .thenReturn(Tasks.forResult(emptySnapshot));
 
+        // Mock event fetch (required for geolocationRequired check)
+        Event testEvent = new Event();
+        testEvent.setGeolocationRequired(false); // Test with geolocation not required
+        DocumentSnapshot eventSnapshot = org.mockito.Mockito.mock(DocumentSnapshot.class);
+        when(eventSnapshot.exists()).thenReturn(true);
+        when(eventSnapshot.toObject(Event.class)).thenReturn(testEvent);
+        when(eventRepository.getEventById(EVENT_ID))
+                .thenReturn(Tasks.forResult(eventSnapshot));
+
         DocumentReference entryRef = mockDocumentReference(ENTRY_ID);
         when(waitingListRepository.addToWaitingList(anyString(), any(WaitingListEntry.class)))
                 .thenReturn(Tasks.forResult(entryRef));
@@ -119,7 +134,8 @@ public class EventServiceTest {
         when(userRepository.getUserById(ENTRANT_ID)).thenReturn(Tasks.forResult(userSnapshot));
         when(userRepository.updateUser(any(UserProfile.class))).thenReturn(Tasks.forResult(null));
 
-        com.google.android.gms.tasks.Task<Map<String, String>> task = subject.joinWaitingList(EVENT_ID, ENTRANT_ID);
+        // Call with null sessionLocation (tests don't require location)
+        com.google.android.gms.tasks.Task<Map<String, String>> task = subject.joinWaitingList(EVENT_ID, ENTRANT_ID, null);
         Shadows.shadowOf(Looper.getMainLooper()).idle();
 
         assertTrue(task.isComplete());
