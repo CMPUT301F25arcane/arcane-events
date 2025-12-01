@@ -9,5 +9,12 @@
         app:iconTint="?attr/colorOnPrimary"
         app:showAsAction="always" />
 
+    <item
+        android:id="@+id/action_export_csv"
+        android:icon="@android:drawable/ic_menu_share"
+        android:title="Export CSV"
+        app:iconTint="?attr/colorOnPrimary"
+        app:showAsAction="always" />
+
 </menu>
 
