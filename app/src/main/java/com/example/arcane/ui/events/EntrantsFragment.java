@@ -99,6 +99,7 @@ public class EntrantsFragment extends Fragment {
         decisionRepository = new DecisionRepository();
 
         adapter = new EntrantAdapter();
+        adapter.setOnCancelClickListener((entrantId, decisionId) -> handleCancelInvitation(entrantId, decisionId));
         binding.entrantsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.entrantsRecyclerView.setAdapter(adapter);
 
@@ -151,6 +152,8 @@ public class EntrantsFragment extends Fragment {
                                         Users user = userDoc.toObject(Users.class);
                                         if (user != null) {
                                             EntrantItem item = new EntrantItem();
+                                            item.entrantId = entrantId;
+                                            item.decisionId = (String) registration.get("decisionId");
                                             item.name = user.getName();
                                             item.email = user.getEmail();
                                             item.phone = user.getPhone();
@@ -388,6 +391,46 @@ public class EntrantsFragment extends Fragment {
         navController.navigate(R.id.navigation_entrants_map, args);
     }
 
+    /**
+     * Handles cancel invitation button click.
+     * Cancels an entrant's invitation and promotes the next winner.
+     *
+     * @param entrantId the entrant's user ID
+     * @param decisionId the decision ID
+     */
+    private void handleCancelInvitation(String entrantId, String decisionId) {
+        if (eventId == null || entrantId == null || decisionId == null) {
+            Toast.makeText(requireContext(), "Invalid entrant information", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Show confirmation dialog
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Cancel Invitation")
+                .setMessage("Are you sure you want to cancel this entrant's invitation? A replacement will be automatically selected.")
+                .setPositiveButton("Cancel Invitation", (dialog, which) -> {
+                    // Perform cancellation
+                    eventService.cancelEntrantInvitation(eventId, entrantId, decisionId)
+                            .addOnSuccessListener(aVoid -> {
+                                if (!isAdded() || getContext() == null) return;
+                                Toast.makeText(getContext(), "Invitation cancelled. Replacement selected.", Toast.LENGTH_SHORT).show();
+                                // Reload entrants to reflect the change
+                                loadEntrants();
+                            })
+                            .addOnFailureListener(e -> {
+                                if (!isAdded() || getContext() == null) return;
+                                String errorMessage = e.getMessage();
+                                if (errorMessage != null && errorMessage.contains("Can only cancel INVITED")) {
+                                    Toast.makeText(getContext(), "Can only cancel invitations that haven't been accepted or declined", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(getContext(), "Failed to cancel invitation: " + errorMessage, Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .setNegativeButton("No", null)
+                .show();
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -396,6 +439,8 @@ public class EntrantsFragment extends Fragment {
 
     // Simple data class for entrant display
     static class EntrantItem {
+        String entrantId;
+        String decisionId;
         String name;
         String email;
         String phone;
