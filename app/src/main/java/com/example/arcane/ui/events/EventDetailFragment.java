@@ -1004,12 +1004,12 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                         Toast.makeText(getContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
                     }
                     isUserJoined = false;
-                    userStatus = null;
+                    userStatus = "PENDING";  // Show "PENDING" status chip instead of hiding
                     userDecision = null;
                     waitingListEntryId = null;
                     decisionId = null;
                     
-                    // Immediately hide status chip (status is now "pending" = no chip)
+                    // Immediately show "PENDING" status chip
                     showUserStatus();
                     
                     // Update UI to show join button (this will also refresh total entrants count)
