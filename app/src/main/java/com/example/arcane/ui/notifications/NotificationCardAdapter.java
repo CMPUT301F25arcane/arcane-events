@@ -1,3 +1,15 @@
+/**
+ * NotificationCardAdapter.java
+ * 
+ * Purpose: RecyclerView adapter for displaying notification cards in a list.
+ * 
+ * Design Pattern: Adapter pattern for RecyclerView. Implements the standard
+ * RecyclerView.Adapter interface to bind notification data to view holders.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.notifications;
 
 import android.view.LayoutInflater;
@@ -18,6 +30,12 @@ import java.util.Locale;
 
 /**
  * RecyclerView adapter for displaying notification cards.
+ *
+ * <p>Manages the display of notification information in a RecyclerView,
+ * including title, message, timestamp, user email, type, and read status.
+ * Supports color coding based on notification type.</p>
+ *
+ * @version 1.0
  */
 public class NotificationCardAdapter extends RecyclerView.Adapter<NotificationCardAdapter.NotificationViewHolder> {
 

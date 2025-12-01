@@ -1,3 +1,15 @@
+/**
+ * UserCardAdapter.java
+ * 
+ * Purpose: RecyclerView adapter for displaying user cards in a list.
+ * 
+ * Design Pattern: Adapter pattern for RecyclerView. Implements the standard
+ * RecyclerView.Adapter interface to bind user profile data to view holders.
+ * 
+ * Outstanding Issues: None currently identified.
+ * 
+ * @version 1.0
+ */
 package com.example.arcane.ui.users;
 
 import android.view.LayoutInflater;
@@ -19,6 +31,12 @@ import java.util.List;
 
 /**
  * RecyclerView adapter for displaying user cards.
+ *
+ * <p>Manages the display of user information in a RecyclerView,
+ * including name, email, role, and profile image. Supports delete functionality
+ * for admin users.</p>
+ *
+ * @version 1.0
  */
 public class UserCardAdapter extends RecyclerView.Adapter<UserCardAdapter.UserViewHolder> {
 
