@@ -18,6 +18,7 @@
  */
 package com.example.arcane.service;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.example.arcane.model.Decision;
@@ -506,7 +507,150 @@ public class EventService {
                                 // Update userEvents mirror (if userEvents collection exists)
                                 // For now, keep registeredEventIds as-is
                                 
+                                // Promote next winner from waiting list
+                                promoteNextWinner(eventId)
+                                        .addOnFailureListener(e -> {
+                                            Log.w("EventService", "Failed to promote replacement winner", e);
+                                        });
+                                
+                                // Return success even if promotion fails (non-blocking)
                                 return com.google.android.gms.tasks.Tasks.forResult(null);
+                            });
+                });
+    }
+
+    /**
+     * Promotes the next winner from the waiting list when someone declines.
+     * This ensures the number of accepted entrants matches numberOfWinners.
+     *
+     * @param eventId the event ID
+     * @return a Task that completes when promotion is done (or if no promotion needed)
+     */
+    private Task<Void> promoteNextWinner(String eventId) {
+        // Get event to check numberOfWinners
+        return eventRepository.getEventById(eventId)
+                .continueWithTask(eventTask -> {
+                    if (!eventTask.isSuccessful() || eventTask.getResult() == null || !eventTask.getResult().exists()) {
+                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                    }
+
+                    Event event = eventTask.getResult().toObject(Event.class);
+                    if (event == null || event.getNumberOfWinners() == null || event.getNumberOfWinners() <= 0) {
+                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                    }
+
+                    int numberOfWinners = event.getNumberOfWinners();
+                    String eventName = event.getEventName();
+
+                    Log.d("EventService", "promoteNextWinner: Checking if promotion needed. numberOfWinners=" + numberOfWinners);
+
+                    // Count how many have ACCEPTED
+                    return decisionRepository.getDecisionsByStatus(eventId, "ACCEPTED")
+                            .continueWithTask(acceptedTask -> {
+                                if (!acceptedTask.isSuccessful()) {
+                                    Log.w("EventService", "promoteNextWinner: Failed to get ACCEPTED decisions");
+                                    return com.google.android.gms.tasks.Tasks.forResult(null);
+                                }
+
+                                int acceptedCount = acceptedTask.getResult().size();
+                                Log.d("EventService", "promoteNextWinner: Accepted count=" + acceptedCount + ", needed=" + numberOfWinners);
+                                
+                                // If we already have enough accepted, no need to promote
+                                if (acceptedCount >= numberOfWinners) {
+                                    Log.d("EventService", "promoteNextWinner: Already have enough accepted, no promotion needed");
+                                    return com.google.android.gms.tasks.Tasks.forResult(null);
+                                }
+
+                                // We need to promote someone. First try LOST status (they were in lottery but lost)
+                                return decisionRepository.getDecisionsByStatus(eventId, "LOST")
+                                        .continueWithTask(lostTask -> {
+                                            if (!lostTask.isSuccessful()) {
+                                                return com.google.android.gms.tasks.Tasks.forResult((List<Decision>) null);
+                                            }
+
+                                            List<Decision> lostDecisions = new ArrayList<>();
+                                            for (QueryDocumentSnapshot doc : lostTask.getResult()) {
+                                                Decision decision = doc.toObject(Decision.class);
+                                                decision.setDecisionId(doc.getId());
+                                                lostDecisions.add(decision);
+                                            }
+
+                                            if (!lostDecisions.isEmpty()) {
+                                                // Shuffle and pick one from LOST
+                                                Collections.shuffle(lostDecisions);
+                                                List<Decision> selected = new ArrayList<>();
+                                                selected.add(lostDecisions.get(0));
+                                                Log.d("EventService", "Promoting from LOST status: " + selected.get(0).getEntrantId());
+                                                return com.google.android.gms.tasks.Tasks.forResult(selected);
+                                            }
+
+                                            // No LOST entries, try PENDING (they joined after lottery was drawn)
+                                            return decisionRepository.getDecisionsByStatus(eventId, "PENDING")
+                                                    .continueWith(pendingTask -> {
+                                                        if (!pendingTask.isSuccessful()) {
+                                                            return new ArrayList<Decision>();
+                                                        }
+
+                                                        List<Decision> pendingDecisions = new ArrayList<>();
+                                                        for (QueryDocumentSnapshot doc : pendingTask.getResult()) {
+                                                            Decision decision = doc.toObject(Decision.class);
+                                                            decision.setDecisionId(doc.getId());
+                                                            pendingDecisions.add(decision);
+                                                        }
+
+                                                        if (!pendingDecisions.isEmpty()) {
+                                                            // Shuffle and pick one from PENDING
+                                                            Collections.shuffle(pendingDecisions);
+                                                            List<Decision> selected = new ArrayList<>();
+                                                            selected.add(pendingDecisions.get(0));
+                                                            Log.d("EventService", "Promoting from PENDING status: " + selected.get(0).getEntrantId());
+                                                            return selected;
+                                                        }
+
+                                                        return new ArrayList<Decision>();
+                                                    });
+                                        })
+                                        .continueWithTask(candidatesTask -> {
+                                            List<Decision> candidates = candidatesTask.getResult();
+                                            if (candidates == null || candidates.isEmpty()) {
+                                                // No candidates available to promote
+                                                Log.d("EventService", "promoteNextWinner: No candidates available to promote");
+                                                return com.google.android.gms.tasks.Tasks.forResult(null);
+                                            }
+                                            
+                                            Log.d("EventService", "promoteNextWinner: Found " + candidates.size() + " candidate(s) to promote");
+
+                                            // Promote the first candidate to INVITED
+                                            Decision candidate = candidates.get(0);
+                                            Log.d("EventService", "promoteNextWinner: Promoting entrant " + candidate.getEntrantId() + " to INVITED");
+                                            candidate.setStatus("INVITED");
+                                            candidate.setUpdatedAt(Timestamp.now());
+
+                                            return decisionRepository.updateDecision(eventId, candidate.getDecisionId(), candidate)
+                                                    .continueWithTask(updateTask -> {
+                                                        if (!updateTask.isSuccessful()) {
+                                                            Log.e("EventService", "promoteNextWinner: Failed to update decision", updateTask.getException());
+                                                            return com.google.android.gms.tasks.Tasks.forResult(null);
+                                                        }
+
+                                                        Log.d("EventService", "promoteNextWinner: Successfully updated decision, sending notification");
+                                                        // Send notification to the promoted winner
+                                                        return notificationService.sendNotification(
+                                                                candidate.getEntrantId(),
+                                                                eventId,
+                                                                "INVITED",
+                                                                "You won the lottery!",
+                                                                "Congratulations! You have been selected for " + eventName + ". Please accept or decline your invitation."
+                                                        ).continueWith(notifTask -> {
+                                                            if (notifTask.isSuccessful()) {
+                                                                Log.d("EventService", "promoteNextWinner: Notification sent successfully");
+                                                            } else {
+                                                                Log.w("EventService", "promoteNextWinner: Failed to send notification", notifTask.getException());
+                                                            }
+                                                            return null;
+                                                        });
+                                                    });
+                                        });
                             });
                 });
     }
