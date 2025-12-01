@@ -1,6 +1,7 @@
 package com.example.arcane.model;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.GeoPoint;
 import org.junit.Test;
 import org.junit.Before;
 
@@ -50,17 +51,20 @@ public class WaitingListEntryTest {
      */
     @Test
     public void testParameterizedConstructor() {
+        GeoPoint testLocation = new GeoPoint(37.7749, -122.4194);
         WaitingListEntry entry = new WaitingListEntry(
                 testEntryId,
                 testEntrantId,
                 testJoinTimestamp,
-                testInvitedAt
+                testInvitedAt,
+                testLocation
         );
 
         assertEquals("Entry ID should match", testEntryId, entry.getEntryId());
         assertEquals("Entrant ID should match", testEntrantId, entry.getEntrantId());
         assertEquals("Join timestamp should match", testJoinTimestamp, entry.getJoinTimestamp());
         assertEquals("Invited at should match", testInvitedAt, entry.getInvitedAt());
+        assertEquals("Join location should match", testLocation, entry.getJoinLocation());
     }
 
     /**
@@ -68,17 +72,20 @@ public class WaitingListEntryTest {
      */
     @Test
     public void testParameterizedConstructorWithNullInvitedAt() {
+        GeoPoint testLocation = new GeoPoint(37.7749, -122.4194);
         WaitingListEntry entry = new WaitingListEntry(
                 testEntryId,
                 testEntrantId,
                 testJoinTimestamp,
-                null
+                null,
+                testLocation
         );
 
         assertEquals("Entry ID should match", testEntryId, entry.getEntryId());
         assertEquals("Entrant ID should match", testEntrantId, entry.getEntrantId());
         assertEquals("Join timestamp should match", testJoinTimestamp, entry.getJoinTimestamp());
         assertNull("Invited at should be null", entry.getInvitedAt());
+        assertEquals("Join location should match", testLocation, entry.getJoinLocation());
     }
 
     /**
@@ -86,17 +93,20 @@ public class WaitingListEntryTest {
      */
     @Test
     public void testParameterizedConstructorWithNullEntryId() {
+        GeoPoint testLocation = new GeoPoint(37.7749, -122.4194);
         WaitingListEntry entry = new WaitingListEntry(
                 null,
                 testEntrantId,
                 testJoinTimestamp,
-                testInvitedAt
+                testInvitedAt,
+                testLocation
         );
 
         assertNull("Entry ID should be null", entry.getEntryId());
         assertEquals("Entrant ID should match", testEntrantId, entry.getEntrantId());
         assertEquals("Join timestamp should match", testJoinTimestamp, entry.getJoinTimestamp());
         assertEquals("Invited at should match", testInvitedAt, entry.getInvitedAt());
+        assertEquals("Join location should match", testLocation, entry.getJoinLocation());
     }
 
     // ========== Getter and Setter Tests for entryId ==========
@@ -320,12 +330,14 @@ public class WaitingListEntryTest {
      */
     @Test
     public void testConstructorVsSetters() {
+        GeoPoint testLocation = new GeoPoint(37.7749, -122.4194);
         // Create entry using constructor
         WaitingListEntry constructorEntry = new WaitingListEntry(
                 testEntryId,
                 testEntrantId,
                 testJoinTimestamp,
-                testInvitedAt
+                testInvitedAt,
+                testLocation
         );
 
         // Create entry using setters
@@ -334,6 +346,7 @@ public class WaitingListEntryTest {
         setterEntry.setEntrantId(testEntrantId);
         setterEntry.setJoinTimestamp(testJoinTimestamp);
         setterEntry.setInvitedAt(testInvitedAt);
+        setterEntry.setJoinLocation(testLocation);
 
         // Both should have the same values
         assertEquals("Entry IDs should match",
@@ -344,5 +357,7 @@ public class WaitingListEntryTest {
                 constructorEntry.getJoinTimestamp(), setterEntry.getJoinTimestamp());
         assertEquals("Invited at timestamps should match",
                 constructorEntry.getInvitedAt(), setterEntry.getInvitedAt());
+        assertEquals("Join locations should match",
+                constructorEntry.getJoinLocation(), setterEntry.getJoinLocation());
     }
 }
