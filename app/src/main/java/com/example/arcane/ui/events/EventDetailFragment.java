@@ -1058,11 +1058,14 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
 
         dialogBinding.buttonOk.setOnClickListener(v -> {
             List<String> selectedStatuses = new ArrayList<>();
+            boolean sendToWaitingList = false;
+            
             if (dialogBinding.checkboxInvited.isChecked()) {
                 selectedStatuses.add("INVITED");
             }
             if (dialogBinding.checkboxEnrolled.isChecked()) {
-                selectedStatuses.add("ACCEPTED");
+                // "Enrolled" means waiting list entrants, not ACCEPTED status
+                sendToWaitingList = true;
             }
             if (dialogBinding.checkboxLost.isChecked()) {
                 selectedStatuses.add("LOST");
@@ -1071,19 +1074,19 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
                 selectedStatuses.add("CANCELLED");
             }
 
-            if (selectedStatuses.isEmpty()) {
+            if (selectedStatuses.isEmpty() && !sendToWaitingList) {
                 Toast.makeText(requireContext(), "Please select at least one group", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             dialog.dismiss();
-            sendNotificationsToSelectedGroups(selectedStatuses);
+            sendNotificationsToSelectedGroups(selectedStatuses, sendToWaitingList);
         });
 
         dialog.show();
     }
 
-    private void sendNotificationsToSelectedGroups(List<String> statuses) {
+    private void sendNotificationsToSelectedGroups(List<String> statuses, boolean sendToWaitingList) {
         if (eventId == null || currentEvent == null) {
             return;
         }
@@ -1092,6 +1095,16 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback 
         
         // Send notifications with status-specific messages
         List<com.google.android.gms.tasks.Task<Map<String, Object>>> statusTasks = new ArrayList<>();
+        
+        // Handle waiting list entrants (Enrolled)
+        if (sendToWaitingList) {
+            String title = "Event update";
+            String message = "You have an update regarding " + eventName + ".";
+            com.google.android.gms.tasks.Task<Map<String, Object>> waitingListTask = eventService.sendNotificationsToWaitingListEntrants(eventId, title, message);
+            statusTasks.add(waitingListTask);
+        }
+        
+        // Handle status-based notifications
         for (String status : statuses) {
             String title;
             String message;
