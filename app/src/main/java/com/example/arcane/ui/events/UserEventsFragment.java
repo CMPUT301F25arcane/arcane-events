@@ -645,15 +645,6 @@ public class UserEventsFragment extends Fragment {
     }
 
     /**
-     * Gets the event adapter (for testing purposes).
-     *
-     * @return the event card adapter
-     */
-    public EventCardAdapter getAdapter() {
-        return adapter;
-    }
-
-    /**
      * Called when the view hierarchy is being removed.
      */
     @Override
