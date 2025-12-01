@@ -86,7 +86,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="Rogers Place" />
 
-        <!-- Category Tag -->
+        <!-- Category Tag (purely visual label, not clickable/selectable) -->
         <com.google.android.material.chip.Chip
             android:id="@+id/category_tag"
             style="@style/Widget.MaterialComponents.Chip.Entry"
@@ -95,6 +95,9 @@
             android:text="Sports"
             android:textSize="11sp"
             android:textStyle="bold"
+            android:clickable="false"
+            android:focusable="false"
+            android:checkable="false"
             app:chipStrokeWidth="0dp"
             app:chipMinHeight="24dp"
             app:closeIconEnabled="false"
@@ -103,7 +106,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="Sports" />
 
-        <!-- Location Enabled Chip -->
+        <!-- Location Enabled Chip (visual label only) -->
         <com.google.android.material.chip.Chip
             android:id="@+id/location_chip"
             style="@style/Widget.MaterialComponents.Chip.Entry"
@@ -114,6 +117,9 @@
             android:textSize="11sp"
             android:textStyle="bold"
             android:visibility="gone"
+            android:clickable="false"
+            android:focusable="false"
+            android:checkable="false"
             app:chipStrokeWidth="0dp"
             app:chipMinHeight="24dp"
             app:closeIconEnabled="false"
@@ -121,7 +127,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="📍 Location" />
 
-        <!-- Waitlist Status Bubble -->
+        <!-- Waitlist Status Bubble (status label only) -->
         <com.google.android.material.chip.Chip
             android:id="@+id/waitlist_status"
             style="@style/Widget.MaterialComponents.Chip.Entry"
@@ -133,6 +139,9 @@
             android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="@color/status_pending"
+            android:clickable="false"
+            android:focusable="false"
+            android:checkable="false"
             app:chipBackgroundColor="@color/status_pending_bg"
             app:chipStrokeWidth="0dp"
             app:chipMinHeight="28dp"
